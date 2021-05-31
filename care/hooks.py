@@ -100,23 +100,9 @@ app_license = "MIT"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"care.tasks.all"
-# 	],
-# 	"daily": [
-# 		"care.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"care.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"care.tasks.weekly"
-# 	]
-# 	"monthly": [
-# 		"care.tasks.monthly"
-# 	]
-# }
+scheduler_events = {
+	"hourly": ["care.hook_events.override_pos_closing.execute_pos_invoices"]
+}
 
 # Testing
 # -------
@@ -126,9 +112,9 @@ app_license = "MIT"
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "care.event.get_events"
-# }
+override_whitelisted_methods = {
+	"erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry.get_pos_invoices": "care.hook_events.override_pos_closing.get_pos_invoices"
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
@@ -141,30 +127,34 @@ app_license = "MIT"
 #
 # auto_cancel_exempted_doctypes = ["Auto Repeat"]
 
+override_doctype_class = {
+    'POS Closing Entry': 'care.hook_events.override_pos_closing.OverridePOSClosingEntry',
+    'POS Invoice Merge Log': 'care.hook_events.override_pos_merge_log.OverridePOSInvoiceMergeLog'
+}
 
 # User Data Protection
 # --------------------
 
-user_data_fields = [
-	{
-		"doctype": "{doctype_1}",
-		"filter_by": "{filter_by}",
-		"redact_fields": ["{field_1}", "{field_2}"],
-		"partial": 1,
-	},
-	{
-		"doctype": "{doctype_2}",
-		"filter_by": "{filter_by}",
-		"partial": 1,
-	},
-	{
-		"doctype": "{doctype_3}",
-		"strict": False,
-	},
-	{
-		"doctype": "{doctype_4}"
-	}
-]
+# user_data_fields = [
+# 	{
+# 		"doctype": "{doctype_1}",
+# 		"filter_by": "{filter_by}",
+# 		"redact_fields": ["{field_1}", "{field_2}"],
+# 		"partial": 1,
+# 	},
+# 	{
+# 		"doctype": "{doctype_2}",
+# 		"filter_by": "{filter_by}",
+# 		"partial": 1,
+# 	},
+# 	{
+# 		"doctype": "{doctype_3}",
+# 		"strict": False,
+# 	},
+# 	{
+# 		"doctype": "{doctype_4}"
+# 	}
+# ]
 
 # Authentication and authorization
 # --------------------------------
