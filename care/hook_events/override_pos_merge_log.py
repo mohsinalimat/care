@@ -1,15 +1,7 @@
 
 import frappe
-from frappe import _
-from frappe.model import default_fields
-from frappe.model.document import Document
-from frappe.utils import flt, getdate, nowdate
-from frappe.utils.background_jobs import enqueue
+from frappe.utils import flt, getdate
 from frappe.model.mapper import map_doc, map_child_doc
-from frappe.utils.scheduler import is_scheduler_inactive
-from frappe.core.page.background_jobs.background_jobs import get_info
-import json
-import six
 from erpnext.accounts.doctype.pos_invoice_merge_log.pos_invoice_merge_log import POSInvoiceMergeLog, update_item_wise_tax_detail
 
 
@@ -17,6 +9,38 @@ class OverridePOSInvoiceMergeLog(POSInvoiceMergeLog):
     def validate(self):
         self.validate_pos_invoice_status()
         self.validate_pos_invoice_status()
+
+    def process_merging_into_sales_invoice(self, data):
+        sales_invoice = self.get_new_sales_invoice()
+
+        sales_invoice = self.merge_pos_invoice_into(sales_invoice, data)
+
+        sales_invoice.is_consolidated = 1
+        sales_invoice.set_posting_time = 1
+        sales_invoice.posting_date = getdate(self.posting_date)
+        sales_invoice.save()
+        submit_sales_invoice(sales_invoice)
+        self.consolidated_invoice = sales_invoice.name
+
+        return sales_invoice.name
+
+    def process_merging_into_credit_note(self, data):
+        credit_note = self.get_new_sales_invoice()
+        credit_note.is_return = 1
+
+        credit_note = self.merge_pos_invoice_into(credit_note, data)
+
+        credit_note.is_consolidated = 1
+        credit_note.set_posting_time = 1
+        credit_note.posting_date = getdate(self.posting_date)
+        # TODO: return could be against multiple sales invoice which could also have been consolidated?
+        # credit_note.return_against = self.consolidated_invoice
+        credit_note.save()
+        submit_sales_invoice(credit_note)
+
+        self.consolidated_credit_note = credit_note.name
+
+        return credit_note.name
 
     def merge_pos_invoice_into(self, invoice, data):
         items, payments, taxes = [], [], []
@@ -85,3 +109,46 @@ class OverridePOSInvoiceMergeLog(POSInvoiceMergeLog):
         invoice.ignore_pricing_rule = 1
 
         return invoice
+
+
+def submit_sales_invoice(sales_invoice):
+    lst = []
+    for line in sales_invoice.items:
+        data_dict = {'item_code': line.item_code, 'warehouse': line.warehouse,
+                     'posting_date': sales_invoice.posting_date, 'posting_time': sales_invoice.posting_time,
+                     'voucher_type': 'Sales Invoice', 'voucher_no': sales_invoice.name, 'time_format': '%H:%i:%s'}
+        previous_sle = get_previous_sle_of_current_voucher(data_dict)
+        qty_after_transaction = 0
+        if previous_sle:
+            qty_after_transaction = previous_sle.qty_after_transaction
+
+        diff = qty_after_transaction - line.qty
+        if diff < 0 and abs(diff) > 0.0001:
+            lst.append(1)
+        else:
+            lst.append(0)
+    if 1 not in lst:
+        sales_invoice.submit()
+
+
+def get_previous_sle_of_current_voucher(args):
+    """get stock ledger entries filtered by specific posting datetime conditions"""
+
+    args['time_format'] = '%H:%i:%s'
+    if not args.get("posting_date"):
+        args["posting_date"] = "1900-01-01"
+    if not args.get("posting_time"):
+        args["posting_time"] = "00:00"
+
+    sle = frappe.db.sql("""
+        select *, timestamp(posting_date, posting_time) as "timestamp"
+        from `tabStock Ledger Entry`
+        where item_code = %(item_code)s
+            and warehouse = %(warehouse)s
+            and is_cancelled = 0
+            and timestamp(posting_date, time_format(posting_time, %(time_format)s)) < timestamp(%(posting_date)s, time_format(%(posting_time)s, %(time_format)s))
+        order by timestamp(posting_date, posting_time) desc, creation desc
+        limit 1""", args, as_dict=1)
+
+    return sle[0] if sle else frappe._dict()
+

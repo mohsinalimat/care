@@ -18,7 +18,7 @@ def execute_pos_invoices():
         make_opening_entry(res.name)
 
 def make_opening_entry(pos_profile,date_time=None):
-    check_open_entry = frappe.db.sql("""select * from `tabPOS Opening Entry` where status = 'Open' and docstatus = 1 and pos_profile = %s""", (pos_profile))
+    check_open_entry = frappe.db.sql("""select * from `tabPOS Opening Entry` where status = 'Open' and docstatus = 1 and pos_profile = %s and posting_date = %s""", (pos_profile,datetime.now().date()))
     if not check_open_entry:
         pos_profile_user = frappe.get_list("POS Profile User", filters={"default": 1, "parent": pos_profile}, fields=["user"], limit=1)[0].user
         profile_doc = frappe.get_doc("POS Profile", pos_profile)
@@ -168,9 +168,8 @@ def get_pos_invoices(start, end, pos_profile, user):
         `tabPOS Invoice`
     where docstatus = 1 and pos_profile = %s and ifnull(consolidated_invoice,'') = ''
     """, (pos_profile), as_dict=1)
-    # print("-------------",data,start,end)
+    # print("-------------",pos_profile,start,end)
     data = list(filter(lambda d: get_datetime(start) <= get_datetime(d.timestamp) <= get_datetime(end), data))
-    # print("--------data",data)
     # need to get taxes and payments so can't avoid get_doc
     data = [frappe.get_doc("POS Invoice", d.name).as_dict() for d in data]
 
