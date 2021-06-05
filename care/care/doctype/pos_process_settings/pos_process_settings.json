@@ -33,7 +33,8 @@
   {
    "fieldname": "last_execution_time",
    "fieldtype": "Datetime",
-   "label": "Last Execution Time"
+   "label": "Last Execution Time",
+   "mandatory_depends_on": "eval:doc.enabled ==1"
   },
   {
    "fieldname": "column_break_4",
@@ -43,7 +44,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2021-05-29 11:10:35.234366",
+ "modified": "2021-06-05 15:23:17.703663",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "POS Process Settings",
