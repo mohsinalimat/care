@@ -14,9 +14,9 @@ from erpnext.accounts.doctype.pos_invoice_merge_log.pos_invoice_merge_log import
 def execute_pos_invoices():
     make_closing_entry()
     last_execution_time = frappe.db.get_single_value('POS Process Settings', 'last_execution_time')
-
-    check_before_exe_time_pos_invoices(last_execution_time)
-
+    enabled = frappe.db.get_single_value('POS Process Settings', 'enabled')
+    if enabled:
+        check_before_exe_time_pos_invoices(last_execution_time)
     settings = frappe.get_single("POS Process Settings")
     settings.last_execution_time = datetime.now()
     settings.save()
