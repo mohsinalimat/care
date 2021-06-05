@@ -142,7 +142,7 @@ def check_before_exe_time_pos_invoices(last_execution_time=None):
     date = get_date_str(str(last_execution_time))
     data = frappe.db.sql("""
         select * from `tabPOS Invoice`
-        where docstatus = 1 and posting_date <= %s and posting_time <= %s and ifnull(consolidated_invoice,'') = ''
+        where docstatus = 1 and posting_date >= %s and posting_time >= %s and ifnull(consolidated_invoice,'') = ''
         order by pos_profile,posting_date,posting_time
         """, (date, time), as_dict=1)
     pos_dict = {}
