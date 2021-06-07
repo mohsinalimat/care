@@ -25,7 +25,7 @@
   },
   {
    "default": "1",
-   "description": "In Housr",
+   "description": "In Hours",
    "fieldname": "execution_interval",
    "fieldtype": "Float",
    "label": "Execution Interval"
@@ -44,7 +44,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2021-06-05 15:23:17.703663",
+ "modified": "2021-06-07 10:26:14.420541",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "POS Process Settings",
