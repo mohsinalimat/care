@@ -15,11 +15,15 @@ def execute_pos_invoices():
     make_closing_entry()
     last_execution_time = frappe.db.get_single_value('POS Process Settings', 'last_execution_time')
     enabled = frappe.db.get_single_value('POS Process Settings', 'enabled')
+    execution_interval = 5  # set Interval
     if enabled:
-        check_before_exe_time_pos_invoices(last_execution_time)
-    settings = frappe.get_single("POS Process Settings")
-    settings.last_execution_time = datetime.now()
-    settings.save()
+        hours = time_diff_in_hours(datetime.now(), last_execution_time)
+        execution_interval = frappe.db.get_single_value('POS Process Settings', 'execution_interval')
+        if hours >= execution_interval:
+            check_before_exe_time_pos_invoices(last_execution_time)
+            settings = frappe.get_single("POS Process Settings")
+            settings.last_execution_time = datetime.now()
+            settings.save()
     pos_profiles = frappe.get_list("POS Profile", filters={"disabled": 0}, fields=["name"], order_by="creation")
     for res in pos_profiles:
         make_opening_entry(res.name)
@@ -134,8 +138,8 @@ def make_closing_entry():
                     pos_c_entry.submit()
                     make_opening_entry(pos_c_entry.pos_profile, pos_c_entry.period_end_date)
         except Exception as e:
-            print("-----------e",e)
-            pass
+            print("-----------e", e)
+            continue
 
 def check_before_exe_time_pos_invoices(last_execution_time=None):
     time = get_time(str(last_execution_time))
@@ -231,9 +235,6 @@ def create_close_entry(pos_o_entry, close_datetime, end_date):
             pos_c_entry.submit()
     except Exception as e:
         print("-----------e", e)
-        pass
-
-
 
 def consolidate_pos_invoices(pos_invoices=None, closing_entry=None):
     invoices = pos_invoices or (closing_entry and closing_entry.get('pos_transactions')) or get_all_unconsolidated_invoices()
