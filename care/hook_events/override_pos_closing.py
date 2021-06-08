@@ -4,7 +4,7 @@ from frappe import _
 from frappe.utils import get_datetime, flt
 from erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry import POSClosingEntry
 from datetime import datetime
-from frappe.utils import time_diff_in_hours, add_to_date,get_time,get_date_str,get_datetime_str
+from frappe.utils import time_diff_in_hours, add_to_date,get_time,get_date_str, get_datetime_str, now_datetime, nowdate
 from erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry import get_pos_invoices
 from erpnext.accounts.doctype.pos_invoice_merge_log.pos_invoice_merge_log import create_merge_logs
 from erpnext.accounts.doctype.pos_invoice_merge_log.pos_invoice_merge_log import get_all_unconsolidated_invoices, enqueue_job, get_invoice_customer_map
@@ -17,36 +17,37 @@ def execute_pos_invoices():
     enabled = frappe.db.get_single_value('POS Process Settings', 'enabled')
     execution_interval = 5  # set Interval
     if enabled:
-        hours = time_diff_in_hours(datetime.now(), last_execution_time)
+        print("---------------",now_datetime(),nowdate())
+        hours = time_diff_in_hours(now_datetime(), last_execution_time)
         execution_interval = frappe.db.get_single_value('POS Process Settings', 'execution_interval')
         if hours >= execution_interval:
             check_before_exe_time_pos_invoices(last_execution_time)
             settings = frappe.get_single("POS Process Settings")
-            settings.last_execution_time = datetime.now()
+            settings.last_execution_time = now_datetime()
             settings.save()
     pos_profiles = frappe.get_list("POS Profile", filters={"disabled": 0}, fields=["name"], order_by="creation")
     for res in pos_profiles:
         make_opening_entry(res.name)
 
 def make_opening_entry(pos_profile,date_time=None,execute_previous_entry=False):
-    check_open_entry = frappe.db.sql("""select * from `tabPOS Opening Entry` where status = 'Open' and docstatus = 1 and pos_profile = %s and posting_date = %s""", (pos_profile,datetime.now().date()))
+    check_open_entry = frappe.db.sql("""select * from `tabPOS Opening Entry` where status = 'Open' and docstatus = 1 and pos_profile = %s and posting_date = %s""", (pos_profile,nowdate()))
     if not check_open_entry or execute_previous_entry:
         pos_profile_user = frappe.get_list("POS Profile User", filters={"default": 1, "parent": pos_profile}, fields=["user"], limit=1)[0].user
         profile_doc = frappe.get_doc("POS Profile", pos_profile)
         pos_o_entry = frappe.new_doc("POS Opening Entry")
 
-        validate_open_entry_date_time = frappe.db.sql("""select * from `tabPOS Opening Entry` where docstatus = 1 and pos_profile  = %s and posting_date = %s""", (pos_profile, datetime.now().date()))
+        validate_open_entry_date_time = frappe.db.sql("""select * from `tabPOS Opening Entry` where docstatus = 1 and pos_profile  = %s and posting_date = %s""", (pos_profile, nowdate()))
         if date_time:
             pos_o_entry.period_start_date = date_time
             pos_o_entry.posting_date = get_date_str(str(date_time))
         elif not validate_open_entry_date_time:
-            date_str = str(datetime.now().date()) + " 00:00:00"
+            date_str = str(nowdate()) + " 00:00:00"
             p_date = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
             pos_o_entry.period_start_date = p_date
-            pos_o_entry.posting_date = datetime.now().date()
+            pos_o_entry.posting_date = nowdate()
         else:
-            pos_o_entry.period_start_date = datetime.now()
-            pos_o_entry.posting_date = datetime.now().date()
+            pos_o_entry.period_start_date = now_datetime()
+            pos_o_entry.posting_date = nowdate()
 
         pos_o_entry.user = pos_profile_user
         pos_o_entry.company = profile_doc.company
@@ -70,12 +71,12 @@ def make_closing_entry():
     for open_e in pos_opening_entries:
         try:
             pos_o_entry = frappe.get_doc("POS Opening Entry", open_e.name)
-            hours = time_diff_in_hours(datetime.now(), pos_o_entry.period_start_date)
+            hours = time_diff_in_hours(now_datetime(), pos_o_entry.period_start_date)
             if hours >= execution_interval:
                 pos_c_entry = frappe.new_doc("POS Closing Entry")
-                if datetime.now().date() == pos_o_entry.posting_date:
-                    pos_c_entry.period_end_date = datetime.now()
-                    pos_c_entry.posting_date = datetime.now().date()
+                if nowdate() == pos_o_entry.posting_date:
+                    pos_c_entry.period_end_date = now_datetime()
+                    pos_c_entry.posting_date = nowdate()
                 else:
                     date_str = str(pos_o_entry.posting_date) + " 23:59:59"
                     p_date = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
