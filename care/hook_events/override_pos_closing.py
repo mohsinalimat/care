@@ -17,7 +17,6 @@ def execute_pos_invoices():
     enabled = frappe.db.get_single_value('POS Process Settings', 'enabled')
     execution_interval = 5  # set Interval
     if enabled:
-        print("---------------",now_datetime(),nowdate())
         hours = time_diff_in_hours(now_datetime(), last_execution_time)
         execution_interval = frappe.db.get_single_value('POS Process Settings', 'execution_interval')
         if hours >= execution_interval:
