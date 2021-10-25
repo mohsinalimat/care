@@ -23,4 +23,5 @@ class MaterialDemand(Document):
 			if conversion:
 				conversion_factor = conversion['conversion_factor']
 			d.stock_qty = d.qty * conversion_factor
+			d.amount = d.qty * d.rate
 
