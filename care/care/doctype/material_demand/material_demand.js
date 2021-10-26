@@ -19,6 +19,23 @@ frappe.ui.form.on('Material Demand', {
 			}
 		}
 	 },
+	 refresh: function(frm){
+	     if(frm.doc.docstatus == 1 && frm.doc.per_ordered < 100){
+             frm.add_custom_button(__('Make Purchase Order'), function(){
+                frappe.call({
+                    method: "make_purchase_order",
+                    doc: frm.doc,
+                    freeze: true,
+                    callback: function(r) {
+                        var doclist = frappe.model.sync(r.message);
+                        frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+//                      frappe.show_alert(__("Purchase Order Created"))
+//                      frm.reload_doc();
+                    }
+                });
+            }).addClass("btn-primary");
+         }
+	 },
 	 warehouse: function(frm) {
 		let transaction_controller = new erpnext.TransactionController();
 		transaction_controller.autofill_warehouse(frm.doc.items, "warehouse", frm.doc.warehouse);

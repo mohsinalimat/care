@@ -111,6 +111,7 @@ class PurchaseRequest(Document):
 							"cost_center": cost_center
 						})
 					md.insert()
+			frappe.msgprint(_("Material Demand Created"), alert=True)
 
 
 

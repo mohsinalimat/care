@@ -89,13 +89,16 @@ app_license = "MIT"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-#	}
-# }
+doc_events = {
+    "Purchase Order": {
+        "on_submit": "care.hook_events.purchase_order.update_md_status",
+        "on_cancel": "care.hook_events.purchase_order.cancel_update_md_status",
+    },
+    "Purchase Receipt": {
+        "on_submit": "care.hook_events.purchase_receipt.update_md_status",
+        "on_cancel": "care.hook_events.purchase_receipt.cancel_update_md_status",
+    }
+}
 
 # Scheduled Tasks
 # ---------------

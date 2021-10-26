@@ -9,6 +9,12 @@ frappe.ui.form.on('Purchase Request', {
     },
 	refresh: function(frm) {
         frm.fields_dict.get_items.$input.addClass("btn-primary");
+        if (frm.doc.docstatus == 1 || frm.doc.__islocal){
+            frm.set_df_property('get_items', 'hidden', 1);
+        }
+        else{
+            frm.set_df_property('get_items', 'hidden', 0);
+        }
 	},
 	get_items: function(frm){
 	    frappe.call({
