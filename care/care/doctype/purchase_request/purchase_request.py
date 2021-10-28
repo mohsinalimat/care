@@ -92,13 +92,18 @@ class PurchaseRequest(Document):
 						expense_account = get_default_expense_account(item_defaults, item_group_defaults, brand_defaults)
 						cost_center = get_default_cost_center(self,item_defaults, item_group_defaults, brand_defaults)
 
+						qty = d.order_qty / conversion_factor
+						q_lst = "0."+str(round(qty, 2)).split(".")[1]
+						if 0 < float(q_lst) <= 0.50:
+							r = .55 - float(q_lst)
+							qty += r
 						md.append("items", {
 							"item_code": d.item_code,
 							"item_name": d.item_name,
 							"brand": d.brand,
 							"description": d.item_description,
 							"schedule_date": self.required_by,
-							"qty": d.order_qty,
+							"qty": round(qty),
 							"stock_uom": d.stock_uom,
 							"uom": self.order_uom,
 							"conversion_factor": conversion_factor,
