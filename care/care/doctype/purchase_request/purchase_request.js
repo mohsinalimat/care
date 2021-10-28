@@ -29,11 +29,11 @@ frappe.ui.form.on('Purchase Request', {
                             actual_qty = parseFloat(d.actual_qty)
                         }
                         let order_qty = 0
-                        let avl_qty = parseFloat(d.warehouse_reorder_level) - parseFloat(actual_qty)
-                        if (avl_qty > 0 && avl_qty < parseFloat(d.warehouse_reorder_level))
+                        let avl_qty = parseFloat(actual_qty)
+                        if (actual_qty >= 0 && actual_qty < parseFloat(d.warehouse_reorder_level))
                         {
                             let total_qty = actual_qty + parseFloat(d.warehouse_reorder_qty)
-                            if(total_qty > parseFloat(d.optimum_level)){
+                            if(total_qty >= parseFloat(d.optimum_level)){
                                 order_qty = parseFloat(d.optimum_level) - actual_qty
                             }
                             else{
