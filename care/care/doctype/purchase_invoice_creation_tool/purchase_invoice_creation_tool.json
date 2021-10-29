@@ -14,8 +14,6 @@
   "naming_series",
   "date",
   "company",
-  "upload_items_section",
-  "items",
   "section_break_10",
   "reference_doctype",
   "import_type",
@@ -25,7 +23,16 @@
   "template_warnings",
   "import_warnings",
   "section_import_preview",
-  "import_preview"
+  "import_preview",
+  "section_break_20",
+  "template_options",
+  "google_sheets_url",
+  "section_break_23",
+  "status",
+  "import_log_section",
+  "import_log",
+  "show_failed_logs",
+  "import_log_preview"
  ],
  "fields": [
   {
@@ -74,22 +81,10 @@
    "reqd": 1
   },
   {
-   "fieldname": "upload_items_section",
-   "fieldtype": "Section Break",
-   "label": "Upload Items"
-  },
-  {
-   "allow_bulk_edit": 1,
-   "fieldname": "items",
-   "fieldtype": "Table",
-   "label": "Items",
-   "options": "Purchase Invoice Creation Tool Item",
-   "reqd": 1
-  },
-  {
    "default": "Purchase Invoice Creation Tool Item",
    "fieldname": "reference_doctype",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Reference Doctype",
    "options": "DocType",
    "read_only": 1,
@@ -143,11 +138,61 @@
    "fieldname": "import_warnings",
    "fieldtype": "HTML",
    "label": "Import Warnings"
+  },
+  {
+   "fieldname": "template_options",
+   "fieldtype": "Code",
+   "label": "Template Options",
+   "options": "JSON"
+  },
+  {
+   "fieldname": "google_sheets_url",
+   "fieldtype": "Data",
+   "label": "Import from Google Sheets"
+  },
+  {
+   "fieldname": "section_break_20",
+   "fieldtype": "Section Break",
+   "hidden": 1
+  },
+  {
+   "fieldname": "section_break_23",
+   "fieldtype": "Section Break",
+   "hidden": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Pending\nSuccess\nPartial Success\nError"
+  },
+  {
+   "fieldname": "import_log_section",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Import Log"
+  },
+  {
+   "fieldname": "import_log",
+   "fieldtype": "Code",
+   "label": "Import Log",
+   "options": "JSON"
+  },
+  {
+   "default": "0",
+   "fieldname": "show_failed_logs",
+   "fieldtype": "Check",
+   "label": "Show Failed Logs"
+  },
+  {
+   "fieldname": "import_log_preview",
+   "fieldtype": "HTML",
+   "label": "Import Log Preview"
   }
  ],
  "hide_toolbar": 1,
  "links": [],
- "modified": "2021-10-28 15:45:47.858113",
+ "modified": "2021-10-29 15:02:53.096945",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Invoice Creation Tool",

@@ -15,6 +15,26 @@ frappe.ui.form.on('Purchase Invoice Creation Tool', {
 			);
 		});
 	},
+	refresh: function(frm){
+		frm.trigger('import_file');
+		frm.trigger('show_import_log');
+		let label = __('Start Import');
+		frm.page.set_primary_action(label, () => frm.events.start_import(frm));
+	},
+	start_import(frm) {
+		frm
+			.call({
+				method: 'form_start_import',
+				args: { data_import: frm.doc.name },
+				btn: frm.page.btn_primary
+			})
+			.then(r => {
+				if (r.message === true) {
+					frm.disable_save();
+				}
+				frm.reload_doc()
+			});
+	},
 	import_file(frm) {
 		frm.toggle_display('section_import_preview', frm.has_import_file());
 		if (!frm.has_import_file()) {
@@ -70,7 +90,6 @@ frappe.ui.form.on('Purchase Invoice Creation Tool', {
 				frm,
 				events: {
 					remap_column(changed_map) {
-					    console.log("------------------------",changed_map)
 						let template_options = JSON.parse(frm.doc.template_options || '{}');
 						template_options.column_to_field_map = template_options.column_to_field_map || {};
 						Object.assign(template_options.column_to_field_map, changed_map);
@@ -150,5 +169,96 @@ frappe.ui.form.on('Purchase Invoice Creation Tool', {
 				<div class="col-sm-10 warnings">${html}</div>
 			</div>
 		`);
+	},
+	show_import_log(frm) {
+		let import_log = JSON.parse(frm.doc.import_log || '[]');
+		let logs = import_log;
+		frm.toggle_display('import_log', false);
+		frm.toggle_display('import_log_section', logs.length > 0);
+
+		if (logs.length === 0) {
+			frm.get_field('import_log_preview').$wrapper.empty();
+			return;
+		}
+
+		let rows = logs
+			.map(log => {
+				let html = '';
+				if (log.success) {
+					if (frm.doc.import_type === 'Insert New Records') {
+						html = __('Successfully imported {0}', [
+							`<span class="underline">${frappe.utils.get_form_link(
+								frm.doc.reference_doctype,
+								log.docname,
+								true
+							)}<span>`
+						]);
+					} else {
+						html = __('Successfully updated {0}', [
+							`<span class="underline">${frappe.utils.get_form_link(
+								frm.doc.reference_doctype,
+								log.docname,
+								true
+							)}<span>`
+						]);
+					}
+				} else {
+					let messages = log.messages
+						.map(JSON.parse)
+						.map(m => {
+							let title = m.title ? `<strong>${m.title}</strong>` : '';
+							let message = m.message ? `<div>${m.message}</div>` : '';
+							return title + message;
+						})
+						.join('');
+					let id = frappe.dom.get_unique_id();
+					html = `${messages}
+						<button class="btn btn-default btn-xs" type="button" data-toggle="collapse" data-target="#${id}" aria-expanded="false" aria-controls="${id}" style="margin-top: 15px;">
+							${__('Show Traceback')}
+						</button>
+						<div class="collapse" id="${id}" style="margin-top: 15px;">
+							<div class="well">
+								<pre>${log.exception}</pre>
+							</div>
+						</div>`;
+				}
+				let indicator_color = log.success ? 'green' : 'red';
+				let title = log.success ? __('Success') : __('Failure');
+
+				if (frm.doc.show_failed_logs && log.success) {
+					return '';
+				}
+
+				return `<tr>
+					<td>${log.row_indexes.join(', ')}</td>
+					<td>
+						<div class="indicator ${indicator_color}">${title}</div>
+					</td>
+					<td>
+						${html}
+					</td>
+				</tr>`;
+			})
+			.join('');
+
+		if (!rows && frm.doc.show_failed_logs) {
+			rows = `<tr><td class="text-center text-muted" colspan=3>
+				${__('No failed logs')}
+			</td></tr>`;
+		}
+
+		frm.get_field('import_log_preview').$wrapper.html(`
+			<table class="table table-bordered">
+				<tr class="text-muted">
+					<th width="10%">${__('Row Number')}</th>
+					<th width="10%">${__('Status')}</th>
+					<th width="80%">${__('Message')}</th>
+				</tr>
+				${rows}
+			</table>
+		`);
+	},
+	show_failed_logs(frm) {
+		frm.trigger('show_import_log');
 	},
 });

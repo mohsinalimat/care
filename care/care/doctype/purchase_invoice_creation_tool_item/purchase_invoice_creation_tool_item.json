@@ -1,6 +1,7 @@
 {
  "actions": [],
- "creation": "2021-10-28 12:49:00.503248",
+ "autoname": "PICTI.###",
+ "creation": "2021-10-29 14:56:17.202868",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -17,8 +18,7 @@
   "rate",
   "column_break_11",
   "discount_percent",
-  "discount",
-  "amount"
+  "discount"
  ],
  "fields": [
   {
@@ -30,18 +30,38 @@
    "reqd": 1
   },
   {
-   "fieldname": "item_code",
-   "fieldtype": "Link",
-   "label": "Item Code",
-   "options": "Item"
-  },
-  {
    "columns": 2,
    "fieldname": "item_name",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Item Name",
    "reqd": 1
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Item Code",
+   "options": "Item"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "packing",
+   "fieldtype": "Data",
+   "label": "Packing"
+  },
+  {
+   "columns": 1,
+   "fieldname": "expiry",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Expiry Date"
+  },
+  {
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break"
   },
   {
    "columns": 1,
@@ -70,26 +90,6 @@
    "reqd": 1
   },
   {
-   "fieldname": "column_break_4",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "packing",
-   "fieldtype": "Data",
-   "label": "Packing"
-  },
-  {
-   "columns": 1,
-   "fieldname": "expiry",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Expiry"
-  },
-  {
-   "fieldname": "section_break_7",
-   "fieldtype": "Section Break"
-  },
-  {
    "fieldname": "column_break_11",
    "fieldtype": "Column Break"
   },
@@ -101,12 +101,6 @@
    "label": "Discount Percent"
   },
   {
-   "fieldname": "amount",
-   "fieldtype": "Currency",
-   "label": "Amount",
-   "read_only": 1
-  },
-  {
    "columns": 1,
    "fieldname": "discount",
    "fieldtype": "Currency",
@@ -115,14 +109,26 @@
   }
  ],
  "index_web_pages_for_search": 1,
- "istable": 1,
  "links": [],
- "modified": "2021-10-28 15:16:05.875365",
+ "modified": "2021-10-29 14:57:44.206463",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Invoice Creation Tool Item",
  "owner": "Administrator",
- "permissions": [],
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1
