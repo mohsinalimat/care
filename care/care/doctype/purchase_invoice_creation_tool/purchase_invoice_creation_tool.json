@@ -14,6 +14,7 @@
   "naming_series",
   "date",
   "company",
+  "status",
   "section_break_10",
   "reference_doctype",
   "import_type",
@@ -27,8 +28,6 @@
   "section_break_20",
   "template_options",
   "google_sheets_url",
-  "section_break_23",
-  "status",
   "import_log_section",
   "import_log",
   "show_failed_logs",
@@ -53,6 +52,8 @@
    "fetch_from": "purchase_order.supplier",
    "fieldname": "supplier",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Supplier",
    "options": "Supplier",
    "reqd": 1
@@ -61,6 +62,7 @@
    "fetch_from": "purchase_order.supplier_name",
    "fieldname": "supplier_name",
    "fieldtype": "Read Only",
+   "in_list_view": 1,
    "label": "Supplier Name"
   },
   {
@@ -92,7 +94,8 @@
   },
   {
    "fieldname": "section_break_10",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Select File"
   },
   {
    "fieldname": "download_template",
@@ -156,15 +159,14 @@
    "hidden": 1
   },
   {
-   "fieldname": "section_break_23",
-   "fieldtype": "Section Break",
-   "hidden": 1
-  },
-  {
+   "default": "Pending",
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
-   "options": "Pending\nSuccess\nPartial Success\nError"
+   "options": "Pending\nSuccess\nPartial Success\nError\nInvoice Created",
+   "read_only": 1
   },
   {
    "fieldname": "import_log_section",
@@ -191,8 +193,13 @@
   }
  ],
  "hide_toolbar": 1,
- "links": [],
- "modified": "2021-10-29 15:02:53.096945",
+ "links": [
+  {
+   "link_doctype": "Purchase Invoice",
+   "link_fieldname": "purchase_invoice_creation_tool"
+  }
+ ],
+ "modified": "2021-10-31 16:30:02.647233",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Invoice Creation Tool",
@@ -211,7 +218,9 @@
    "write": 1
   }
  ],
+ "search_fields": "purchase_order,supplier,supplier_name",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "title_field": "purchase_order",
  "track_changes": 1
 }

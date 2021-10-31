@@ -2,11 +2,21 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Purchase Invoice Creation Tool', {
-	 setup: function(frm) {
-        frm.has_import_file = () => {
-			return frm.doc.import_file;
-		};
-	 },
+	setup: function(frm) {
+         frm.has_import_file = () => {
+			 return frm.doc.import_file;
+		 };
+		 if (frm.doc.__islocal) {
+			frm.set_df_property('section_break_10', 'hidden', 1);
+		}
+		frm.set_query("purchase_order", () => {
+			return {
+				"filters": {
+					"docstatus": 1
+				}
+			};
+		})
+	},
 	download_template(frm) {
 		frappe.require('/assets/js/data_import_tools.min.js', () => {
 			frm.data_exporter = new frappe.data_import.DataExporter(
@@ -16,10 +26,40 @@ frappe.ui.form.on('Purchase Invoice Creation Tool', {
 		});
 	},
 	refresh: function(frm){
-		frm.trigger('import_file');
-		frm.trigger('show_import_log');
-		let label = __('Start Import');
-		frm.page.set_primary_action(label, () => frm.events.start_import(frm));
+	    if (frm.doc.__islocal) {
+			frm.set_df_property('section_break_10', 'hidden', 1);
+		}
+		else{
+		    frm.set_df_property('section_break_10', 'hidden', 0);
+		}
+
+        frm.trigger('import_file');
+	    if (frm.doc.status != "Invoice Created"){
+            if (frm.doc.status != "Success"){
+                frm.trigger('show_import_log');
+                let label = __('Validate File');
+                frm.page.set_primary_action(label, () => frm.events.start_import(frm));
+            }
+            if (frm.doc.status == "Success"){
+                let label = __('Make Purchase Invoice');
+                frm.page.set_primary_action(label, () => frm.events.make_purchase_invoice(frm));
+            }
+        }
+        else{
+            frm.disable_save();
+        }
+	},
+	make_purchase_invoice(frm){
+        frappe.call({
+            method: "make_purchase_invoice",
+            doc: frm.doc,
+            callback: function(r) {
+                if(!r.exc){
+                    var doclist = frappe.model.sync(r.message);
+                    frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+                }
+            }
+        });
 	},
 	start_import(frm) {
 		frm

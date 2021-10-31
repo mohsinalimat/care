@@ -30,9 +30,26 @@
    "link_type": "DocType",
    "onboard": 1,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Tool",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Purchase Invoice Creation Tool",
+   "link_to": "Purchase Invoice Creation Tool",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
   }
  ],
- "modified": "2021-10-26 09:45:37.049384",
+ "modified": "2021-10-31 10:35:53.660406",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Care",
@@ -50,6 +67,12 @@
    "doc_view": "List",
    "label": "Material Demand",
    "link_to": "Material Demand",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "List",
+   "label": "Purchase Invoice Creation Tool",
+   "link_to": "Purchase Invoice Creation Tool",
    "type": "DocType"
   }
  ]

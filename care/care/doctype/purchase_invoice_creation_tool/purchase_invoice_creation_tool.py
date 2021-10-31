@@ -4,8 +4,8 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.core.doctype.data_import.importer import Importer
-from frappe.utils.background_jobs import enqueue
+from care.care.doctype.purchase_invoice_creation_tool.importer import Importer
+from frappe.utils import nowdate
 
 class PurchaseInvoiceCreationTool(Document):
 	@frappe.whitelist()
@@ -24,30 +24,49 @@ class PurchaseInvoiceCreationTool(Document):
 		return Importer(self.reference_doctype, data_import=self)
 
 	def start_import(self):
-		from frappe.core.page.background_jobs.background_jobs import get_info
-		from frappe.utils.scheduler import is_scheduler_inactive
-
 		start_import(self.name)
-		# if is_scheduler_inactive() and not frappe.flags.in_test:
-		# 	frappe.throw(
-		# 		_("Scheduler is inactive. Cannot import data."), title=_("Scheduler Inactive")
-		# 	)
-		#
-		# enqueued_jobs = [d.get("job_name") for d in get_info()]
-		#
-		# if self.name not in enqueued_jobs:
-		# 	enqueue(
-		# 		start_import,
-		# 		queue="default",
-		# 		timeout=6000,
-		# 		event="data_import",
-		# 		job_name=self.name,
-		# 		data_import=self.name,
-		# 		now=frappe.conf.developer_mode or frappe.flags.in_test,
-		# 	)
-		# 	return True
-
 		return False
+
+	@frappe.whitelist()
+	def make_purchase_invoice(self):
+		if self:
+			i = Importer(self.reference_doctype, data_import=self)
+			data = i.import_file.get_payloads_for_import()
+			if len(data) > 0:
+				pi = frappe.new_doc("Purchase Invoice")
+				pi.supplier = self.supplier
+				pi.posting_date = nowdate()
+				pi.due_date = nowdate()
+				pi.company = self.company
+				pi.purchase_invoice_creation_tool = self.name
+				pi.update_stock = 1
+				for d in data:
+					line = d.get('doc')
+					item = frappe.get_doc("Item Supplier", {'supplier_part_no': line.get('supplier_item_code'), 'supplier': self.supplier})
+					po_item = frappe.get_value("Purchase Order Item", {'item_code': item.parent, 'parent': self.purchase_order})
+					if po_item:
+						poi_doc = frappe.get_doc("Purchase Order Item", po_item)
+						pi.append("items", {
+							"item_code": item.parent,
+							"warehouse": poi_doc.warehouse,
+							"qty": line.get('qty'),
+							"received_qty": line.get('qty'),
+							"rate": line.get('rate'),
+							"expense_account": poi_doc.expense_account,
+							"conversion_factor": poi_doc.conversion_factor,
+							"uom": poi_doc.uom,
+							"stock_Uom": poi_doc.stock_uom,
+							"purchase_order": self.purchase_order,
+							"po_detail": poi_doc.name,
+							"material_demand": poi_doc.material_demand,
+							"material_demand_item": poi_doc.material_demand_item,
+						})
+					else:
+						po_item
+				pi.set_missing_values()
+				pi.insert(ignore_permissions=True)
+				return pi.as_dict()
+
 
 @frappe.whitelist()
 def get_preview_from_template(data_import, import_file=None, google_sheets_url=None):
