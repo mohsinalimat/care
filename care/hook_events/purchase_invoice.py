@@ -13,6 +13,6 @@ def cancel_update_p_r_c_tool_status(doc, method):
         prc_doc.status = "Success"
         prc_doc.db_update()
 
-
+@frappe.whitelist()
 def delete_purchase_inv_cr_tol_item():
     frappe.db.sql("delete from `tabPurchase Invoice Creation Tool Item`")
