@@ -46,6 +46,12 @@ class PurchaseInvoiceCreationTool(Document):
 					po_item = frappe.get_doc("Purchase Order Item", {'item_code': item.parent, 'parent': self.purchase_order})
 					if po_item:
 						poi_doc = frappe.get_doc("Purchase Order Item", po_item.name)
+						margin_type = None
+						if line.get("discount_percent"):
+							margin_type = "Percentage"
+						if line.get("discount"):
+							margin_type = "Amount"
+
 						pi.append("items", {
 							"item_code": item.parent,
 							"warehouse": poi_doc.warehouse,
@@ -60,6 +66,9 @@ class PurchaseInvoiceCreationTool(Document):
 							"po_detail": poi_doc.name,
 							"material_demand": poi_doc.material_demand,
 							"material_demand_item": poi_doc.material_demand_item,
+							"margin_type": margin_type,
+							"discount_percentage": line.get("discount_percent"),
+							"discount_amount": line.get("discount"),
 						})
 					else:
 						po_item
