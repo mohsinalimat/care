@@ -43,9 +43,9 @@ class PurchaseInvoiceCreationTool(Document):
 				for d in data:
 					line = d.get('doc')
 					item = frappe.get_doc("Item Supplier", {'supplier_part_no': line.get('supplier_item_code'), 'supplier': self.supplier})
-					po_item = frappe.get_value("Purchase Order Item", {'item_code': item.parent, 'parent': self.purchase_order})
+					po_item = frappe.get_doc("Purchase Order Item", {'item_code': item.parent, 'parent': self.purchase_order})
 					if po_item:
-						poi_doc = frappe.get_doc("Purchase Order Item", po_item)
+						poi_doc = frappe.get_doc("Purchase Order Item", po_item.name)
 						pi.append("items", {
 							"item_code": item.parent,
 							"warehouse": poi_doc.warehouse,
