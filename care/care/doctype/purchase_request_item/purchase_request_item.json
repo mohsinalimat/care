@@ -12,11 +12,13 @@
   "item_description",
   "section_break_6",
   "stock_uom",
+  "conversion_factor",
   "reorder_level",
   "optimal__level",
   "avl_qty",
   "column_break_9",
   "order_qty",
+  "pack_order_qty",
   "rate",
   "amount",
   "section_break_12",
@@ -75,7 +77,7 @@
    "read_only": 1
   },
   {
-   "columns": 2,
+   "columns": 1,
    "fieldname": "supplier",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -151,12 +153,26 @@
    "fieldtype": "Float",
    "label": "Optimal  Level",
    "read_only": 1
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "pack_order_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Pack Order Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "conversion_factor",
+   "fieldtype": "Float",
+   "label": "UOM Conversion Factor"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2021-10-25 15:17:56.597401",
+ "modified": "2021-11-02 14:54:30.537846",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Request Item",

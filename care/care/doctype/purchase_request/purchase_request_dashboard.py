@@ -8,6 +8,10 @@ def get_data():
             {
                 'label': _('Material Demand'),
                 'items': ['Material Demand']
+            },
+            {
+                'label': _('Purchase Order'),
+                'items': ['Purchase Order']
             }
         ]
     }

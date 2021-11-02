@@ -6,7 +6,6 @@ from frappe import _
 from frappe.model.document import Document
 from care.care.doctype.purchase_request.purchase_request import get_default_expense_account,get_item_defaults,get_item_group_defaults,get_brand_defaults,get_default_cost_center
 from erpnext.stock.get_item_details import get_conversion_factor
-from frappe.desk.form.linked_with import get_linked_doctypes
 
 class MaterialDemand(Document):
 	def before_submit(self):

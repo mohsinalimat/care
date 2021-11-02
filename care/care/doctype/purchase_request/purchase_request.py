@@ -12,6 +12,15 @@ from erpnext.setup.doctype.brand.brand import get_brand_defaults
 class PurchaseRequest(Document):
 
 	@frappe.whitelist()
+	def get_suppliers_name(self):
+		if self.suppliers:
+			s_name = ""
+			for res in self.suppliers:
+				s = frappe.get_doc("Supplier",res.supplier)
+				s_name += s.supplier_name + '\n'
+			return s_name
+
+	@frappe.whitelist()
 	def get_items(self):
 		if not self.suppliers:
 			frappe.throw(_("Select suppliers"))
@@ -36,7 +45,8 @@ class PurchaseRequest(Document):
 				ird.optimum_level,
 				b.actual_qty,
 				i.stock_uom,
-				i.last_purchase_rate
+				i.last_purchase_rate,
+				0 as conversion_factor
 				from `tabItem` i 
 				inner join `tabItem Default` idf on idf.parent = i.name
 				inner  join `tabItem Reorder` ird on ird.parent = i.name
@@ -56,6 +66,12 @@ class PurchaseRequest(Document):
 			query += """ and ird.warehouse in {0}""".format(tuple(w_lst))
 		query += " order by idf.default_supplier, ird.warehouse, i.name"
 		item_details = frappe.db.sql(query,as_dict=True)
+		for res in item_details:
+			conversion_factor = 1
+			conversion = get_conversion_factor(res.item_code, self.order_uom)
+			if conversion:
+				conversion_factor = conversion['conversion_factor']
+			res['conversion_factor'] = conversion_factor
 		return item_details
 
 	def on_submit(self):
@@ -116,9 +132,45 @@ class PurchaseRequest(Document):
 							"cost_center": cost_center
 						})
 					md.insert()
+					if self.submit_md:
+						md.submit()
 			frappe.msgprint(_("Material Demand Created"), alert=True)
 
-
+	@frappe.whitelist()
+	def make_purchase_order(self):
+		if self.items:
+			item_details = {}
+			for res in self.items:
+				key = (res.supplier)
+				item_details.setdefault(key, {"details": []})
+				fifo_queue = item_details[key]["details"]
+				fifo_queue.append(res)
+			if item_details:
+				for key in item_details.keys():
+					po = frappe.new_doc("Purchase Order")
+					po.supplier = key
+					po.company = self.company
+					po.transaction_date = self.date
+					po.schedule_date = self.required_by
+					po.purchase_request = self.name
+					for d in item_details[key]['details']:
+						item = frappe.get_doc("Item", d.item_code)
+						po.append("items", {
+							"item_code": d.item_code,
+							"description": item.description,
+							"brand": d.brand,
+							"warehouse": d.warehouse,
+							"qty": d.pack_order_qty,
+							"rate": d.rate,
+							"stock_uom": d.stock_uom,
+							"uom": self.order_uom,
+							"conversion_factor": d.conversion_factor,
+							"allow_zero_valuation_rate": 0
+						})
+					po.set_missing_values()
+					po.insert(ignore_permissions=True)
+					if self.submit_pr:
+						po.submit()
 
 def get_default_expense_account(item, item_group, brand):
 	return (item.get("expense_account")

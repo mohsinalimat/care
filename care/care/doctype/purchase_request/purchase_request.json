@@ -9,11 +9,16 @@
   "naming_series",
   "company",
   "suppliers",
-  "order_uom",
+  "supplier_name",
   "column_break_2",
   "date",
   "required_by",
   "warehouses",
+  "order_uom",
+  "section_break_9",
+  "submit_pr",
+  "column_break_11",
+  "submit_md",
   "items_section",
   "get_items",
   "items",
@@ -101,12 +106,38 @@
    "label": "Company",
    "options": "Company",
    "reqd": 1
+  },
+  {
+   "fieldname": "section_break_9",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "submit_pr",
+   "fieldtype": "Check",
+   "label": "Submit Purchase Order"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "submit_md",
+   "fieldtype": "Check",
+   "label": "Submit  Material Demand"
+  },
+  {
+   "fieldname": "supplier_name",
+   "fieldtype": "Small Text",
+   "label": "Supplier Name",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-10-25 16:55:09.022813",
+ "modified": "2021-11-02 16:50:17.740880",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Request",
