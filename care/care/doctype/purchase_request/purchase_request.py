@@ -33,6 +33,11 @@ class PurchaseRequest(Document):
 
 		for res in self.warehouses:
 			w_lst.append(res.warehouse)
+			wr_doc = frappe.get_doc("Warehouse",res.warehouse)
+			if wr_doc.is_group:
+				child_wr = frappe.get_list("Warehouse", filters={'parent_warehouse': wr_doc.name}, fields='*')
+				for r in child_wr:
+					w_lst.append(r.name)
 
 		query = """select i.name as item_code,
 				i.item_name,
