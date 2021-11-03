@@ -11,6 +11,10 @@ from erpnext.setup.doctype.brand.brand import get_brand_defaults
 
 class PurchaseRequest(Document):
 
+	def on_cancel(self):
+		self.status = "Cancelled"
+		self.db_update()
+
 	@frappe.whitelist()
 	def get_suppliers_name(self):
 		if self.suppliers:
@@ -65,7 +69,7 @@ class PurchaseRequest(Document):
 				and ird.warehouse_reorder_level > 0 
 				and ird.warehouse_reorder_qty > 0 
 				and ird.optimum_level > 0
-				and (b.actual_qty < ird.warehouse_reorder_level or b.actual_qty is null)
+				and (b.actual_qty <= ird.warehouse_reorder_level or b.actual_qty is null)
 				and idf.default_supplier in {0}""".format(tuple(s_lst))
 		if self.warehouses:
 			query += """ and ird.warehouse in {0}""".format(tuple(w_lst))
@@ -83,6 +87,8 @@ class PurchaseRequest(Document):
 		if not self.items:
 			frappe.throw(_("no Items Found. Please set first"))
 		self.make_material_demand()
+		self.status = "Submitted"
+		self.db_update()
 
 	def make_material_demand(self):
 		if self.items:
@@ -177,6 +183,8 @@ class PurchaseRequest(Document):
 					if self.submit_pr:
 						po.submit()
 
+			self.status = "Order Created"
+			self.db_update()
 def get_default_expense_account(item, item_group, brand):
 	return (item.get("expense_account")
 		or item_group.get("expense_account")

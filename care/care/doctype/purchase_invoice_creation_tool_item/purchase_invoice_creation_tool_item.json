@@ -18,7 +18,8 @@
   "rate",
   "column_break_11",
   "discount_percent",
-  "discount"
+  "discount",
+  "bonus"
  ],
  "fields": [
   {
@@ -106,11 +107,16 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Discount"
+  },
+  {
+   "fieldname": "bonus",
+   "fieldtype": "Float",
+   "label": "Bonus"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-10-29 14:57:44.206463",
+ "modified": "2021-11-03 13:19:53.441590",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Invoice Creation Tool Item",

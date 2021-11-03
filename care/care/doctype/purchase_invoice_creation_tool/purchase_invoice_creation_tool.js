@@ -9,16 +9,30 @@ frappe.ui.form.on('Purchase Invoice Creation Tool', {
 		 if (frm.doc.__islocal) {
 			frm.set_df_property('section_break_10', 'hidden', 1);
 		}
-		frm.set_query("purchase_order", () => {
+		frm.set_query("purchase_request", () => {
 			return {
 				"filters": {
-					"docstatus": 1
+					"docstatus": 1,
+					"status": "Order Created"
 				}
 			};
 		})
+		frm.set_query("warehouse", () => {
+			return {
+				"filters": {
+					"is_group": 0
+				}
+			};
+		})
+		frm.set_query("supplier", function() {
+            return {
+                query: "care.care.doctype.purchase_invoice_creation_tool.purchase_invoice_creation_tool.get_supplier",
+                filters: {'purchase_request': frm.doc.purchase_request}
+            }
+        });
 	},
 	download_template(frm) {
-		frappe.require('/assets/js/data_import_tools.min.js', () => {
+		frappe.require('/assets/care/js/data_import_tools1.min.js', () => {
 			frm.data_exporter = new frappe.data_import.DataExporter(
 				frm.doc.reference_doctype,
 				frm.doc.import_type
@@ -121,7 +135,7 @@ frappe.ui.form.on('Purchase Invoice Creation Tool', {
 			return;
 		}
 
-		frappe.require('/assets/js/data_import_tools.min.js', () => {
+		frappe.require('/assets/care/js/data_import_tools1.min.js', () => {
 			frm.import_preview = new frappe.data_import.ImportPreview({
 				wrapper: frm.get_field('import_preview').$wrapper,
 				doctype: frm.doc.reference_doctype,

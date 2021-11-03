@@ -14,7 +14,7 @@ app_license = "MIT"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/care/css/care.css"
-# app_include_js = "/assets/care/js/care.js"
+app_include_js = "/assets/care/js/data_import_tools1.min.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/care/css/care.css"

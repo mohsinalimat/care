@@ -10,8 +10,8 @@ import json
 from datetime import datetime, date
 from frappe import _
 from frappe.utils import cint, flt, update_progress_bar, cstr, duration_to_seconds
-from frappe.utils.csvutils import read_csv_content, get_csv_content_from_google_sheets
-from frappe.utils.xlsxutils import (
+from care.utils.csvutils import read_csv_content, get_csv_content_from_google_sheets
+from care.utils.xlsxutils import (
 	read_xlsx_file_from_attached_file,
 	read_xls_file_from_attached_file,
 )
@@ -33,7 +33,7 @@ class Importer:
 
 		self.data_import = data_import
 		if not self.data_import:
-			self.data_import = frappe.get_doc(doctype="Data Import")
+			self.data_import = frappe.get_doc(doctype="Purchase Invoice Creation Tool")
 			if import_type:
 				self.data_import.import_type = import_type
 

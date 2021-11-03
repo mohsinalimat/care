@@ -1,17 +1,6 @@
 // Copyright (c) 2021, RF and contributors
 // For license information, please see license.txt
 
-
-function supplier_name(suppliers){
-    var supplier_name = ""
-    suppliers.forEach(function(s) {
-        frappe.db.get_value('Supplier', s.supplier, 'supplier_name', (r) => {
-             supplier_name += r.supplier_name.toString()+ "\n"
-        });
-    })
-    return supplier_name
-}
-
 frappe.ui.form.on('Purchase Request', {
     setup: function(frm){
         if (!frm.doc.date){
@@ -26,7 +15,7 @@ frappe.ui.form.on('Purchase Request', {
         else{
             frm.set_df_property('get_items', 'hidden', 0);
         }
-        if(frm.doc.docstatus == 1){
+        if(frm.doc.status == 'Submitted'){
             frm.add_custom_button(__('Make Purchase Order'), function(){
                 frappe.call({
                     method: "make_purchase_order",
@@ -89,7 +78,8 @@ frappe.ui.form.on('Purchase Request', {
         });
 	},
 	suppliers: function(frm){
-//	    var su_name = supplier_name(frm.doc.suppliers)
+        frm.clear_table("items");
+        refresh_field("items");
 	    frappe.call({
             method: "get_suppliers_name",
             doc: frm.doc,
@@ -97,11 +87,12 @@ frappe.ui.form.on('Purchase Request', {
                 frm.set_value("supplier_name", r.message);
             }
         });
+	},
+	warehouses: function(frm){
+        frm.clear_table("items");
+        refresh_field("items");
 	}
 });
-
-
-
 
 frappe.ui.form.on("Purchase Request Item", {
     order_qty: function(frm, cdt, cdn) {

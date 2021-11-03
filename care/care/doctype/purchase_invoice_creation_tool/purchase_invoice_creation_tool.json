@@ -7,13 +7,14 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "purchase_order",
+  "purchase_request",
   "supplier",
   "supplier_name",
   "column_break_5",
   "naming_series",
   "date",
   "company",
+  "warehouse",
   "status",
   "section_break_10",
   "reference_doctype",
@@ -41,14 +42,6 @@
    "options": "PICT/.YYYY./.###"
   },
   {
-   "fieldname": "purchase_order",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Purchase Order",
-   "options": "Purchase Order",
-   "reqd": 1
-  },
-  {
    "fetch_from": "purchase_order.supplier",
    "fieldname": "supplier",
    "fieldtype": "Link",
@@ -59,7 +52,7 @@
    "reqd": 1
   },
   {
-   "fetch_from": "purchase_order.supplier_name",
+   "fetch_from": "supplier.supplier_name",
    "fieldname": "supplier_name",
    "fieldtype": "Read Only",
    "in_list_view": 1,
@@ -162,9 +155,11 @@
    "default": "Pending",
    "fieldname": "status",
    "fieldtype": "Select",
+   "hidden": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
+   "no_copy": 1,
    "options": "Pending\nSuccess\nPartial Success\nError\nInvoice Created",
    "read_only": 1
   },
@@ -190,6 +185,20 @@
    "fieldname": "import_log_preview",
    "fieldtype": "HTML",
    "label": "Import Log Preview"
+  },
+  {
+   "fieldname": "purchase_request",
+   "fieldtype": "Link",
+   "label": "Purchase Request",
+   "options": "Purchase Request",
+   "reqd": 1
+  },
+  {
+   "description": "Set up only when order received against particular Warehouse",
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "Warehouse"
   }
  ],
  "hide_toolbar": 1,
@@ -199,7 +208,7 @@
    "link_fieldname": "purchase_invoice_creation_tool"
   }
  ],
- "modified": "2021-10-31 16:30:02.647233",
+ "modified": "2021-11-03 16:41:18.783210",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Invoice Creation Tool",
@@ -218,9 +227,9 @@
    "write": 1
   }
  ],
- "search_fields": "purchase_order,supplier,supplier_name",
+ "search_fields": "purchase_request,supplier,supplier_name",
  "sort_field": "modified",
  "sort_order": "DESC",
- "title_field": "purchase_order",
+ "title_field": "purchase_request",
  "track_changes": 1
 }
