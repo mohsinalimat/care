@@ -27,7 +27,8 @@
    "fieldname": "supplier_item_code",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Supplier Item Code"
+   "label": "Supplier Item Code",
+   "reqd": 1
   },
   {
    "columns": 2,
@@ -117,7 +118,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-11-06 14:59:52.537744",
+ "modified": "2021-11-06 15:02:40.391721",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Invoice Creation Tool Item",
