@@ -45,8 +45,16 @@ class PurchaseInvoiceCreationTool(Document):
 				if self.warehouse:
 					for d in data:
 						line = d.get('doc')
-						item = frappe.get_doc("Item Supplier", {'supplier_part_no': line.get('supplier_item_code'), 'supplier': self.supplier})
-						po_item = frappe.get_doc("Purchase Order Item", {'item_code': item.parent, 'parent': purchase_order.name, "warehouse": self.warehouse})
+						item = None
+						item_code = None
+						if line.get('item_code'):
+							item = frappe.get_doc("Item", line.get('item_code'))
+							item_code = item.name
+						else:
+							item = frappe.get_doc("Item Supplier", {'supplier_part_no': line.get('supplier_item_code'), 'supplier': self.supplier})
+							item_code = item.parent
+
+						po_item = frappe.get_doc("Purchase Order Item", {'item_code': item_code, 'parent': purchase_order.name, "warehouse": self.warehouse})
 						if po_item:
 							poi_doc = frappe.get_doc("Purchase Order Item", po_item.name)
 							margin_type = None
@@ -56,7 +64,7 @@ class PurchaseInvoiceCreationTool(Document):
 								margin_type = "Amount"
 
 							pi.append("items", {
-								"item_code": item.parent,
+								"item_code": item_code,
 								"warehouse": poi_doc.warehouse,
 								"qty": line.get('qty'),
 								"received_qty": line.get('qty'),
@@ -78,8 +86,16 @@ class PurchaseInvoiceCreationTool(Document):
 				else:
 					for d in data:
 						line = d.get('doc')
-						item = frappe.get_doc("Item Supplier", {'supplier_part_no': line.get('supplier_item_code'), 'supplier': self.supplier})
-						po_item = frappe.get_list("Purchase Order Item", {'item_code': item.parent, 'parent': purchase_order.name}, ['name'])
+						item = None
+						item_code = None
+						if line.get('item_code'):
+							item = frappe.get_doc("Item", line.get('item_code'))
+							item_code = item.name
+						else:
+							item = frappe.get_doc("Item Supplier", {'supplier_part_no': line.get('supplier_item_code'), 'supplier': self.supplier})
+							item_code = item.parent
+
+						po_item = frappe.get_list("Purchase Order Item", {'item_code': item_code, 'parent': purchase_order.name}, ['name'])
 						received_qty = float(line.get('qty'))
 						for p_tm in po_item:
 							if received_qty > 0:
@@ -92,7 +108,7 @@ class PurchaseInvoiceCreationTool(Document):
 										margin_type = "Amount"
 
 									pi.append("items", {
-										"item_code": item.parent,
+										"item_code": item_code,
 										"warehouse": poi_doc.warehouse,
 										"qty": poi_doc.qty,
 										"received_qty": poi_doc.qty if poi_doc.qty <= received_qty else received_qty,

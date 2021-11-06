@@ -198,7 +198,7 @@ class Importer:
 	def insert_record(self, doc):
 		meta = frappe.get_meta(self.doctype)
 		new_doc = frappe.new_doc(self.doctype)
-		if 'supplier_item_code' in doc.keys():
+		if doc.supplier_item_code:
 			sup = self.data_import.supplier
 			item = frappe.get_doc("Item Supplier", {'supplier_part_no': doc.supplier_item_code, 'supplier': sup})
 			doc['item_code'] = item.parent
