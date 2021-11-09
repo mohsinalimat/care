@@ -13,7 +13,7 @@ frappe.ui.form.on('Purchase Invoice Creation Tool', {
 			return {
 				"filters": {
 					"docstatus": 1,
-					"status": "Order Created"
+//					"status": "Order Created"
 				}
 			};
 		})
@@ -121,6 +121,9 @@ frappe.ui.form.on('Purchase Invoice Creation Tool', {
 				frm.events.show_import_preview(frm, preview_data);
 				frm.events.show_import_warnings(frm, preview_data);
 			});
+		if(frm.doc.status == "Pending"){
+		    frm.trigger('set_column_mapping')
+		}
 	},
 	show_import_preview(frm, preview_data) {
 		let import_log = JSON.parse(frm.doc.import_log || '[]');
@@ -315,4 +318,18 @@ frappe.ui.form.on('Purchase Invoice Creation Tool', {
 	show_failed_logs(frm) {
 		frm.trigger('show_import_log');
 	},
+	supplier: function(frm){
+	    frm.trigger('set_column_mapping')
+	},
+	set_column_mapping: function(frm){
+	    frappe.call({
+            method: "set_column_mapping",
+            doc: frm.doc,
+            callback: function(r) {
+                if(r.message){
+                    frm.set_value('template_options',JSON.stringify(r.message))
+                }
+            }
+        });
+	}
 });

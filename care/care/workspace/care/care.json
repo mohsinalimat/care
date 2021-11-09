@@ -56,9 +56,26 @@
    "link_type": "DocType",
    "onboard": 1,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Setting",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "File Column Mapping",
+   "link_to": "File Column Mapping",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
   }
  ],
- "modified": "2021-10-31 16:37:16.332689",
+ "modified": "2021-11-09 16:29:41.702210",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Care",

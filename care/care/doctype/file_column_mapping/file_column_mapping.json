@@ -1,0 +1,76 @@
+{
+ "actions": [],
+ "autoname": "FCM.###",
+ "creation": "2021-11-09 16:22:28.552899",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "supplier",
+  "mapping_section",
+  "heading_3",
+  "heading_4",
+  "field_mapping"
+ ],
+ "fields": [
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Supplier",
+   "options": "Supplier",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "mapping_section",
+   "fieldtype": "Section Break",
+   "label": "Mapping"
+  },
+  {
+   "fieldname": "field_mapping",
+   "fieldtype": "Table",
+   "label": "Field Mapping",
+   "options": "File Column Mapping Child",
+   "reqd": 1
+  },
+  {
+   "default": "Set the column position on a left-to-right basis of the file. and position must be started from 1.",
+   "fieldname": "heading_3",
+   "fieldtype": "Heading",
+   "label": "Set the column position on a left-to-right basis of the file. and position must be started from 1."
+  },
+  {
+   "default": "Note: Don't Skip Column",
+   "fieldname": "heading_4",
+   "fieldtype": "Heading",
+   "label": "<span style=\"color: red;\">Note: Don't Skip Column</span>"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2021-11-09 16:46:35.228736",
+ "modified_by": "Administrator",
+ "module": "Care",
+ "name": "File Column Mapping",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "search_fields": "supplier",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "supplier",
+ "track_changes": 1
+}

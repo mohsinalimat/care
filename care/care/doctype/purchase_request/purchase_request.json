@@ -79,9 +79,11 @@
    "label": "Items"
   },
   {
+   "allow_bulk_edit": 1,
    "fieldname": "items",
    "fieldtype": "Table",
    "label": "Items",
+   "no_copy": 1,
    "options": "Purchase Request Item"
   },
   {
@@ -125,7 +127,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "0",
+   "default": "1",
    "fieldname": "submit_md",
    "fieldtype": "Check",
    "label": "Submit  Material Demand"
@@ -150,7 +152,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-11-03 12:43:17.188140",
+ "modified": "2021-11-09 12:23:34.884727",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Request",

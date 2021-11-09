@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
-from frappe import _
+from frappe import _, scrub
 from frappe.model.document import Document
 from care.care.doctype.purchase_invoice_creation_tool.importer import Importer
 from care.care.doctype.purchase_invoice_creation_tool.exporter import Exporter
@@ -41,7 +41,10 @@ class PurchaseInvoiceCreationTool(Document):
 				pi.company = self.company
 				pi.purchase_invoice_creation_tool = self.name
 				pi.update_stock = 1
-				purchase_order = frappe.get_doc("Purchase Order", {'supplier': self.supplier, 'purchase_request': self.purchase_request})
+				material_demand = frappe.get_list("Material Demand", {'supplier': self.supplier, 'purchase_request': self.purchase_request}, ['name'])
+				m_list = []
+				for res in material_demand:
+					m_list.append(res.name)
 				if self.warehouse:
 					for d in data:
 						line = d.get('doc')
@@ -54,9 +57,9 @@ class PurchaseInvoiceCreationTool(Document):
 							item = frappe.get_doc("Item Supplier", {'supplier_part_no': line.get('supplier_item_code'), 'supplier': self.supplier})
 							item_code = item.parent
 
-						po_item = frappe.get_doc("Purchase Order Item", {'item_code': item_code, 'parent': purchase_order.name, "warehouse": self.warehouse})
-						if po_item:
-							poi_doc = frappe.get_doc("Purchase Order Item", po_item.name)
+						md_item = frappe.get_doc("Material Demand Item", {'item_code': item_code, 'parent': ['in', m_list], "warehouse": self.warehouse})
+						if md_item:
+							md_doc = frappe.get_doc("Material Demand Item", md_item.name)
 							margin_type = None
 							if line.get("discount_percent"):
 								margin_type = "Percentage"
@@ -65,24 +68,24 @@ class PurchaseInvoiceCreationTool(Document):
 
 							pi.append("items", {
 								"item_code": item_code,
-								"warehouse": poi_doc.warehouse,
+								"warehouse": md_doc.warehouse,
 								"qty": line.get('qty'),
 								"received_qty": line.get('qty'),
 								"rate": line.get('rate'),
-								"expense_account": poi_doc.expense_account,
-								"conversion_factor": poi_doc.conversion_factor,
-								"uom": poi_doc.uom,
-								"stock_Uom": poi_doc.stock_uom,
-								"purchase_order": purchase_order.name,
-								"po_detail": poi_doc.name,
-								"material_demand": poi_doc.material_demand,
-								"material_demand_item": poi_doc.material_demand_item,
+								"expense_account": md_doc.expense_account,
+								"conversion_factor": md_doc.conversion_factor,
+								"uom": md_doc.uom,
+								"stock_Uom": md_doc.stock_uom,
+								# "purchase_order": purchase_order.name,
+								# "po_detail": poi_doc.name,
+								"material_demand": md_doc.parent,
+								"material_demand_item": md_doc.name,
 								"margin_type": margin_type,
 								"discount_percentage": line.get("discount_percent"),
 								"discount_amount": line.get("discount"),
 							})
 						else:
-							po_item
+							md_doc
 				else:
 					for d in data:
 						line = d.get('doc')
@@ -95,12 +98,12 @@ class PurchaseInvoiceCreationTool(Document):
 							item = frappe.get_doc("Item Supplier", {'supplier_part_no': line.get('supplier_item_code'), 'supplier': self.supplier})
 							item_code = item.parent
 
-						po_item = frappe.get_list("Purchase Order Item", {'item_code': item_code, 'parent': purchase_order.name}, ['name'])
+						md_item = frappe.get_list("Material Demand Item", {'item_code': item_code, 'parent': ['in', m_list]}, ['name'])
 						received_qty = float(line.get('qty'))
-						for p_tm in po_item:
+						for p_tm in md_item:
 							if received_qty > 0:
-								poi_doc = frappe.get_doc("Purchase Order Item", p_tm.name)
-								if poi_doc:
+								md_doc = frappe.get_doc("Material Demand Item", p_tm.name)
+								if md_doc:
 									margin_type = None
 									if line.get("discount_percent"):
 										margin_type = "Percentage"
@@ -109,29 +112,45 @@ class PurchaseInvoiceCreationTool(Document):
 
 									pi.append("items", {
 										"item_code": item_code,
-										"warehouse": poi_doc.warehouse,
-										"qty": poi_doc.qty,
-										"received_qty": poi_doc.qty if poi_doc.qty <= received_qty else received_qty,
+										"warehouse": md_doc.warehouse,
+										"qty": md_doc.qty,
+										"received_qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
 										"rate": line.get('rate'),
-										"expense_account": poi_doc.expense_account,
-										"conversion_factor": poi_doc.conversion_factor,
-										"uom": poi_doc.uom,
-										"stock_Uom": poi_doc.stock_uom,
-										"purchase_order": purchase_order.name,
-										"po_detail": poi_doc.name,
-										"material_demand": poi_doc.material_demand,
-										"material_demand_item": poi_doc.material_demand_item,
+										"expense_account": md_doc.expense_account,
+										"conversion_factor": md_doc.conversion_factor,
+										"uom": md_doc.uom,
+										"stock_Uom": md_doc.stock_uom,
+										# "purchase_order": purchase_order.name,
+										# "po_detail": poi_doc.name,
+										"material_demand": md_doc.parent,
+										"material_demand_item": md_doc.name,
 										"margin_type": margin_type,
 										"discount_percentage": line.get("discount_percent"),
 										"discount_amount": line.get("discount"),
 									})
-									received_qty -= poi_doc.qty
+									received_qty -= md_doc.qty
 								else:
-									poi_doc
+									md_doc
 				pi.set_missing_values()
 				pi.insert(ignore_permissions=True)
 				return pi.as_dict()
 
+	@frappe.whitelist()
+	def set_column_mapping(self):
+		if self.supplier:
+			map_col = frappe.get_value("File Column Mapping",{'supplier': self.supplier}, 'name')
+			if map_col:
+				map_col_doc = frappe.get_doc("File Column Mapping",map_col)
+				column_to_field_map = {}
+				for res in map_col_doc.field_mapping:
+					col_pos = int(res.column_position) - 1
+					if col_pos >= 0:
+						if res.map_field != "Don't Import":
+							column_to_field_map[str(col_pos)] = str(scrub(res.map_field))
+						else:
+							column_to_field_map[str(col_pos)] = scrub(res.map_field)
+				column_dict = {"column_to_field_map": column_to_field_map}
+				return column_dict
 
 @frappe.whitelist()
 def download_template(
