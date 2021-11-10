@@ -98,22 +98,23 @@ class PurchaseRequest(Document):
 			for w in f_w_lst:
 				try:
 					w_doc = frappe.get_doc("Warehouse", w)
-					url = str(w_doc.url)+"/api/method/care.utils.api.get_franchise_order"
-					api_key = w_doc.api_key
-					api_secret = w_doc.api_secret
-					headers = {
-						'Authorization': 'token ' + str(api_key)+':' + str(api_secret)
-					}
-					datas = {
-						"supplier": json.dumps(s_lst),
-						"order_uom": 'Pack',
-						"warehouse": w
-					}
-					response = requests.get(url=url, headers=headers, params=datas)
-					if response.status_code == 200:
-						response = frappe.parse_json(response.content.decode())
-						data = response.message
-						item_details.extend(data)
+					if w_doc.url and w_doc.api_key and w_doc.api_secret:
+						url = str(w_doc.url)+"/api/method/care.utils.api.get_franchise_order"
+						api_key = w_doc.api_key
+						api_secret = w_doc.api_secret
+						headers = {
+							'Authorization': 'token ' + str(api_key)+':' + str(api_secret)
+						}
+						datas = {
+							"supplier": json.dumps(s_lst),
+							"order_uom": 'Pack',
+							"warehouse": w
+						}
+						response = requests.get(url=url, headers=headers, params=datas)
+						if response.status_code == 200:
+							response = frappe.parse_json(response.content.decode())
+							data = response.message
+							item_details.extend(data)
 				except Exception as e:
 					print("------Exception------",e)
 					continue
