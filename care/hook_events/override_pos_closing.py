@@ -12,11 +12,11 @@ from erpnext.accounts.doctype.pos_invoice_merge_log.pos_invoice_merge_log import
 
 @frappe.whitelist()
 def execute_pos_invoices():
-    make_closing_entry()
-    last_execution_time = frappe.db.get_single_value('POS Process Settings', 'last_execution_time')
     enabled = frappe.db.get_single_value('POS Process Settings', 'enabled')
-    execution_interval = 5  # set Interval
     if enabled:
+        make_closing_entry()
+        last_execution_time = frappe.db.get_single_value('POS Process Settings', 'last_execution_time')
+        execution_interval = 5  # set Interval
         hours = time_diff_in_hours(now_datetime(), last_execution_time)
         execution_interval = frappe.db.get_single_value('POS Process Settings', 'execution_interval')
         if hours >= execution_interval:
@@ -24,9 +24,9 @@ def execute_pos_invoices():
             settings = frappe.get_single("POS Process Settings")
             settings.last_execution_time = now_datetime()
             settings.save()
-    pos_profiles = frappe.get_list("POS Profile", filters={"disabled": 0}, fields=["name"], order_by="creation")
-    for res in pos_profiles:
-        make_opening_entry(res.name)
+        pos_profiles = frappe.get_list("POS Profile", filters={"disabled": 0}, fields=["name"], order_by="creation")
+        for res in pos_profiles:
+            make_opening_entry(res.name)
 
 def make_opening_entry(pos_profile,date_time=None,execute_previous_entry=False):
     check_open_entry = frappe.db.sql("""select * from `tabPOS Opening Entry` where status = 'Open' and docstatus = 1 and pos_profile = %s and posting_date = %s""", (pos_profile,nowdate()))
