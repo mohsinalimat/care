@@ -33,8 +33,8 @@ frappe.ui.form.on('Purchase Request', {
             method: "get_items",
             doc: frm.doc,
             callback: function(r) {
+                frm.clear_table("items");
                 if(r.message) {
-                    frm.clear_table("items");
                     r.message.forEach(function(d) {
                         let actual_qty = 0
                         if (d.actual_qty){
@@ -72,8 +72,9 @@ frappe.ui.form.on('Purchase Request', {
                             item.amount = d.last_purchase_rate * pack_order_qty
                         }
                     })
-                    refresh_field("items");
                 }
+                refresh_field("items");
+                frm.save();
             }
         });
 	},

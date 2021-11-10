@@ -1,7 +1,9 @@
 # Copyright (c) 2021, RF and contributors
 # For license information, please see license.txt
 
+import json
 import frappe
+import requests
 from frappe import _
 from frappe.model.document import Document
 from erpnext.stock.get_item_details import get_conversion_factor
@@ -26,22 +28,32 @@ class PurchaseRequest(Document):
 
 	@frappe.whitelist()
 	def get_items(self):
+		item_details = []
 		if not self.suppliers:
 			frappe.throw(_("Select suppliers"))
-		# if not self.warehouses:
-		# 	frappe.throw(_("Select Warehouses"))
+		if not self.warehouses:
+			frappe.throw(_("Select Warehouses"))
+
 		s_lst = ["axop123"]
-		w_lst = ["axop123"]
+		w_lst = ["axop123","axop123"]
+		f_w_lst = []
 		for res in self.suppliers:
 			s_lst.append(res.supplier)
 
 		for res in self.warehouses:
-			w_lst.append(res.warehouse)
-			wr_doc = frappe.get_doc("Warehouse",res.warehouse)
+			wr_doc = frappe.get_doc("Warehouse", res.warehouse)
+			if wr_doc.is_franchise:
+				f_w_lst.append(res.warehouse)
+			else:
+				w_lst.append(res.warehouse)
 			if wr_doc.is_group:
 				child_wr = frappe.get_list("Warehouse", filters={'parent_warehouse': wr_doc.name}, fields='*')
 				for r in child_wr:
-					w_lst.append(r.name)
+					wr = frappe.get_doc("Warehouse", r.name)
+					if wr.is_franchise:
+						f_w_lst.append(r.name)
+					else:
+						w_lst.append(r.name)
 
 		query = """select i.name as item_code,
 				i.item_name,
@@ -71,7 +83,7 @@ class PurchaseRequest(Document):
 				and ird.optimum_level > 0
 				and (b.actual_qty <= ird.warehouse_reorder_level or b.actual_qty is null)
 				and idf.default_supplier in {0}""".format(tuple(s_lst))
-		if self.warehouses:
+		if w_lst:
 			query += """ and ird.warehouse in {0}""".format(tuple(w_lst))
 		query += " order by idf.default_supplier, ird.warehouse, i.name"
 		item_details = frappe.db.sql(query,as_dict=True)
@@ -81,6 +93,31 @@ class PurchaseRequest(Document):
 			if conversion:
 				conversion_factor = conversion['conversion_factor']
 			res['conversion_factor'] = conversion_factor
+
+		if f_w_lst:
+			for w in f_w_lst:
+				try:
+					w_doc = frappe.get_doc("Warehouse", w)
+					url = str(w_doc.url)+"/api/method/care.utils.api.get_franchise_order"
+					api_key = w_doc.api_key
+					api_secret = w_doc.api_secret
+					headers = {
+						'Authorization': 'token ' + str(api_key)+':' + str(api_secret)
+					}
+					datas = {
+						"supplier": json.dumps(s_lst),
+						"order_uom": 'Pack',
+						"warehouse": w
+					}
+					response = requests.get(url=url, headers=headers, params=datas)
+					if response.status_code == 200:
+						response = frappe.parse_json(response.content.decode())
+						data = response.message
+						item_details.extend(data)
+				except Exception as e:
+					print("------Exception------",e)
+					continue
+
 		return item_details
 
 	def on_submit(self):
