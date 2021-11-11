@@ -57,9 +57,9 @@ class PurchaseInvoiceCreationTool(Document):
 							item = frappe.get_doc("Item Supplier", {'supplier_part_no': line.get('supplier_item_code'), 'supplier': self.supplier})
 							item_code = item.parent
 
-						md_item = frappe.get_doc("Material Demand Item", {'item_code': item_code, 'parent': ['in', m_list], "warehouse": self.warehouse})
+						md_item = frappe.get_value("Material Demand Item", {'item_code': item_code, 'parent': ['in', m_list], "warehouse": self.warehouse}, "name")
 						if md_item:
-							md_doc = frappe.get_doc("Material Demand Item", md_item.name)
+							md_doc = frappe.get_doc("Material Demand Item", md_item)
 							margin_type = None
 							if line.get("discount_percent"):
 								margin_type = "Percentage"
@@ -73,11 +73,8 @@ class PurchaseInvoiceCreationTool(Document):
 								"received_qty": line.get('qty'),
 								"rate": line.get('rate'),
 								"expense_account": md_doc.expense_account,
-								"conversion_factor": md_doc.conversion_factor,
 								"uom": md_doc.uom,
 								"stock_Uom": md_doc.stock_uom,
-								# "purchase_order": purchase_order.name,
-								# "po_detail": poi_doc.name,
 								"material_demand": md_doc.parent,
 								"material_demand_item": md_doc.name,
 								"margin_type": margin_type,
@@ -85,7 +82,7 @@ class PurchaseInvoiceCreationTool(Document):
 								"discount_amount": line.get("discount"),
 							})
 						else:
-							md_doc
+							frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(item_code))
 				else:
 					for d in data:
 						line = d.get('doc')
@@ -100,37 +97,35 @@ class PurchaseInvoiceCreationTool(Document):
 
 						md_item = frappe.get_list("Material Demand Item", {'item_code': item_code, 'parent': ['in', m_list]}, ['name'])
 						received_qty = float(line.get('qty'))
-						for p_tm in md_item:
-							if received_qty > 0:
-								md_doc = frappe.get_doc("Material Demand Item", p_tm.name)
-								if md_doc:
-									margin_type = None
-									if line.get("discount_percent"):
-										margin_type = "Percentage"
-									if line.get("discount"):
-										margin_type = "Amount"
+						if md_item:
+							for p_tm in md_item:
+								if received_qty > 0:
+									md_doc = frappe.get_doc("Material Demand Item", p_tm.name)
+									if md_doc:
+										margin_type = None
+										if line.get("discount_percent"):
+											margin_type = "Percentage"
+										if line.get("discount"):
+											margin_type = "Amount"
 
-									pi.append("items", {
-										"item_code": item_code,
-										"warehouse": md_doc.warehouse,
-										"qty": md_doc.qty,
-										"received_qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
-										"rate": line.get('rate'),
-										"expense_account": md_doc.expense_account,
-										"conversion_factor": md_doc.conversion_factor,
-										"uom": md_doc.uom,
-										"stock_Uom": md_doc.stock_uom,
-										# "purchase_order": purchase_order.name,
-										# "po_detail": poi_doc.name,
-										"material_demand": md_doc.parent,
-										"material_demand_item": md_doc.name,
-										"margin_type": margin_type,
-										"discount_percentage": line.get("discount_percent"),
-										"discount_amount": line.get("discount"),
-									})
-									received_qty -= md_doc.qty
-								else:
-									md_doc
+										pi.append("items", {
+											"item_code": item_code,
+											"warehouse": md_doc.warehouse,
+											"qty": md_doc.qty,
+											"received_qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
+											"rate": line.get('rate'),
+											"expense_account": md_doc.expense_account,
+											"uom": md_doc.uom,
+											"stock_Uom": md_doc.stock_uom,
+											"material_demand": md_doc.parent,
+											"material_demand_item": md_doc.name,
+											"margin_type": margin_type,
+											"discount_percentage": line.get("discount_percent"),
+											"discount_amount": line.get("discount"),
+										})
+										received_qty -= md_doc.qty
+						else:
+							frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(item_code))
 				pi.set_missing_values()
 				pi.insert(ignore_permissions=True)
 				return pi.as_dict()
