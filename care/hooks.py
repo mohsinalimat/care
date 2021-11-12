@@ -94,13 +94,15 @@ doc_events = {
         "on_submit": "care.hook_events.purchase_order.update_md_status",
         "on_cancel": "care.hook_events.purchase_order.cancel_update_md_status",
     },
-    "Purchase Receipt": {
-        "on_submit": "care.hook_events.purchase_receipt.update_md_status",
-        "on_cancel": "care.hook_events.purchase_receipt.cancel_update_md_status",
-    },
+    # "Purchase Receipt": {
+    #     "on_submit": "care.hook_events.purchase_receipt.update_md_status",
+    #     "on_cancel": "care.hook_events.purchase_receipt.cancel_update_md_status",
+    # },
     "Purchase Invoice": {
-        "on_submit": "care.hook_events.purchase_invoice.update_p_r_c_tool_status",
-        "on_cancel": "care.hook_events.purchase_invoice.cancel_update_p_r_c_tool_status",
+        "on_submit": ["care.hook_events.purchase_invoice.update_p_r_c_tool_status",
+                      "care.hook_events.purchase_invoice.update_md_status"],
+        "on_cancel": ["care.hook_events.purchase_invoice.cancel_update_p_r_c_tool_status",
+                    "care.hook_events.purchase_invoice.cancel_update_md_status"]
     }
 }
 

@@ -7,13 +7,15 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "date",
   "purchase_request",
   "supplier",
   "supplier_name",
   "column_break_5",
   "naming_series",
-  "date",
   "company",
+  "c_b_warehouse",
+  "allow_unorder_item",
   "warehouse",
   "status",
   "section_break_10",
@@ -199,6 +201,20 @@
    "fieldtype": "Link",
    "label": "Warehouse",
    "options": "Warehouse"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_unorder_item",
+   "fieldtype": "Check",
+   "label": "Allow Un-Order Item"
+  },
+  {
+   "description": "Accepted Bonus and Un-order Item",
+   "fieldname": "c_b_warehouse",
+   "fieldtype": "Link",
+   "label": "Corporate Warehouse",
+   "options": "Warehouse",
+   "reqd": 1
   }
  ],
  "hide_toolbar": 1,
@@ -208,7 +224,7 @@
    "link_fieldname": "purchase_invoice_creation_tool"
   }
  ],
- "modified": "2021-11-03 16:41:18.783210",
+ "modified": "2021-11-12 15:02:45.960450",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Invoice Creation Tool",

@@ -3,21 +3,30 @@
 
 frappe.ui.form.on('Purchase Invoice Creation Tool', {
 	setup: function(frm) {
-         frm.has_import_file = () => {
+        frm.has_import_file = () => {
 			 return frm.doc.import_file;
-		 };
-		 if (frm.doc.__islocal) {
+		};
+		if (frm.doc.__islocal) {
 			frm.set_df_property('section_break_10', 'hidden', 1);
+			frm.set_value("date", frappe.datetime.now_date())
 		}
 		frm.set_query("purchase_request", () => {
 			return {
 				"filters": {
 					"docstatus": 1,
+					"date": frm.doc.date
 //					"status": "Order Created"
 				}
 			};
 		})
 		frm.set_query("warehouse", () => {
+			return {
+				"filters": {
+					"is_group": 0
+				}
+			};
+		})
+		frm.set_query("bonus_warehouse", () => {
 			return {
 				"filters": {
 					"is_group": 0
@@ -42,6 +51,7 @@ frappe.ui.form.on('Purchase Invoice Creation Tool', {
 	refresh: function(frm){
 	    if (frm.doc.__islocal) {
 			frm.set_df_property('section_break_10', 'hidden', 1);
+			frm.set_value("date", frappe.datetime.now_date())
 		}
 		else{
 		    frm.set_df_property('section_break_10', 'hidden', 0);
@@ -62,15 +72,26 @@ frappe.ui.form.on('Purchase Invoice Creation Tool', {
         else{
             frm.disable_save();
         }
+        if(frm.doc.status == "Success" || frm.doc.status == "Invoice Created"){
+            frm.set_df_property('import_file', 'read_only', 1);
+        }
+        else{
+            frm.set_df_property('import_file', 'read_only', 0);
+        }
 	},
 	make_purchase_invoice(frm){
         frappe.call({
             method: "make_purchase_invoice",
             doc: frm.doc,
+            freeze: true,
             callback: function(r) {
-                if(!r.exc){
-                    var doclist = frappe.model.sync(r.message);
-                    frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+                if( r.message){
+                    frm.set_value("status", "Invoice Created")
+                    refresh_field("status");
+                    frm.save();
+                    frappe.set_route("List", "Purchase Invoice", {
+                        purchase_invoice_creation_tool: frm.doc.name,
+                    })
                 }
             }
         });

@@ -8,6 +8,9 @@ frappe.ui.form.on('Purchase Request', {
         }
     },
 	refresh: function(frm) {
+	    if (!frm.doc.date){
+            frm.set_value("date", frappe.datetime.get_today());
+        }
         frm.fields_dict.get_items.$input.addClass("btn-primary");
         if (frm.doc.docstatus == 1 || frm.doc.__islocal){
             frm.set_df_property('get_items', 'hidden', 1);

@@ -152,7 +152,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-11-09 12:23:34.884727",
+ "modified": "2021-11-12 16:02:57.345250",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Request",
@@ -172,7 +172,7 @@
   }
  ],
  "search_fields": "supplier_name",
- "sort_field": "modified",
- "sort_order": "DESC",
+ "sort_field": "naming_series",
+ "sort_order": "ASC",
  "track_changes": 1
 }

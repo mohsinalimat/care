@@ -34,18 +34,20 @@ class PurchaseInvoiceCreationTool(Document):
 			i = Importer(self.reference_doctype, data_import=self)
 			data = i.import_file.get_payloads_for_import()
 			if len(data) > 0:
-				pi = frappe.new_doc("Purchase Invoice")
-				pi.supplier = self.supplier
-				pi.posting_date = nowdate()
-				pi.due_date = nowdate()
-				pi.company = self.company
-				pi.purchase_invoice_creation_tool = self.name
-				pi.update_stock = 1
 				material_demand = frappe.get_list("Material Demand", {'supplier': self.supplier, 'purchase_request': self.purchase_request}, ['name'])
 				m_list = []
 				for res in material_demand:
 					m_list.append(res.name)
+
+				bonus_un_odr = []
 				if self.warehouse:
+					pi = frappe.new_doc("Purchase Invoice")
+					pi.supplier = self.supplier
+					pi.posting_date = nowdate()
+					pi.due_date = nowdate()
+					pi.company = self.company
+					pi.purchase_invoice_creation_tool = self.name
+					pi.update_stock = 1
 					for d in data:
 						line = d.get('doc')
 						item = None
@@ -81,9 +83,41 @@ class PurchaseInvoiceCreationTool(Document):
 								"discount_percentage": line.get("discount_percent"),
 								"discount_amount": line.get("discount"),
 							})
+
 						else:
-							frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(item_code))
+							if self.allow_unorder_item:
+								bonus_un_odr.append(frappe._dict({
+									"item_code": item_code,
+									"warehouse": self.c_b_warehouse,
+									"qty": line.get('qty'),
+									"is_free_item": 0,
+									"rate": line.get('rate'),
+									"discount_percentage": line.get("discount_percent"),
+									"discount_amount": line.get("discount"),
+									"uom": "Pack",
+									"stock_Uom": "Nos",
+								}))
+							else:
+								frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(item_code))
+
+						if line.get('bonus'):
+							bonus_un_odr.append(frappe._dict({
+								"item_code": item_code,
+								"warehouse": self.c_b_warehouse,
+								"qty": line.get('bonus'),
+								"is_free_item": 1,
+								"rate": line.get('rate'),
+								"discount_percentage": line.get("discount_percent"),
+								"discount_amount": line.get("discount"),
+								"uom": "Pack",
+								"stock_Uom": "Nos",
+							}))
+					if pi.get('items'):
+						pi.set_missing_values()
+						pi.insert(ignore_permissions=True)
+
 				else:
+					item_details = {}
 					for d in data:
 						line = d.get('doc')
 						item = None
@@ -108,7 +142,7 @@ class PurchaseInvoiceCreationTool(Document):
 										if line.get("discount"):
 											margin_type = "Amount"
 
-										pi.append("items", {
+										d = {
 											"item_code": item_code,
 											"warehouse": md_doc.warehouse,
 											"qty": md_doc.qty,
@@ -122,13 +156,94 @@ class PurchaseInvoiceCreationTool(Document):
 											"margin_type": margin_type,
 											"discount_percentage": line.get("discount_percent"),
 											"discount_amount": line.get("discount"),
-										})
+										}
 										received_qty -= md_doc.qty
+
+										key = (md_doc.warehouse)
+										item_details.setdefault(key, {"details": []})
+										fifo_queue = item_details[key]["details"]
+										fifo_queue.append(d)
 						else:
-							frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(item_code))
-				pi.set_missing_values()
-				pi.insert(ignore_permissions=True)
-				return pi.as_dict()
+							if self.allow_unorder_item:
+								bonus_un_odr.append(frappe._dict({
+									"item_code": item_code,
+									"warehouse": self.c_b_warehouse,
+									"qty": line.get('qty'),
+									"is_free_item": 0,
+									"rate": line.get('rate'),
+									"discount_percentage": line.get("discount_percent"),
+									"discount_amount": line.get("discount"),
+									"uom": "Pack",
+									"stock_Uom": "Nos",
+								}))
+							else:
+								frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(item_code))
+
+						if line.get('bonus'):
+							bonus_un_odr.append(frappe._dict({
+								"item_code": item_code,
+								"warehouse": self.c_b_warehouse,
+								"qty": line.get('bonus'),
+								"is_free_item": 1,
+								"rate": line.get('rate'),
+								"discount_percentage": line.get("discount_percent"),
+								"discount_amount": line.get("discount"),
+								"uom": "Pack",
+								"stock_Uom": "Nos",
+							}))
+
+					if item_details:
+						if item_details:
+							for key in item_details.keys():
+								try:
+									pi = frappe.new_doc("Purchase Invoice")
+									pi.supplier = self.supplier
+									pi.posting_date = nowdate()
+									pi.due_date = nowdate()
+									pi.company = self.company
+									pi.purchase_invoice_creation_tool = self.name
+									pi.update_stock = 1
+									for d in item_details[key]['details']:
+										pi.append("items", d)
+									if pi.get('items'):
+										pi.set_missing_values()
+										pi.insert(ignore_permissions=True)
+								except:
+									continue
+				if len(bonus_un_odr) > 0:
+					pi = frappe.new_doc("Purchase Invoice")
+					pi.supplier = self.supplier
+					pi.posting_date = nowdate()
+					pi.due_date = nowdate()
+					pi.company = self.company
+					pi.purchase_invoice_creation_tool = self.name
+					pi.update_stock = 1
+					for b in bonus_un_odr:
+						margin_type = None
+						if b.discount_percent:
+							margin_type = "Percentage"
+						if b.discount:
+							margin_type = "Amount"
+						item_doc = frappe.get_doc("Item",b.item_code)
+						s = {
+							"item_code": b.item_code,
+							"warehouse": b.warehouse,
+							"qty": b.qty,
+							"received_qty": b.qty,
+							"rate": b.rate if not b.is_free_item else 0,
+							"is_free_item": b.is_free_item,
+							"uom": b.uom,
+							"stock_Uom": item_doc.stock_uom,
+							"margin_type": margin_type,
+							"discount_percentage": b.discount_percent,
+							"discount_amount": b.discount
+						}
+						if b.is_free_item:
+							s['price_list_rate'] = 0
+						pi.append("items", s)
+					pi.set_missing_values()
+					pi.insert(ignore_permissions=True)
+				return True
 
 	@frappe.whitelist()
 	def set_column_mapping(self):
