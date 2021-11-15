@@ -18,6 +18,11 @@ class PurchaseRequest(Document):
 		self.db_update()
 
 	@frappe.whitelist()
+	def get_warehouse(self):
+		wr = frappe.get_list("Warehouse", filters={'is_group': 0}, fields='*')
+		return wr
+
+	@frappe.whitelist()
 	def get_suppliers_name(self):
 		if self.suppliers:
 			s_name = ""
@@ -40,8 +45,10 @@ class PurchaseRequest(Document):
 		for res in self.suppliers:
 			s_lst.append(res.supplier)
 
+		warehouse_dict = {}
 		for res in self.warehouses:
 			wr_doc = frappe.get_doc("Warehouse", res.warehouse)
+			warehouse_dict[res.warehouse] = res.order_per
 			if wr_doc.is_franchise:
 				f_w_lst.append(res.warehouse)
 			else:
@@ -50,6 +57,7 @@ class PurchaseRequest(Document):
 				child_wr = frappe.get_list("Warehouse", filters={'parent_warehouse': wr_doc.name}, fields='*')
 				for r in child_wr:
 					wr = frappe.get_doc("Warehouse", r.name)
+					warehouse_dict[r.name] = res.order_per
 					if wr.is_franchise:
 						f_w_lst.append(r.name)
 					else:
@@ -67,7 +75,8 @@ class PurchaseRequest(Document):
 				b.actual_qty,
 				i.stock_uom,
 				i.last_purchase_rate,
-				0 as conversion_factor
+				0 as conversion_factor,
+				0.0 as order_qty
 				from `tabItem` i 
 				inner join `tabItem Default` idf on idf.parent = i.name
 				inner  join `tabItem Reorder` ird on ird.parent = i.name
@@ -118,7 +127,21 @@ class PurchaseRequest(Document):
 				except Exception as e:
 					print("------Exception------",e)
 					continue
-
+		for d in item_details:
+			if d.warehouse in warehouse_dict.keys():
+				actual_qty = 0
+				if d.actual_qty:
+					actual_qty = float(d.actual_qty)
+				order_qty = 0
+				if 0 <= actual_qty < float(d.warehouse_reorder_level):
+					total_qty = actual_qty + float(d.warehouse_reorder_qty)
+					if total_qty >= float(d.optimum_level):
+						order_qty = float(d.optimum_level) - actual_qty
+					else:
+						order_qty = float(d.warehouse_reorder_qty)
+				percent = warehouse_dict[d.warehouse]
+				qty = order_qty * (percent / 100)
+				d.order_qty = qty
 		return item_details
 
 	def on_submit(self):

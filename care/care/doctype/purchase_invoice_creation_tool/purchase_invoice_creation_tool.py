@@ -145,7 +145,7 @@ class PurchaseInvoiceCreationTool(Document):
 										d = {
 											"item_code": item_code,
 											"warehouse": md_doc.warehouse,
-											"qty": md_doc.qty,
+											"qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
 											"received_qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
 											"rate": line.get('rate'),
 											"expense_account": md_doc.expense_account,

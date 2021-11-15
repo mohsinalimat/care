@@ -43,7 +43,7 @@
  "fields": [
   {
    "bold": 1,
-   "columns": 3,
+   "columns": 2,
    "fieldname": "item_code",
    "fieldtype": "Link",
    "in_global_search": 1,
@@ -180,12 +180,10 @@
    "fieldtype": "Column Break"
   },
   {
-   "columns": 1,
    "fetch_from": "item_code.stock_uom",
    "fetch_if_empty": 1,
    "fieldname": "uom",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "UOM",
    "oldfieldname": "uom",
    "oldfieldtype": "Link",
@@ -252,12 +250,15 @@
    "fieldtype": "Section Break"
   },
   {
+   "columns": 1,
    "default": "0",
    "fetch_from": "item_code.last_purchase_rate",
    "fetch_if_empty": 1,
    "fieldname": "rate",
    "fieldtype": "Currency",
+   "in_list_view": 1,
    "label": "Rate",
+   "options": "Company:company:default_currency",
    "print_hide": 1
   },
   {
@@ -265,10 +266,13 @@
    "fieldtype": "Column Break"
   },
   {
+   "columns": 1,
    "default": "0",
    "fieldname": "amount",
    "fieldtype": "Currency",
+   "in_list_view": 1,
    "label": "Amount",
+   "options": "Company:company:default_currency",
    "print_hide": 1,
    "read_only": 1
   },
@@ -312,7 +316,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2021-10-25 18:26:43.971877",
+ "modified": "2021-11-15 15:44:47.304413",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Material Demand Item",

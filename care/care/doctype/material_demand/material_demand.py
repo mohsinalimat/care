@@ -59,7 +59,6 @@ class MaterialDemand(Document):
 					"rate": line.rate,
 					"stock_uom": line.stock_uom,
 					"uom": line.uom,
-					"conversion_factor": line.conversion_factor,
 					"allow_zero_valuation_rate": 0,
 					"material_demand": self.name,
 					"material_demand_item": line.name
@@ -67,4 +66,33 @@ class MaterialDemand(Document):
 		po.set_missing_values()
 		# po.insert(ignore_permissions=True)
 		return po.as_dict()
+
+
+	@frappe.whitelist()
+	def make_purchase_invoice(self):
+		pi = frappe.new_doc("Purchase Invoice")
+		pi.supplier = self.supplier
+		pi.company = self.company
+		pi.transaction_date = self.transaction_date
+		pi.schedule_date = self.schedule_date
+		pi.set_warehouse = self.warehouse
+		for line in self.items:
+			remain_qty = line.qty - line.received_qty
+			if remain_qty > 0:
+				item = frappe.get_doc("Item", line.item_code)
+				pi.append("items", {
+					"item_code": line.item_code,
+					"description": item.description,
+					"brand": line.brand,
+					"warehouse": line.warehouse,
+					"qty": line.qty - line.ordered_qty,
+					"rate": line.rate,
+					"stock_uom": line.stock_uom,
+					"uom": line.uom,
+					"allow_zero_valuation_rate": 0,
+					"material_demand": self.name,
+					"material_demand_item": line.name
+				})
+		pi.set_missing_values()
+		return pi.as_dict()
 

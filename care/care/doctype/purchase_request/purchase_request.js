@@ -7,6 +7,25 @@ frappe.ui.form.on('Purchase Request', {
             frm.set_value("date", frappe.datetime.get_today());
         }
     },
+    onload: function(frm){
+        if (frm.doc.__islocal){
+            frappe.call({
+                method: "get_warehouse",
+                doc: frm.doc,
+                callback: function(r) {
+                    if(r.message) {
+                        frm.clear_table("warehouses");
+                        r.message.forEach(function(d) {
+                            var w = frm.add_child("warehouses");
+                            w.warehouse = d.name
+                            w.order_per = d.order_per
+                        });
+                        refresh_field("warehouses");
+                    }
+                }
+            });
+        }
+    },
 	refresh: function(frm) {
 	    if (!frm.doc.date){
             frm.set_value("date", frappe.datetime.get_today());
@@ -39,22 +58,7 @@ frappe.ui.form.on('Purchase Request', {
                 frm.clear_table("items");
                 if(r.message) {
                     r.message.forEach(function(d) {
-                        let actual_qty = 0
-                        if (d.actual_qty){
-                            actual_qty = parseFloat(d.actual_qty)
-                        }
-                        let order_qty = 0
-                        let avl_qty = parseFloat(actual_qty)
-                        if (actual_qty >= 0 && actual_qty < parseFloat(d.warehouse_reorder_level))
-                        {
-                            let total_qty = actual_qty + parseFloat(d.warehouse_reorder_qty)
-                            if(total_qty >= parseFloat(d.optimum_level)){
-                                order_qty = parseFloat(d.optimum_level) - actual_qty
-                            }
-                            else{
-                                order_qty = parseFloat(d.warehouse_reorder_qty)
-                            }
-                        }
+                        let order_qty = parseFloat(d.order_qty)
                         if (order_qty > 0){
                             let pack_order_qty = Math.ceil(order_qty / parseFloat(d.conversion_factor))
                             var item = frm.add_child("items");
@@ -65,7 +69,7 @@ frappe.ui.form.on('Purchase Request', {
                             item.stock_uom = d.stock_uom
                             item.reorder_level = parseFloat(d.warehouse_reorder_level)
                             item.optimal__level = parseFloat(d.optimum_level)
-                            item.avl_qty = actual_qty
+                            item.avl_qty = d.actual_qty
                             item.order_qty = order_qty
                             item.pack_order_qty = pack_order_qty
                             item.conversion_factor = d.conversion_factor
@@ -95,6 +99,14 @@ frappe.ui.form.on('Purchase Request', {
 	warehouses: function(frm){
         frm.clear_table("items");
         refresh_field("items");
+	},
+	validate: function(frm){
+	    var total_amt = 0.0
+	    frm.doc.items.forEach(function(d){
+	        total_amt += parseFloat(d.amount)
+	    })
+	    frm.set_value("total_amount", total_amt)
+	    refresh_field("total_amount")
 	}
 });
 

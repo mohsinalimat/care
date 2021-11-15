@@ -33,7 +33,21 @@ frappe.ui.form.on('Material Demand', {
 //                      frm.reload_doc();
                     }
                 });
-            }).addClass("btn-primary");
+            }, __('Create'));
+
+            frm.add_custom_button(__('Make Purchase Invoice'), function(){
+                frappe.call({
+                    method: "make_purchase_invoice",
+                    doc: frm.doc,
+                    freeze: true,
+                    callback: function(r) {
+                        var doclist = frappe.model.sync(r.message);
+                        frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+                    }
+                });
+            }, __('Create'));
+
+            frm.page.set_inner_btn_group_as_primary(__('Create'));
          }
 	 },
 	 warehouse: function(frm) {
