@@ -31,7 +31,7 @@ app_include_js = "/assets/care/js/data_import_tools1.min.js"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {"Payment Entry": "public/js/payment_entry.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -102,7 +102,14 @@ doc_events = {
         "on_submit": ["care.hook_events.purchase_invoice.update_p_r_c_tool_status",
                       "care.hook_events.purchase_invoice.update_md_status"],
         "on_cancel": ["care.hook_events.purchase_invoice.cancel_update_p_r_c_tool_status",
-                    "care.hook_events.purchase_invoice.cancel_update_md_status"]
+                    "care.hook_events.purchase_invoice.cancel_update_md_status"],
+        "before_submit": ["care.hook_events.purchase_invoice.validate_cost_center"]
+    },
+    "Sales Invoice": {
+        "before_submit": ["care.hook_events.purchase_invoice.validate_cost_center"]
+    },
+    "Payment Entry": {
+        "validate": ["care.hook_events.payment_entry.set_out_grand_total"]
     }
 }
 

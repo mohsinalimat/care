@@ -20,7 +20,7 @@ frappe.ui.form.on('Material Demand', {
 		}
 	 },
 	 refresh: function(frm){
-	     if(frm.doc.docstatus == 1 && frm.doc.per_ordered < 100){
+	     if(frm.doc.docstatus == 1 && frm.doc.per_ordered < 100 && frm.doc.status != "Received"){
              frm.add_custom_button(__('Make Purchase Order'), function(){
                 frappe.call({
                     method: "make_purchase_order",

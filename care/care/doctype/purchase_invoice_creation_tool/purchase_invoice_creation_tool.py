@@ -75,6 +75,7 @@ class PurchaseInvoiceCreationTool(Document):
 								"received_qty": line.get('qty'),
 								"rate": line.get('rate'),
 								"expense_account": md_doc.expense_account,
+								"cost_center": md_doc.cost_center,
 								"uom": md_doc.uom,
 								"stock_Uom": md_doc.stock_uom,
 								"material_demand": md_doc.parent,
@@ -149,6 +150,7 @@ class PurchaseInvoiceCreationTool(Document):
 											"received_qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
 											"rate": line.get('rate'),
 											"expense_account": md_doc.expense_account,
+											"cost_center": md_doc.cost_center,
 											"uom": md_doc.uom,
 											"stock_Uom": md_doc.stock_uom,
 											"material_demand": md_doc.parent,
@@ -203,6 +205,7 @@ class PurchaseInvoiceCreationTool(Document):
 									pi.company = self.company
 									pi.purchase_invoice_creation_tool = self.name
 									pi.update_stock = 1
+									pi.set_warehouse = key
 									for d in item_details[key]['details']:
 										pi.append("items", d)
 									if pi.get('items'):

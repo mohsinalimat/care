@@ -10,6 +10,10 @@ def get_data():
                 'items': ['Purchase Order']
             },
             {
+                'label': _('Purchase Invoice'),
+                'items': ['Purchase Invoice']
+            },
+            {
                 'label': _('Purchase Receipt'),
                 'items': ['Purchase Receipt']
             }

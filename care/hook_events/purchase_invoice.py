@@ -1,5 +1,6 @@
 
 import frappe
+from frappe import _
 
 def update_p_r_c_tool_status(doc, method):
     if doc.purchase_invoice_creation_tool:
@@ -70,3 +71,7 @@ def cancel_update_md_status(doc, method):
         else:
             md.status = "Received"
         md.db_update()
+
+def validate_cost_center(doc, method):
+    if not doc.cost_center:
+        frappe.throw(_("Cost center is Mandatory in Accounting dimensions"))

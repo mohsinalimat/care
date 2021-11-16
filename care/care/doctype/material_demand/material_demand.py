@@ -60,11 +60,13 @@ class MaterialDemand(Document):
 					"stock_uom": line.stock_uom,
 					"uom": line.uom,
 					"allow_zero_valuation_rate": 0,
+					"expense_account": line.expense_account,
+					"cost_center": line.cost_center,
 					"material_demand": self.name,
 					"material_demand_item": line.name
 				})
 		po.set_missing_values()
-		# po.insert(ignore_permissions=True)
+		po.insert(ignore_permissions=True)
 		return po.as_dict()
 
 
@@ -76,6 +78,7 @@ class MaterialDemand(Document):
 		pi.transaction_date = self.transaction_date
 		pi.schedule_date = self.schedule_date
 		pi.set_warehouse = self.warehouse
+		cost_center = None
 		for line in self.items:
 			remain_qty = line.qty - line.received_qty
 			if remain_qty > 0:
@@ -90,9 +93,14 @@ class MaterialDemand(Document):
 					"stock_uom": line.stock_uom,
 					"uom": line.uom,
 					"allow_zero_valuation_rate": 0,
+					"expense_account": line.expense_account,
+					"cost_center": line.cost_center,
 					"material_demand": self.name,
 					"material_demand_item": line.name
 				})
+				cost_center = line.cost_center
+		pi.cost_center = cost_center
 		pi.set_missing_values()
+		pi.insert(ignore_permissions=True)
 		return pi.as_dict()
 
