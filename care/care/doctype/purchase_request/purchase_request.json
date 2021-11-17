@@ -12,6 +12,7 @@
   "supplier_name",
   "status",
   "order_uom",
+  "base_on",
   "column_break_2",
   "date",
   "required_by",
@@ -167,13 +168,21 @@
    "fieldname": "heading_19",
    "fieldtype": "Heading",
    "label": " "
+  },
+  {
+   "default": "Reorder Quantity",
+   "fieldname": "base_on",
+   "fieldtype": "Select",
+   "label": "Order Qty Base On",
+   "options": "Reorder Quantity\nOptimal Level",
+   "reqd": 1
   }
  ],
  "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2021-11-15 15:11:37.272619",
+ "modified": "2021-11-17 14:55:25.905366",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Request",

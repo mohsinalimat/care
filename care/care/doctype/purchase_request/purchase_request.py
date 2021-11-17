@@ -133,12 +133,22 @@ class PurchaseRequest(Document):
 				if d.actual_qty:
 					actual_qty = float(d.actual_qty)
 				order_qty = 0
-				if 0 <= actual_qty < float(d.warehouse_reorder_level):
-					total_qty = actual_qty + float(d.warehouse_reorder_qty)
-					if total_qty >= float(d.optimum_level):
-						order_qty = float(d.optimum_level) - actual_qty
-					else:
-						order_qty = float(d.warehouse_reorder_qty)
+				if self.base_on == "Reorder Quantity":
+					if 0 <= actual_qty < float(d.warehouse_reorder_level):
+						total_qty = actual_qty + float(d.warehouse_reorder_qty)
+						if total_qty >= float(d.optimum_level):
+							order_qty = float(d.optimum_level) - actual_qty
+						else:
+							order_qty = float(d.warehouse_reorder_qty)
+
+				if self.base_on == "Optimal Level":
+					if 0 <= actual_qty < float(d.optimum_level):
+						total_qty = actual_qty + float(d.optimum_level)
+						if total_qty >= float(d.optimum_level):
+							order_qty = float(d.optimum_level) - actual_qty
+						else:
+							order_qty = float(d.optimum_level)
+
 				percent = warehouse_dict[d.warehouse]
 				qty = order_qty * (percent / 100)
 				d.order_qty = qty
