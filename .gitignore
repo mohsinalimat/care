@@ -4,3 +4,4 @@
 *.swp
 tags
 care/docs/current
+node_modules
