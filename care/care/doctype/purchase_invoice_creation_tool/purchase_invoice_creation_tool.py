@@ -86,18 +86,19 @@ class PurchaseInvoiceCreationTool(Document):
 							})
 
 						else:
-							if self.allow_unorder_item:
-								bonus_un_odr.append(frappe._dict({
-									"item_code": item_code,
-									"warehouse": self.c_b_warehouse,
-									"qty": line.get('qty'),
-									"is_free_item": 0,
-									"rate": line.get('rate'),
-									"discount_percentage": line.get("discount_percent"),
-									"discount_amount": line.get("discount"),
-									"uom": "Pack",
-									"stock_Uom": "Nos",
-								}))
+							if self.ignore_un_order_item:
+								pass
+								# bonus_un_odr.append(frappe._dict({
+								# 	"item_code": item_code,
+								# 	"warehouse": self.c_b_warehouse,
+								# 	"qty": line.get('qty'),
+								# 	"is_free_item": 0,
+								# 	"rate": line.get('rate'),
+								# 	"discount_percentage": line.get("discount_percent"),
+								# 	"discount_amount": line.get("discount"),
+								# 	"uom": "Pack",
+								# 	"stock_Uom": "Nos",
+								# }))
 							else:
 								frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(item_code))
 
@@ -166,18 +167,19 @@ class PurchaseInvoiceCreationTool(Document):
 										fifo_queue = item_details[key]["details"]
 										fifo_queue.append(d)
 						else:
-							if self.allow_unorder_item:
-								bonus_un_odr.append(frappe._dict({
-									"item_code": item_code,
-									"warehouse": self.c_b_warehouse,
-									"qty": line.get('qty'),
-									"is_free_item": 0,
-									"rate": line.get('rate'),
-									"discount_percentage": line.get("discount_percent"),
-									"discount_amount": line.get("discount"),
-									"uom": "Pack",
-									"stock_Uom": "Nos",
-								}))
+							if self.ignore_un_order_item:
+								pass
+								# bonus_un_odr.append(frappe._dict({
+								# 	"item_code": item_code,
+								# 	"warehouse": self.c_b_warehouse,
+								# 	"qty": line.get('qty'),
+								# 	"is_free_item": 0,
+								# 	"rate": line.get('rate'),
+								# 	"discount_percentage": line.get("discount_percent"),
+								# 	"discount_amount": line.get("discount"),
+								# 	"uom": "Pack",
+								# 	"stock_Uom": "Nos",
+								# }))
 							else:
 								frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(item_code))
 

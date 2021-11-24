@@ -15,7 +15,7 @@
   "naming_series",
   "company",
   "c_b_warehouse",
-  "allow_unorder_item",
+  "ignore_un_order_item",
   "warehouse",
   "status",
   "section_break_10",
@@ -203,18 +203,18 @@
    "options": "Warehouse"
   },
   {
-   "default": "0",
-   "fieldname": "allow_unorder_item",
-   "fieldtype": "Check",
-   "label": "Allow Un-Order Item"
-  },
-  {
-   "description": "Accepted Bonus and Un-order Item",
+   "description": "Accepted Bonus Item",
    "fieldname": "c_b_warehouse",
    "fieldtype": "Link",
    "label": "Corporate Warehouse",
    "options": "Warehouse",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "ignore_un_order_item",
+   "fieldtype": "Check",
+   "label": "Ignore Un-Order Item"
   }
  ],
  "hide_toolbar": 1,
@@ -224,7 +224,7 @@
    "link_fieldname": "purchase_invoice_creation_tool"
   }
  ],
- "modified": "2021-11-12 15:02:45.960450",
+ "modified": "2021-11-24 11:32:27.032735",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Invoice Creation Tool",
