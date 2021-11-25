@@ -46,6 +46,7 @@ class MaterialDemand(Document):
 		po.transaction_date = self.transaction_date
 		po.schedule_date = self.schedule_date
 		po.set_warehouse = self.warehouse
+		po.set_posting_time= 1
 		for line in self.items:
 			remain_qty = line.qty - line.ordered_qty
 			if remain_qty > 0:
@@ -75,9 +76,10 @@ class MaterialDemand(Document):
 		pi = frappe.new_doc("Purchase Invoice")
 		pi.supplier = self.supplier
 		pi.company = self.company
-		pi.transaction_date = self.transaction_date
-		pi.schedule_date = self.schedule_date
+		pi.posting_date = self.transaction_date
+		pi.due_date = self.schedule_date
 		pi.set_warehouse = self.warehouse
+		pi.set_posting_time = 1
 		cost_center = None
 		for line in self.items:
 			remain_qty = line.qty - line.received_qty
@@ -92,7 +94,6 @@ class MaterialDemand(Document):
 					"rate": line.rate,
 					"stock_uom": line.stock_uom,
 					"uom": line.uom,
-					"allow_zero_valuation_rate": 0,
 					"expense_account": line.expense_account,
 					"cost_center": line.cost_center,
 					"material_demand": self.name,
