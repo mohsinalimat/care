@@ -10,6 +10,9 @@ frappe.ui.form.on('Purchase Invoice', {
             frm.set_df_property('update_price_rate', 'hidden', 1);
         }
 	},
+	onload: function(frm, cdt, cdn){
+	     validate_item_rate(frm, cdt, cdn)
+	},
 	validate: function(frm, cdt, cdn){
 	     validate_item_rate(frm, cdt, cdn)
 	},
@@ -80,11 +83,11 @@ frappe.ui.form.on('Purchase Invoice', {
 function validate_item_rate(frm, cdt, cdn){
     cur_frm.fields_dict["items"].$wrapper.find('.grid-body .rows').find(".grid-row").each(function(i, item) {
         let d = locals[cur_frm.fields_dict["items"].grid.doctype][$(item).attr('data-name')];
-        if(d["rate"] != d['price_list_rate']){
-            $(item).find('.grid-static-col').css({'background-color': '#ffff80'});
+        if( d['price_list_rate'] - 1 <= d["rate"] && d["rate"] <= d['price_list_rate'] + 1){
+            $(item).find('.grid-static-col').css({'background-color': '#ffffff'});
         }
         else{
-            $(item).find('.grid-static-col').css({'background-color': '#ffffff'});
+            $(item).find('.grid-static-col').css({'background-color': '#ffff80'});
         }
     });
 }

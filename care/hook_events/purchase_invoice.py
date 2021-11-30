@@ -133,5 +133,7 @@ def get_price_list_rate_for(item_code, args):
 def validate_price_and_rate(doc, method):
     if doc.items:
         for res in doc.items:
-            if res.rate != res.price_list_rate:
+            if res.price_list_rate - 1 <= res.rate <= res.price_list_rate + 1:
+                pass
+            else:
                 frappe.throw(_("Item <b>{0}:{1}</b> Price List Rate and Rate did not match in row {2}.".format(res.item_code,res.item_name,res.idx)))

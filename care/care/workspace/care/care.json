@@ -43,6 +43,23 @@
   {
    "hidden": 0,
    "is_query_report": 0,
+   "label": "Report",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Material Order",
+   "link_to": "Material Order",
+   "link_type": "Report",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
    "label": "Tool",
    "link_type": "DocType",
    "onboard": 0,
@@ -73,26 +90,9 @@
    "link_type": "DocType",
    "onboard": 1,
    "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Report",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 1,
-   "label": "Material Order",
-   "link_to": "Material Order",
-   "link_type": "Report",
-   "onboard": 1,
-   "type": "Link"
   }
  ],
- "modified": "2021-11-24 16:41:31.444087",
+ "modified": "2021-11-30 13:34:11.273423",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Care",
@@ -130,5 +130,6 @@
    "link_to": "Material Order",
    "type": "Report"
   }
- ]
+ ],
+ "shortcuts_label": "Shortcuts"
 }

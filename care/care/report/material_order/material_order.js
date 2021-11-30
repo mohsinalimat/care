@@ -29,6 +29,12 @@ frappe.query_reports["Material Order"] = {
 			"reqd": 1
 		},
 		{
+			"fieldname":"purchase_request",
+			"label": __("Purchase Request"),
+			"fieldtype": "Link",
+			"options": "Purchase Request"
+		},
+		{
 			"fieldname":"item_code",
 			"label": __("Item Code"),
 			"fieldtype": "Link",

@@ -46,17 +46,11 @@ def get_columns(filters):
 			"width": 100
 		},
 		{
-			"fieldname": "qty",
-			"fieldtype": "Float",
-			"label": "Order Qty",
-			"width": 100
-		},
-		{
 			"fieldname": "supplier",
 			"fieldtype": "Link",
 			"label": "Supplier",
 			"options": "Supplier",
-			"width": 120
+			"width": 100
 		},
 		{
 			"fieldname": "supplier_name",
@@ -73,6 +67,19 @@ def get_columns(filters):
 			"options": "Warehouse",
 			"width": 200
 		})
+
+	columns.append({
+		"fieldname": "qty",
+		"fieldtype": "Float",
+		"label": "Order Qty",
+		"width": 100
+	})
+	columns.append({
+		"fieldname": "pack_qty",
+		"fieldtype": "Float",
+		"label": "Pack Order Qty (Pack)",
+		"width": 180
+	})
 	return columns
 
 def get_data(filters):
@@ -81,8 +88,9 @@ def get_data(filters):
 			pri.item_code,
 			pri.item_name,
 			pri.brand,
-			pr.order_uom as uom,
+			pri.stock_uom as uom,
 			sum(pri.order_qty) as qty,
+			sum(pri.pack_order_qty) as pack_qty,
 			pri.supplier,
 			s.supplier_name"""
 	if filters.get('base_on') == "Warehouse":
@@ -93,10 +101,13 @@ def get_data(filters):
 			inner join `tabSupplier` s on s.name = pri.supplier 
 			where
 			pr.company = '{0}' and  
-			pr.date between '{1}' and '{2}'""".format(filters.get('company'), filters.get('from_date'), filters.get('to_date'))
+			pr.date between '{1}' and '{2}' """.format(filters.get('company'), filters.get('from_date'), filters.get('to_date'))
 
 	if filters.get('item_code'):
 		query += " and pri.item_code = '{0}'".format(filters.get('item_code'))
+
+	if filters.get('purchase_request'):
+		query += " and pr.name = '{0}'".format(filters.get('purchase_request'))
 
 	if filters.get('warehouse'):
 		query += " and pri.warehouse = '{0}'".format(filters.get('warehouse'))
@@ -109,6 +120,48 @@ def get_data(filters):
 	if filters.get('base_on') == "Warehouse":
 		query += ",pri.warehouse"
 
-	query += " order by pr.name, pri.item_code"
+	query += " order by pr.name, pri.warehouse, pri.item_code"
 	result = frappe.db.sql(query, as_dict=True)
-	return result
+	if filters.get('base_on') == "Warehouse":
+		datas = []
+		item_details = {}
+		for res in result:
+			key = (res.warehouse)
+			if key not in item_details:
+				item_details.setdefault(key, [])
+			item_details[key].append(res)
+		total = 0
+		p_total = 0
+		for key in item_details.keys():
+			sub_total = 0
+			p_sub_total = 0
+			for d in item_details[key]:
+				sub_total += d.qty
+				p_sub_total += d.pack_qty
+				total += d.qty
+				p_total += d.pack_qty
+				datas.append(d)
+			datas.append({'purchase_req': None,
+				'item_code': None,
+				'item_name': None,
+				'brand': None,
+				'uom': None,
+				'supplier': None,
+				'supplier_name': None,
+				'warehouse': "<b>Total</b>",
+				'qty': sub_total,
+				'pack_qty': p_sub_total})
+
+		datas.append({'purchase_req': None,
+				'item_code': None,
+				'item_name': None,
+				'brand': None,
+				'uom': None,
+				'supplier': None,
+				'supplier_name': None,
+				'warehouse': "<b>Grand Total</b>",
+				'qty': total,
+				'pack_qty': p_total})
+		return datas
+	else:
+		return result
