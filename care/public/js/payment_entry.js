@@ -1,18 +1,20 @@
 frappe.ui.form.on('Payment Entry', {
     validate: function(frm){
-        for (var row of frm.doc.references) {
-			if (row.reference_doctype == "Purchase Invoice" || row.reference_doctype == "Sales Invoice") {
-				if (row.reference_doctype == "Purchase Invoice") {
-					var doctype = "Purchase Invoice";
-					var fieldname = "cost_center"
-				}
-				else if (row.reference_doctype == "Sales Invoice") {
-					var doctype = "Sales Invoice";
-					var fieldname = "cost_center";
-				}
-				get_sales_order(row, doctype, fieldname);
-			}
-		}
+        if(frm.doc.references){
+            for (var row of frm.doc.references) {
+                if (row.reference_doctype == "Purchase Invoice" || row.reference_doctype == "Sales Invoice") {
+                    if (row.reference_doctype == "Purchase Invoice") {
+                        var doctype = "Purchase Invoice";
+                        var fieldname = "cost_center"
+                    }
+                    else if (row.reference_doctype == "Sales Invoice") {
+                        var doctype = "Sales Invoice";
+                        var fieldname = "cost_center";
+                    }
+                    get_sales_order(row, doctype, fieldname);
+                }
+            }
+        }
     }
 });
 
@@ -31,3 +33,4 @@ function get_sales_order(row, doctype, fieldname) {
 		}
 	});
 }
+
