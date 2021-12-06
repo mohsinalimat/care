@@ -15,6 +15,10 @@ frappe.ui.form.on('Payment Entry', {
                 }
             }
         }
+    },
+    party: function(frm){
+        var filters = {}
+        frm.events.get_outstanding_documents(frm, filters);
     }
 });
 
