@@ -124,8 +124,10 @@ class PurchaseRequest(Document):
 							response = frappe.parse_json(response.content.decode())
 							data = response.message
 							item_details.extend(data)
+						else:
+							frappe.log_error(title="Franchise API Error", message=response.json())
 				except Exception as e:
-					print("------Exception------",e)
+					frappe.log_error(title="Franchise API Error", message=e)
 					continue
 		for d in item_details:
 			if d.warehouse in warehouse_dict.keys():

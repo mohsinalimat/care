@@ -43,6 +43,32 @@
   {
    "hidden": 0,
    "is_query_report": 0,
+   "label": "Tool",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Order Receiving",
+   "link_to": "Order Receiving",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Purchase Invoice Creation Tool",
+   "link_to": "Purchase Invoice Creation Tool",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
    "label": "Report",
    "link_type": "DocType",
    "onboard": 0,
@@ -54,23 +80,6 @@
    "label": "Material Order",
    "link_to": "Material Order",
    "link_type": "Report",
-   "onboard": 1,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Tool",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Purchase Invoice Creation Tool",
-   "link_to": "Purchase Invoice Creation Tool",
-   "link_type": "DocType",
    "onboard": 1,
    "type": "Link"
   },
@@ -92,7 +101,7 @@
    "type": "Link"
   }
  ],
- "modified": "2021-11-30 13:34:11.273423",
+ "modified": "2021-12-11 13:41:25.896425",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Care",
@@ -113,6 +122,13 @@
    "type": "DocType"
   },
   {
+   "color": "#db2525",
+   "doc_view": "",
+   "label": "Order Receiving",
+   "link_to": "Order Receiving",
+   "type": "DocType"
+  },
+  {
    "doc_view": "List",
    "label": "Purchase Invoice Creation Tool",
    "link_to": "Purchase Invoice Creation Tool",
@@ -123,12 +139,6 @@
    "label": "Purchase Invoice",
    "link_to": "Purchase Invoice",
    "type": "DocType"
-  },
-  {
-   "doc_view": "",
-   "label": "Material Order",
-   "link_to": "Material Order",
-   "type": "Report"
   }
  ],
  "shortcuts_label": "Shortcuts"
