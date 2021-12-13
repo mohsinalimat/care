@@ -130,30 +130,30 @@ class PurchaseRequest(Document):
 					frappe.log_error(title="Franchise API Error", message=e)
 					continue
 		for d in item_details:
-			if d.warehouse in warehouse_dict.keys():
+			if d.get('warehouse') in warehouse_dict.keys():
 				actual_qty = 0
-				if d.actual_qty:
-					actual_qty = float(d.actual_qty)
+				if d.get('actual_qty'):
+					actual_qty = float(d.get('actual_qty'))
 				order_qty = 0
 				if self.base_on == "Reorder Quantity":
-					if 0 <= actual_qty < float(d.warehouse_reorder_level):
-						total_qty = actual_qty + float(d.warehouse_reorder_qty)
-						if total_qty >= float(d.optimum_level):
-							order_qty = float(d.optimum_level) - actual_qty
+					if 0 <= actual_qty < float(d.get('warehouse_reorder_level')):
+						total_qty = actual_qty + float(d.get('warehouse_reorder_qty'))
+						if total_qty >= float(d.get('optimum_level')):
+							order_qty = float(d.get('optimum_level')) - actual_qty
 						else:
-							order_qty = float(d.warehouse_reorder_qty)
+							order_qty = float(d.get('warehouse_reorder_qty'))
 
 				if self.base_on == "Optimal Level":
-					if 0 <= actual_qty < float(d.optimum_level):
-						total_qty = actual_qty + float(d.optimum_level)
-						if total_qty >= float(d.optimum_level):
-							order_qty = float(d.optimum_level) - actual_qty
+					if 0 <= actual_qty < float(d.get('optimum_level')):
+						total_qty = actual_qty + float(d.get('optimum_level'))
+						if total_qty >= float(d.get('optimum_level')):
+							order_qty = float(d.get('optimum_level')) - actual_qty
 						else:
-							order_qty = float(d.optimum_level)
+							order_qty = float(d.get('optimum_level'))
 
-				percent = warehouse_dict[d.warehouse]
+				percent = warehouse_dict[d.get('warehouse')]
 				qty = order_qty * (percent / 100)
-				d.order_qty = qty
+				d['order_qty'] = qty
 		return item_details
 
 	def on_submit(self):
