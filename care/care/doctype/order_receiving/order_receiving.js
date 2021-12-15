@@ -2,7 +2,7 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Order Receiving', {
-	setup: function(frm) {
+	setup: function(frm, cdt, cdn) {
 	    if (frm.doc.__islocal) {
 			frm.set_value("date", frappe.datetime.now_date())
 		}
@@ -29,6 +29,12 @@ frappe.ui.form.on('Order Receiving', {
                 filters: {'purchase_request': frm.doc.purchase_request}
             }
         });
+	    frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
+            return {
+                query: "care.care.doctype.order_receiving.order_receiving.get_item_code",
+                filters: {'purchase_request': doc.purchase_request}
+            }
+	    }
 	},
 	refresh: function(frm){
 	    if (frm.doc.__islocal) {

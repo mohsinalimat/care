@@ -60,6 +60,11 @@ class OrderReceiving(Document):
 							if received_qty > 0:
 								md_doc = frappe.get_doc("Material Demand Item", p_tm.name)
 								if md_doc:
+									margin_type = None
+									if d.get("discount_percent"):
+										margin_type = "Percentage"
+									if d.get("discount"):
+										margin_type = "Amount"
 									d = {
 										"item_code": d.get('item_code'),
 										"warehouse": md_doc.warehouse,
@@ -72,6 +77,9 @@ class OrderReceiving(Document):
 										"stock_Uom": md_doc.stock_uom,
 										"material_demand": md_doc.parent,
 										"material_demand_item": md_doc.name,
+										"margin_type": margin_type,
+										"discount_percentage": d.get("discount_percent"),
+										"discount_amount": d.get("discount"),
 									}
 									received_qty -= md_doc.qty
 
@@ -104,3 +112,13 @@ class OrderReceiving(Document):
 			frappe.msgprint(_("Purchase Invoice Created"), alert=1)
 
 
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_item_code(doctype, txt, searchfield, start, page_len, filters):
+	if filters.get('purchase_request'):
+		result = frappe.db.sql("""select distinct pi.item_code, pi.item_name from `tabPurchase Request Item` as pi
+				inner join `tabPurchase Request` as p on p.name = pi.parent 
+				where p.name = '{0}'""".format(filters.get('purchase_request')))
+		return result
+	else:
+		return (" ", )
