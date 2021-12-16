@@ -11,6 +11,19 @@ class OrderReceiving(Document):
 	def on_submit(self):
 		self.make_purchase_invoice()
 
+	@frappe.whitelist()
+	def get_item_code(self):
+		i_lst = []
+		if self.purchase_request:
+			result = frappe.db.sql("""select distinct pi.item_code from `tabPurchase Request Item` as pi
+					inner join `tabPurchase Request` as p on p.name = pi.parent 
+					where p.name = '{0}'""".format(self.purchase_request),as_dict=True)
+
+			for res in result:
+				i_lst.append(res.get('item_code'))
+		return i_lst
+
+
 	def make_purchase_invoice(self):
 		material_demand = frappe.get_list("Material Demand", {'supplier': self.supplier, 'purchase_request': self.purchase_request},['name'])
 		m_list = []

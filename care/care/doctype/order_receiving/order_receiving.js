@@ -29,12 +29,7 @@ frappe.ui.form.on('Order Receiving', {
                 filters: {'purchase_request': frm.doc.purchase_request}
             }
         });
-	    frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
-            return {
-                query: "care.care.doctype.order_receiving.order_receiving.get_item_code",
-                filters: {'purchase_request': doc.purchase_request}
-            }
-	    }
+	    frm.trigger("apply_item_filter")
 	},
 	refresh: function(frm){
 	    if (frm.doc.__islocal) {
@@ -43,7 +38,23 @@ frappe.ui.form.on('Order Receiving', {
 	},
 	validate:function(frm, cdt, cdn){
 	    update_total_qty(frm, cdt, cdn)
-	}
+	},
+    purchase_request: function (frm){
+	    frm.trigger("apply_item_filter")
+    },
+    apply_item_filter: function (frm){
+	    frappe.call({
+            method: "get_item_code",
+            doc: frm.doc,
+            callback: function(r) {
+                frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
+                    return {
+                        filters: {'name':['in',r.message]}
+                    }
+                }
+            }
+        });
+    }
 });
 
 frappe.ui.form.on('Order Receiving Item', {
