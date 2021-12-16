@@ -102,6 +102,7 @@
    "label": "Items"
   },
   {
+   "allow_bulk_edit": 1,
    "fieldname": "items",
    "fieldtype": "Table",
    "label": "Items",
@@ -179,7 +180,7 @@
    "link_fieldname": "order_receiving"
   }
  ],
- "modified": "2021-12-11 13:43:02.021985",
+ "modified": "2021-12-16 11:37:47.734644",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Order Receiving",

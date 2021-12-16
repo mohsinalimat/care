@@ -46,6 +46,7 @@ class MaterialDemand(Document):
 		po.transaction_date = self.transaction_date
 		po.schedule_date = self.schedule_date
 		po.set_warehouse = self.warehouse
+		po.purchase_request = self.purchase_request
 		po.set_posting_time= 1
 		for line in self.items:
 			remain_qty = line.qty - line.ordered_qty
@@ -79,6 +80,7 @@ class MaterialDemand(Document):
 		pi.posting_date = self.transaction_date
 		pi.due_date = self.schedule_date
 		pi.set_warehouse = self.warehouse
+		pi.purchase_request = self.purchase_request
 		pi.set_posting_time = 1
 		cost_center = None
 		for line in self.items:

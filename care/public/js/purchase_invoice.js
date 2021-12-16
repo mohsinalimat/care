@@ -9,6 +9,20 @@ frappe.ui.form.on('Purchase Invoice', {
         else{
             frm.set_df_property('update_price_rate', 'hidden', 1);
         }
+        if (!frm.doc.franchise_inv_generated && frm.doc.docstatus ==1){
+            frm.add_custom_button(__('Create Franchise Invoice'), function() {
+                frm.call({
+                    method: "care.hook_events.purchase_invoice.make_franchise_purchase_invoice",
+                    args: {
+                        "doc": frm.doc.name,
+                        "method": null
+                    },
+                    callback: function (r) {
+                        frm.reload_doc()
+                    }
+                })
+            },__('Create'));
+        }
 	},
 	onload: function(frm, cdt, cdn){
 	     validate_item_rate(frm, cdt, cdn)

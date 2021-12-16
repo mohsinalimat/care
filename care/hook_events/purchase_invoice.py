@@ -137,3 +137,72 @@ def validate_price_and_rate(doc, method):
                 pass
             else:
                 frappe.throw(_("Item <b>{0}:{1}</b> Price List Rate and Rate did not match in row {2}.".format(res.item_code,res.item_name,res.idx)))
+
+
+@frappe.whitelist()
+def make_franchise_purchase_invoice(doc):
+    doc = frappe.get_doc("Purchase Invoice", doc)
+    create_franchise_purchase_invoice(doc, None)
+
+@frappe.whitelist()
+def un_check_franchise_inv_generated(doc, method):
+    doc.franchise_inv_generated = 0
+
+@frappe.whitelist()
+def create_franchise_purchase_invoice(doc, method):
+    import requests
+    if doc.purchase_request and doc.set_warehouse and not doc.franchise_inv_generated:
+        try:
+            w_doc = frappe.get_doc("Warehouse", doc.set_warehouse)
+            if w_doc.is_franchise:
+                if w_doc.url and w_doc.api_key and w_doc.api_secret:
+                    data = {
+                        "name": doc.name,
+                        "supplier": doc.supplier,
+                        "posting_date": str(doc.posting_date),
+                        "due_date": str(doc.due_date),
+                        "company": doc.company,
+                        "update_stock": doc.update_stock,
+                        "set_warehouse": doc.set_warehouse,
+                        "items": []
+                    }
+                    itm_lst = data['items']
+                    for res in doc.items:
+                        itm_lst.append({
+                                "item_code": res.item_code,
+                                "warehouse": res.warehouse,
+                                "qty": res.qty,
+                                "received_qty": res.qty,
+                                "rate": res.rate,
+                                "expense_account": res.expense_account,
+                                "cost_center": res.cost_center,
+                                "uom": res.uom,
+                                "stock_Uom": res.stock_uom,
+                                "margin_type": res.margin_type,
+                                "discount_percentage": res.discount_percentage,
+                                "discount_amount": res.discount_amount
+                            })
+
+                    url = str(w_doc.url) + "/api/resource/Purchase Invoice"
+                    api_key = w_doc.api_key
+                    api_secret = w_doc.api_secret
+                    headers = {
+                        'Authorization': 'token ' + str(api_key) + ':' + str(api_secret)
+                    }
+                    payload = dict({"data": data})
+                    response = requests.post(url, headers=headers, json=payload)
+                    if response.status_code == 200:
+                        frappe.log_error(title="Franchise Invoice Creation Error", message=response.json())
+                        frappe.msgprint("Franchise invoice created on <b><a href='{0}' target='_blank'>{0}</a></b>".format(w_doc.url), indicator='Green', alert=True)
+                        doc.franchise_inv_generated = 1
+                        doc.db_update()
+                    else:
+                        frappe.log_error(title="Franchise Invoice Creation Error", message=response.json())
+                        frappe.msgprint("Error Log Generated", indicator='red', alert=True)
+            else:
+                frappe.log_error(title="Franchise configuration messing Error", message=w_doc.as_dict())
+                frappe.msgprint("Error Log Generated", indicator='red', alert=True)
+        except Exception as e:
+            frappe.log_error(title="Franchise Invoice Creation Error", message=e)
+            frappe.msgprint("Error Log Generated", indicator='red', alert=True)
+

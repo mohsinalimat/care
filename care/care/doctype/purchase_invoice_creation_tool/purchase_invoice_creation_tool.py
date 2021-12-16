@@ -47,6 +47,7 @@ class PurchaseInvoiceCreationTool(Document):
 					pi.due_date = nowdate()
 					pi.company = self.company
 					pi.purchase_invoice_creation_tool = self.name
+					pi.purchase_request = self.purchase_request
 					pi.update_stock = 1
 					for d in data:
 						line = d.get('doc')
@@ -88,17 +89,6 @@ class PurchaseInvoiceCreationTool(Document):
 						else:
 							if self.ignore_un_order_item:
 								pass
-								# bonus_un_odr.append(frappe._dict({
-								# 	"item_code": item_code,
-								# 	"warehouse": self.c_b_warehouse,
-								# 	"qty": line.get('qty'),
-								# 	"is_free_item": 0,
-								# 	"rate": line.get('rate'),
-								# 	"discount_percentage": line.get("discount_percent"),
-								# 	"discount_amount": line.get("discount"),
-								# 	"uom": "Pack",
-								# 	"stock_Uom": "Nos",
-								# }))
 							else:
 								frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(item_code))
 
@@ -169,17 +159,6 @@ class PurchaseInvoiceCreationTool(Document):
 						else:
 							if self.ignore_un_order_item:
 								pass
-								# bonus_un_odr.append(frappe._dict({
-								# 	"item_code": item_code,
-								# 	"warehouse": self.c_b_warehouse,
-								# 	"qty": line.get('qty'),
-								# 	"is_free_item": 0,
-								# 	"rate": line.get('rate'),
-								# 	"discount_percentage": line.get("discount_percent"),
-								# 	"discount_amount": line.get("discount"),
-								# 	"uom": "Pack",
-								# 	"stock_Uom": "Nos",
-								# }))
 							else:
 								frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(item_code))
 
@@ -206,6 +185,7 @@ class PurchaseInvoiceCreationTool(Document):
 									pi.due_date = nowdate()
 									pi.company = self.company
 									pi.purchase_invoice_creation_tool = self.name
+									pi.purchase_request = self.purchase_request
 									pi.update_stock = 1
 									pi.set_warehouse = key
 									for d in item_details[key]['details']:
@@ -222,6 +202,7 @@ class PurchaseInvoiceCreationTool(Document):
 					pi.due_date = nowdate()
 					pi.company = self.company
 					pi.purchase_invoice_creation_tool = self.name
+					pi.purchase_request = self.purchase_request
 					pi.update_stock = 1
 					for b in bonus_un_odr:
 						margin_type = None

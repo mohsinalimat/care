@@ -100,6 +100,7 @@ class OrderReceiving(Document):
 								pi.due_date = nowdate()
 								pi.company = self.company
 								pi.order_receiving = self.name
+								pi.purchase_request = self.purchase_request
 								pi.update_stock = 1
 								pi.set_warehouse = key
 								for d in item_details[key]['details']:
