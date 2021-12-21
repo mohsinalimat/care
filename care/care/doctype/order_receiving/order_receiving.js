@@ -4,7 +4,7 @@
 frappe.ui.form.on('Order Receiving', {
 	setup: function(frm, cdt, cdn) {
 	    if (frm.doc.__islocal) {
-			frm.set_value("date", frappe.datetinow_date())
+			frm.set_value("date", frappe.datetime.now_date())
 		}
 		frm.set_value("buying_price_list", frappe.defaults.get_default('buying_price_list'))
 		frm.set_value("currency", frappe.defaults.get_default('Currency'))
@@ -33,7 +33,7 @@ frappe.ui.form.on('Order Receiving', {
 	},
 	refresh: function(frm){
 	    if (frm.doc.__islocal) {
-			frm.set_value("date", frappe.datetinow_date())
+			frm.set_value("date", frappe.datetime.now_date())
 		}
 		frm.trigger("apply_item_filter")
 	},
