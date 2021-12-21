@@ -72,6 +72,7 @@ frappe.ui.form.on('Purchase Invoice', {
                                 weight_per_unit: item.weight_per_unit,
                                 weight_uom: item.weight_uom,
                                 manufacturer: item.manufacturer,
+                                uom: item.uom,
                                 stock_uom: item.stock_uom,
                                 pos_profile: cint(frm.doc.is_pos) ? frm.doc.pos_profile : '',
                                 cost_center: item.cost_center,

@@ -67,21 +67,25 @@ frappe.ui.form.on('Order Receiving Item', {
         }
         else{
             if (row.item_code){
-                update_price_rate(frm, cdt, cdn)
-                frappe.call({
-                    method: "care.care.doctype.order_receiving.order_receiving.get_item_qty",
-                    args: {
-                        "purchase_request": frm.doc.purchase_request,
-                        "item": row.item_code,
-                        "supplier": frm.doc.supplier,
-                        "warehouse": frm.doc.warehouse
+                frappe.run_serially([
+                    ()=>update_price_rate(frm, cdt, cdn),
+                    ()=>{
+                        frappe.call({
+                            method: "care.care.doctype.order_receiving.order_receiving.get_item_qty",
+                            args: {
+                                "purchase_request": frm.doc.purchase_request,
+                                "item": row.item_code,
+                                "supplier": frm.doc.supplier,
+                                "warehouse": frm.doc.warehouse
+                            },
+                            callback: function(r) {
+                                frappe.model.set_value(cdt,cdn,"qty",r.message);
+                                refresh_field("qty", cdn, "items");
+                            }
+                        });
                     },
-                    callback: function(r) {
-                        frappe.model.set_value(cdt,cdn,"qty",r.message);
-                        refresh_field("qty", cdn, "items");
-                    }
-                });
-                apply_pricing_rule(row, frm, cdt, cdn);
+                    ()=>apply_pricing_rule(row, frm, cdt, cdn)
+                ])
             }
         }
     },
@@ -100,7 +104,6 @@ frappe.ui.form.on('Order Receiving Item', {
         frappe.model.set_value(cdt,cdn,"amount",amount);
         refresh_field("amount", cdn, "items");
         update_total_qty(frm, cdt, cdn)
-
 	},
 
 })
@@ -118,28 +121,44 @@ function update_total_qty(frm, cdt, cdn){
 
 function update_price_rate(frm, cdt, cdn){
     var item = locals[cdt][cdn];
-    frm.call({
-        method: "care.hook_events.purchase_invoice.get_price_list_rate_for",
+    frappe.call({
+        method: "erpnext.stock.get_item_details.get_conversion_factor",
         args: {
             item_code: item.item_code,
-            args: {
-                item_code: item.item_code,
-                supplier: frm.doc.supplier,
-                currency: frm.doc.currency,
-                price_list: frm.doc.buying_price_list,
-                price_list_currency: frm.doc.currency,
-                company: frm.doc.company,
-                transaction_date: frm.doc.date ,
-                doctype: frm.doc.doctype,
-                name: frm.doc.name,
-                qty: item.qty || 1,
-                child_docname: item.name
-            }
+            uom: item.uom
         },
         callback: function(r) {
-            frappe.model.set_value( cdt, cdn, 'rate',r.message)
+            if(!r.exc) {
+                var conversion_factor = r.message.conversion_factor
+                frappe.model.set_value(cdt,cdn,"conversion_factor",r.message.conversion_factor);
+                frm.call({
+                    method: "care.hook_events.purchase_invoice.get_price_list_rate_for",
+                    args: {
+                        item_code: item.item_code,
+                        args: {
+                            item_code: item.item_code,
+                            supplier: frm.doc.supplier,
+                            currency: frm.doc.currency,
+                            price_list: frm.doc.buying_price_list,
+                            price_list_currency: frm.doc.currency,
+                            company: frm.doc.company,
+                            transaction_date: frm.doc.date ,
+                            doctype: frm.doc.doctype,
+                            name: frm.doc.name,
+                            qty: item.qty || 1,
+                            child_docname: item.name,
+                            uom: item.uom,
+                            stock_uom: item.stock_uom,
+                            conversion_factor: conversion_factor
+                        }
+                    },
+                    callback: function(r) {
+                        frappe.model.set_value( cdt, cdn, 'rate',r.message)
+                    }
+                })
+            }
         }
-    })
+    });
 }
 
 
