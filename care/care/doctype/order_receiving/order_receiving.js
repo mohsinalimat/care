@@ -144,96 +144,96 @@ function update_price_rate(frm, cdt, cdn){
 
 
 function apply_pricing_rule(item, frm, cdt, cdn) {
-        var args = _get_args(item, frm, cdt, cdn);
-        return frm.call({
-            method: "erpnext.accounts.doctype.pricing_rule.pricing_rule.apply_pricing_rule",
-            args: {	args: args, doc: frm.doc },
-            callback: function(r) {
-                let data = r.message
-                if (data[0].margin_type == 'Percentage' && data[0].discount_percentage > 0){
-                    frappe.model.set_value( cdt, cdn, 'discount_percent', data[0].discount_percentage)
-                }
-                else{
-                    frappe.model.set_value( cdt, cdn, 'discount_percent', 0)
-                }
-                if (data[0].margin_type == 'Amount' && data[0].discount_amount > 0){
-                    frappe.model.set_value( cdt, cdn, 'discount', data[0].discount_amount)
-                }
-                else{
-                    frappe.model.set_value( cdt, cdn, 'discount', 0)
-                }
+    var args = _get_args(item, frm, cdt, cdn);
+    return frm.call({
+        method: "erpnext.accounts.doctype.pricing_rule.pricing_rule.apply_pricing_rule",
+        args: {	args: args, doc: frm.doc },
+        callback: function(r) {
+            let data = r.message
+            if (data[0].margin_type == 'Percentage' && data[0].discount_percentage > 0){
+                frappe.model.set_value( cdt, cdn, 'discount_percent', data[0].discount_percentage)
             }
-        });
-    }
+            else{
+                frappe.model.set_value( cdt, cdn, 'discount_percent', 0)
+            }
+            if (data[0].margin_type == 'Amount' && data[0].discount_amount > 0){
+                frappe.model.set_value( cdt, cdn, 'discount', data[0].discount_amount)
+            }
+            else{
+                frappe.model.set_value( cdt, cdn, 'discount', 0)
+            }
+        }
+    });
+}
 
  function _get_args(item, frm, cdt, cdn) {
-        return {
-            "items": _get_item_list(item),
-            "customer": frm.doc.customer || frm.doc.party_name,
-            "quotation_to": frm.doc.quotation_to,
-            "customer_group": frm.doc.customer_group,
-            "territory": frm.doc.territory,
-            "supplier": frm.doc.supplier,
-            "supplier_group": frm.doc.supplier_group,
-            "currency": frm.doc.currency,
-            "conversion_rate": frm.doc.conversion_rate,
-            "price_list": frm.doc.selling_price_list || frm.doc.buying_price_list,
-            "price_list_currency": frm.doc.price_list_currency,
-            "plc_conversion_rate": frm.doc.plc_conversion_rate,
-            "company": frm.doc.company,
-            "transaction_date": frm.doc.transaction_date || frm.doc.posting_date,
-            "campaign": frm.doc.campaign,
-            "sales_partner": frm.doc.sales_partner,
-            "ignore_pricing_rule": frm.doc.ignore_pricing_rule,
-            "doctype": frm.doc.doctype,
-            "name": frm.doc.name,
-            "is_return": cint(frm.doc.is_return),
-            "update_stock": in_list(['Sales Invoice', 'Purchase Invoice'], frm.doc.doctype) ? cint(frm.doc.update_stock) : 0,
-            "conversion_factor": frm.doc.conversion_factor,
-            "pos_profile": frm.doc.doctype == 'Sales Invoice' ? frm.doc.pos_profile : '',
-            "coupon_code": frm.doc.coupon_code
-        };
-    }
+    return {
+        "items": _get_item_list(item),
+        "customer": frm.doc.customer || frm.doc.party_name,
+        "quotation_to": frm.doc.quotation_to,
+        "customer_group": frm.doc.customer_group,
+        "territory": frm.doc.territory,
+        "supplier": frm.doc.supplier,
+        "supplier_group": frm.doc.supplier_group,
+        "currency": frm.doc.currency,
+        "conversion_rate": frm.doc.conversion_rate,
+        "price_list": frm.doc.selling_price_list || frm.doc.buying_price_list,
+        "price_list_currency": frm.doc.price_list_currency,
+        "plc_conversion_rate": frm.doc.plc_conversion_rate,
+        "company": frm.doc.company,
+        "transaction_date": frm.doc.transaction_date || frm.doc.posting_date,
+        "campaign": frm.doc.campaign,
+        "sales_partner": frm.doc.sales_partner,
+        "ignore_pricing_rule": frm.doc.ignore_pricing_rule,
+        "doctype": frm.doc.doctype,
+        "name": frm.doc.name,
+        "is_return": cint(frm.doc.is_return),
+        "update_stock": in_list(['Sales Invoice', 'Purchase Invoice'], frm.doc.doctype) ? cint(frm.doc.update_stock) : 0,
+        "conversion_factor": frm.doc.conversion_factor,
+        "pos_profile": frm.doc.doctype == 'Sales Invoice' ? frm.doc.pos_profile : '',
+        "coupon_code": frm.doc.coupon_code
+    };
+}
 
 function _get_item_list(item) {
-		var item_list = [];
-		var append_item = function(d) {
-			if (d.item_code) {
-				item_list.push({
-					"doctype": d.doctype,
-					"name": d.name,
-					"child_docname": d.name,
-					"item_code": d.item_code,
-					"item_group": d.item_group,
-					"brand": d.brand,
-					"qty": d.qty,
-					"stock_qty": d.stock_qty,
-					"uom": d.uom,
-					"stock_uom": d.stock_uom,
-					"parenttype": d.parenttype,
-					"parent": d.parent,
-					"pricing_rules": d.pricing_rules,
-					"warehouse": d.warehouse,
-					"serial_no": d.serial_no,
-					"batch_no": d.batch_no,
-					"price_list_rate": d.price_list_rate,
-					"conversion_factor": d.conversion_factor || 1.0
-				});
+    var item_list = [];
+    var append_item = function(d) {
+        if (d.item_code) {
+            item_list.push({
+                "doctype": d.doctype,
+                "name": d.name,
+                "child_docname": d.name,
+                "item_code": d.item_code,
+                "item_group": d.item_group,
+                "brand": d.brand,
+                "qty": d.qty,
+                "stock_qty": d.stock_qty,
+                "uom": d.uom,
+                "stock_uom": d.stock_uom,
+                "parenttype": d.parenttype,
+                "parent": d.parent,
+                "pricing_rules": d.pricing_rules,
+                "warehouse": d.warehouse,
+                "serial_no": d.serial_no,
+                "batch_no": d.batch_no,
+                "price_list_rate": d.price_list_rate,
+                "conversion_factor": d.conversion_factor || 1.0
+            });
 
-				// if doctype is Quotation Item / Sales Order Iten then add Margin Type and rate in item_list
-				if (in_list(["Quotation Item", "Sales Order Item", "Delivery Note Item", "Sales Invoice Item",  "Purchase Invoice Item", "Purchase Order Item", "Purchase Receipt Item"]), d.doctype) {
-					item_list[0]["margin_type"] = d.margin_type;
-					item_list[0]["margin_rate_or_amount"] = d.margin_rate_or_amount;
-				}
-			}
-		};
+            // if doctype is Quotation Item / Sales Order Iten then add Margin Type and rate in item_list
+            if (in_list(["Quotation Item", "Sales Order Item", "Delivery Note Item", "Sales Invoice Item",  "Purchase Invoice Item", "Purchase Order Item", "Purchase Receipt Item"]), d.doctype) {
+                item_list[0]["margin_type"] = d.margin_type;
+                item_list[0]["margin_rate_or_amount"] = d.margin_rate_or_amount;
+            }
+        }
+    };
 
-		if (item) {
-			append_item(item);
-		} else {
-			$.each(this.frm.doc["items"] || [], function(i, d) {
-				append_item(d);
-			});
-		}
-		return item_list;
-	}
+    if (item) {
+        append_item(item);
+    } else {
+        $.each(this.frm.doc["items"] || [], function(i, d) {
+            append_item(d);
+        });
+    }
+    return item_list;
+}
