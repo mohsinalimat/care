@@ -34,13 +34,15 @@
    "in_list_view": 1,
    "label": "Item Code",
    "options": "Item",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fetch_from": "item_code.item_name",
    "fieldname": "item_name",
    "fieldtype": "Read Only",
-   "label": "Item Name"
+   "label": "Item Name",
+   "search_index": 1
   },
   {
    "fetch_from": "item_code.stock_uom",
@@ -87,7 +89,8 @@
    "in_list_view": 1,
    "label": "Supplier",
    "options": "Supplier",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "columns": 2,
@@ -96,7 +99,8 @@
    "in_list_view": 1,
    "label": "Warehouse",
    "options": "Warehouse",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "collapsible": 1,
@@ -172,7 +176,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2021-11-15 15:06:27.807319",
+ "modified": "2021-12-21 10:38:20.841028",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Request Item",

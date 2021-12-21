@@ -136,3 +136,23 @@ def get_item_code(doctype, txt, searchfield, start, page_len, filters):
 		return result
 	else:
 		return (" ", )
+
+
+@frappe.whitelist()
+def get_item_qty(purchase_request, item, supplier, warehouse=None):
+	if purchase_request and supplier and item:
+		if warehouse:
+			qty = float(frappe.db.sql("""select sum(pack_order_qty) from `tabPurchase Request Item` 
+							where item_code = '{0}' 
+							and parent = '{1}' 
+							and supplier = '{2}' 
+							and warehouse = '{3}'""".format(item, purchase_request, supplier, warehouse))[0][0] or 0)
+			return qty
+		else:
+			qty = float(frappe.db.sql("""select sum(pack_order_qty) from `tabPurchase Request Item` 
+							where item_code = '{0}' 
+							and parent = '{1}' 
+							and supplier = '{2}'""".format(item, purchase_request, supplier))[0][0] or 0)
+			return qty
+	else:
+		return 0
