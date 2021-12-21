@@ -74,6 +74,7 @@ class MaterialDemand(Document):
 
 	@frappe.whitelist()
 	def make_purchase_invoice(self):
+		is_franchise = frappe.get_value("Warehouse", {'name': self.warehouse}, "is_franchise")
 		pi = frappe.new_doc("Purchase Invoice")
 		pi.supplier = self.supplier
 		pi.company = self.company
@@ -82,6 +83,7 @@ class MaterialDemand(Document):
 		pi.set_warehouse = self.warehouse
 		pi.purchase_request = self.purchase_request
 		pi.set_posting_time = 1
+		pi.update_stock = 1 if not is_franchise else 0
 		cost_center = None
 		for line in self.items:
 			remain_qty = line.qty - line.received_qty

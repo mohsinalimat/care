@@ -152,37 +152,39 @@ def un_check_franchise_inv_generated(doc, method):
 def create_franchise_purchase_invoice(doc, method):
     import requests
     if doc.purchase_request and doc.set_warehouse and not doc.franchise_inv_generated:
-        try:
-            w_doc = frappe.get_doc("Warehouse", doc.set_warehouse)
-            if w_doc.is_franchise:
-                if w_doc.url and w_doc.api_key and w_doc.api_secret:
-                    data = {
-                        "name": doc.name,
-                        "supplier": doc.supplier,
-                        "posting_date": str(doc.posting_date),
-                        "due_date": str(doc.due_date),
-                        "company": doc.company,
-                        "update_stock": doc.update_stock,
-                        "set_warehouse": doc.set_warehouse,
-                        "items": []
-                    }
-                    itm_lst = data['items']
-                    for res in doc.items:
-                        itm_lst.append({
-                                "item_code": res.item_code,
-                                "warehouse": res.warehouse,
-                                "qty": res.qty,
-                                "received_qty": res.qty,
-                                "rate": res.rate,
-                                "expense_account": res.expense_account,
-                                "cost_center": res.cost_center,
-                                "uom": res.uom,
-                                "stock_Uom": res.stock_uom,
-                                "margin_type": res.margin_type,
-                                "discount_percentage": res.discount_percentage,
-                                "discount_amount": res.discount_amount
-                            })
+        w_doc = frappe.get_doc("Warehouse", doc.set_warehouse)
+        if w_doc.is_franchise:
+            if not w_doc.company_name:
+                frappe.throw("Please set company name in franchise Warehouse.")
 
+            if w_doc.url and w_doc.api_key and w_doc.api_secret:
+                data = {
+                    "name": doc.name,
+                    "supplier": doc.supplier,
+                    "posting_date": str(doc.posting_date),
+                    "due_date": str(doc.due_date),
+                    "company": w_doc.company_name,
+                    "update_stock": 1,
+                    "set_warehouse": doc.set_warehouse,
+                    "items": []
+                }
+                itm_lst = data['items']
+                for res in doc.items:
+                    itm_lst.append({
+                            "item_code": res.item_code,
+                            "warehouse": res.warehouse,
+                            "qty": res.qty,
+                            "received_qty": res.qty,
+                            "rate": res.rate,
+                            "expense_account": res.expense_account,
+                            "cost_center": res.cost_center,
+                            "uom": res.uom,
+                            "stock_Uom": res.stock_uom,
+                            "margin_type": res.margin_type,
+                            "discount_percentage": res.discount_percentage,
+                            "discount_amount": res.discount_amount
+                        })
+                try:
                     url = str(w_doc.url) + "/api/resource/Purchase Invoice"
                     api_key = w_doc.api_key
                     api_secret = w_doc.api_secret
@@ -199,10 +201,13 @@ def create_franchise_purchase_invoice(doc, method):
                     else:
                         frappe.log_error(title="Franchise Invoice Creation Error", message=response.json())
                         frappe.msgprint("Error Log Generated", indicator='red', alert=True)
+
+                except Exception as e:
+                    frappe.log_error(title="Franchise Invoice Creation Error", message=e)
+                    frappe.msgprint("Error Log Generated", indicator='red', alert=True)
+
             else:
                 frappe.log_error(title="Franchise configuration messing Error", message=w_doc.as_dict())
                 frappe.msgprint("Error Log Generated", indicator='red', alert=True)
-        except Exception as e:
-            frappe.log_error(title="Franchise Invoice Creation Error", message=e)
-            frappe.msgprint("Error Log Generated", indicator='red', alert=True)
+
 

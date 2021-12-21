@@ -31,13 +31,15 @@ class OrderReceiving(Document):
 			m_list.append(res.name)
 		if self.items:
 			if self.warehouse:
+				is_franchise = frappe.get_value("Warehouse", {'name': self.warehouse}, "is_franchise")
 				pi = frappe.new_doc("Purchase Invoice")
 				pi.supplier = self.supplier
 				pi.posting_date = nowdate()
 				pi.due_date = nowdate()
 				pi.company = self.company
 				pi.order_receiving = self.name
-				pi.update_stock = 1
+				pi.update_stock = 1 if not is_franchise else 0
+				pi.set_warehouse = self.warehouse
 				for d in self.items:
 					md_item = frappe.get_value("Material Demand Item", {'item_code': d.get('item_code'), 'parent': ['in', m_list], "warehouse": self.warehouse}, "name")
 					if md_item:
@@ -107,6 +109,7 @@ class OrderReceiving(Document):
 					if item_details:
 						for key in item_details.keys():
 							try:
+								is_franchise = frappe.get_value("Warehouse", {'name': key}, "is_franchise")
 								pi = frappe.new_doc("Purchase Invoice")
 								pi.supplier = self.supplier
 								pi.posting_date = nowdate()
@@ -114,7 +117,7 @@ class OrderReceiving(Document):
 								pi.company = self.company
 								pi.order_receiving = self.name
 								pi.purchase_request = self.purchase_request
-								pi.update_stock = 1
+								pi.update_stock = 1 if not is_franchise else 0
 								pi.set_warehouse = key
 								for d in item_details[key]['details']:
 									pi.append("items", d)

@@ -227,18 +227,27 @@ class PurchaseRequest(Document):
 		if self.items:
 			item_details = {}
 			for res in self.items:
-				key = (res.supplier)
+				is_franchise = frappe.get_value("Warehouse", {'name': res.warehouse}, "is_franchise")
+				key = ''
+				if is_franchise:
+					key = (res.supplier, res.warehouse)
+				else:
+					key = (res.supplier, "common")
 				item_details.setdefault(key, {"details": []})
 				fifo_queue = item_details[key]["details"]
 				fifo_queue.append(res)
+
 			if item_details:
 				for key in item_details.keys():
 					po = frappe.new_doc("Purchase Order")
-					po.supplier = key
+					po.supplier = key[0]
 					po.company = self.company
 					po.transaction_date = self.date
 					po.schedule_date = self.required_by
 					po.purchase_request = self.name
+					if frappe.db.exists('Warehouse', key[1]):
+						po.set_warehouse = key[1]
+
 					for d in item_details[key]['details']:
 						item = frappe.get_doc("Item", d.item_code)
 						po.append("items", {
