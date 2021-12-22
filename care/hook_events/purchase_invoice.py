@@ -176,8 +176,6 @@ def create_franchise_purchase_invoice(doc, method):
                             "qty": res.qty,
                             "received_qty": res.qty,
                             "rate": res.rate,
-                            "expense_account": res.expense_account,
-                            "cost_center": res.cost_center,
                             "uom": res.uom,
                             "stock_Uom": res.stock_uom,
                             "margin_type": res.margin_type,
