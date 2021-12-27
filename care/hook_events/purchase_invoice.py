@@ -131,7 +131,7 @@ def get_price_list_rate_for(item_code, args):
             return item_price_data[0][1]
 
 def validate_price_and_rate(doc, method):
-    if doc.items:
+    if doc.items and not doc.update_buying_price:
         for res in doc.items:
             if res.price_list_rate - 1 <= res.rate <= res.price_list_rate + 1:
                 pass
@@ -209,3 +209,18 @@ def create_franchise_purchase_invoice(doc, method):
                 frappe.msgprint("Error Log Generated", indicator='red', alert=True)
 
 
+def updated_price_list(doc, method):
+    if doc.update_buying_price or doc.update_selling_price:
+        for res in doc.items:
+            if doc.update_buying_price and res.rate != res.price_list_rate:
+                buying_price_list = frappe.get_value("Item Price", {'item_code': res.item_code, 'price_list': doc.buying_price_list,'buying': 1}, ['name'])
+                if buying_price_list:
+                    item_price = frappe.get_doc("Item Price", buying_price_list)
+                    item_price.price_list_rate = res.rate / res.conversion_factor
+                    item_price.save(ignore_permissions=True)
+            if doc.update_selling_price and res.selling_price_list_rate != res.base_selling_price_list_rate:
+                selling_price_list = frappe.get_value("Item Price", {'item_code': res.item_code, 'price_list': doc.base_selling_price_list, 'selling': 1}, ['name'])
+                if selling_price_list:
+                    item_price = frappe.get_doc("Item Price", selling_price_list)
+                    item_price.price_list_rate = res.selling_price_list_rate / res.conversion_factor
+                    item_price.save(ignore_permissions=True)
