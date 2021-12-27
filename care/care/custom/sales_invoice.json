@@ -99,7 +99,7 @@
    "modified": "2021-12-27 16:59:45.673010",
    "modified_by": "Administrator",
    "name": "Sales Invoice-item_amendment",
-   "no_copy": 0,
+   "no_copy": 1,
    "non_negative": 0,
    "options": "Invoice Item Amendment Summary",
    "owner": "Administrator",
