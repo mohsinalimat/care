@@ -112,9 +112,9 @@ doc_events = {
                           "care.hook_events.purchase_invoice.validate_price_and_rate"],
         "before_insert": "care.hook_events.purchase_invoice.un_check_franchise_inv_generated"
     },
-    # "Sales Invoice": {
-    #     "before_submit": ["care.hook_events.purchase_invoice.validate_cost_center"]
-    # },
+    "Sales Invoice": {
+        "validate": ["care.hook_events.sales_invoice.updated_item_amendment_summary"]
+    },
     "Payment Entry": {
         "validate": ["care.hook_events.payment_entry.set_out_grand_total"]
     }
