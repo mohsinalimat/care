@@ -62,6 +62,7 @@ frappe.ui.form.on('Order Receiving Item', {
     item_code: function(frm, cdt, cdn){
         var row = locals[cdt][cdn];
         if(!frm.doc.purchase_request || !frm.doc.supplier){
+            frm.fields_dict["items"].grid.grid_rows[row.idx - 1].remove();
             frappe.msgprint(__("Select supplier first."))
         }
         else{
