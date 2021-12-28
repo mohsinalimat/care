@@ -2,6 +2,11 @@
 frappe.ui.form.on('Stock Entry', {
     set_expense_account: function(frm, cdt, cdn) {
        set_warehouse_in_children(frm.doc.items, "expense_account", frm.doc.set_expense_account);
+	},
+	stock_entry_type: function (frm){
+    	if(frm.doc.stock_entry_type != "Material Issue"){
+    		frm.set_value( 'is_material_return', 0)
+		}
 	}
 });
 
