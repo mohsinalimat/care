@@ -1,5 +1,5 @@
 import frappe
-from frappe.utils import nowdate
+from frappe.utils import nowdate, now
 
 def updated_item_amendment_summary(doc, method):
     for res in doc.items:
@@ -8,7 +8,7 @@ def updated_item_amendment_summary(doc, method):
                 {'item_code': res.item_code,
                     'item_name': res.item_name,
                     'qty': res.qty,
-                    'amend_date': nowdate(),
+                    'amend_date': now(),
                     'amend_by': frappe.session.user
                 }
             )

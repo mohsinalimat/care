@@ -34,6 +34,7 @@ app_include_js = "/assets/care/js/data_import_tools1.min.js"
 doctype_js = {
     "Payment Entry": "public/js/payment_entry.js",
     "Purchase Invoice": "public/js/purchase_invoice.js",
+    "Stock Entry": "public/js/stock_entry.js"
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -117,6 +118,9 @@ doc_events = {
     },
     "Payment Entry": {
         "validate": ["care.hook_events.payment_entry.set_out_grand_total"]
+    },
+    "Stock Entry": {
+        "on_submit": ["care.hook_events.stock_entry.make_journal_entry"]
     }
 }
 
