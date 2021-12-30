@@ -6,3 +6,9 @@ frappe.ui.form.on('Item Expiry', {
 
 	// }
 });
+
+frappe.ui.form.on('Item Expiry Child', {
+	item_code: function (frm,cdt,cdn){
+	    frappe.model.set_value( cdt, cdn, 'add_date',frappe.datetime.now_datetime())
+    }
+});

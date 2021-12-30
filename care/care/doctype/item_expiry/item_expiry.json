@@ -1,13 +1,14 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2021-12-24 12:44:21.079315",
+ "autoname": "field:title",
+ "creation": "2021-12-30 12:29:42.431979",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "title",
   "section_break_1",
-  "is_enabled",
   "items_expiry_section",
   "item_expiries"
  ],
@@ -17,31 +18,30 @@
    "fieldtype": "Section Break"
   },
   {
-   "default": "0",
-   "fieldname": "is_enabled",
-   "fieldtype": "Check",
-   "label": "Is Enabled"
+   "default": "ItemExpiry",
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title",
+   "read_only": 1,
+   "unique": 1
   },
   {
-   "depends_on": "is_enabled",
    "fieldname": "items_expiry_section",
    "fieldtype": "Section Break",
    "label": "Items Expiry"
   },
   {
-   "depends_on": "is_enabled",
    "fieldname": "item_expiries",
    "fieldtype": "Table",
    "label": "Item Expiries",
-   "mandatory_depends_on": "is_enabled",
    "options": "Item Expiry Child"
   }
  ],
  "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
- "issingle": 1,
  "links": [],
- "modified": "2021-12-27 16:03:12.806758",
+ "modified": "2021-12-30 12:31:35.429370",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Item Expiry",
