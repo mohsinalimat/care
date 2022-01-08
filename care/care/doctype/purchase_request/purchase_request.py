@@ -10,6 +10,7 @@ from erpnext.stock.get_item_details import get_conversion_factor
 from erpnext.stock.doctype.item.item import get_item_defaults
 from erpnext.setup.doctype.item_group.item_group import get_item_group_defaults
 from erpnext.setup.doctype.brand.brand import get_brand_defaults
+from care.hook_events.make_xlsx_file import build_xlsx_response
 
 class PurchaseRequest(Document):
 
@@ -269,6 +270,9 @@ class PurchaseRequest(Document):
 
 			self.status = "Order Created"
 			self.db_update()
+
+
+
 def get_default_expense_account(item, item_group, brand):
 	return (item.get("expense_account")
 		or item_group.get("expense_account")
@@ -309,3 +313,8 @@ def get_default_cost_center(args, item=None, item_group=None, brand=None, compan
 			company, "cost_center")
 
 	return cost_center
+
+@frappe.whitelist()
+def download_excel(purchase_request=None):
+	if purchase_request:
+		build_xlsx_response(purchase_request)

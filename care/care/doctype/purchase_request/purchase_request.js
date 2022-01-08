@@ -48,6 +48,16 @@ frappe.ui.form.on('Purchase Request', {
                     }
                 });
             }).addClass("btn-primary");
+        }
+        if(frm.doc.docstatus !=0){
+             frm.add_custom_button(__('Download Excel'), function(){
+                open_url_post(
+					'/api/method/care.care.doctype.purchase_request.purchase_request.download_excel',
+					{
+						purchase_request: frm.doc.name
+					}
+				);
+            });
          }
 	},
 	get_items: function(frm){

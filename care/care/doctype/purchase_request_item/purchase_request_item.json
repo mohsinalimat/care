@@ -114,8 +114,7 @@
    "fieldtype": "Link",
    "label": "Brand",
    "options": "Brand",
-   "read_only": 1,
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fetch_from": "item_code.description",
@@ -176,7 +175,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2021-12-21 10:38:20.841028",
+ "modified": "2022-01-08 16:20:00.077913",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Request Item",
