@@ -12,10 +12,14 @@ from care.utils.xlsxutils import handle_html
 
 ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]')
 
-columns_heading = ["Item Code", "Item Name", "Required By", "Description", "Item Group", "Brand",
-               "Quantity", "Stock UOM", "Target Warehouse", "UOM", "UOM Conversion Factor",
-               "Stock Qty", "Actual Qty", "Completed Qty", "Received Qty", "Rate", "Amount",
-               "Project", "Cost Center", "Expense Account"]
+# columns_heading = ["Item Code", "Item Name", "Required By", "Description", "Item Group", "Brand",
+#                "Quantity", "Stock UOM", "Target Warehouse", "UOM", "UOM Conversion Factor",
+#                "Stock Qty", "Actual Qty", "Completed Qty", "Received Qty", "Rate", "Amount",
+#                "Project", "Cost Center", "Expense Account"]
+
+columns_heading = ["Item Code", "Item Name", "Quantity", "Target Warehouse"]
+
+
 
 @frappe.whitelist()
 def make_xlsx(material_demand_lst, wb=None, column_widths=None):
@@ -35,10 +39,14 @@ def make_xlsx(material_demand_lst, wb=None, column_widths=None):
         row1 = ws.row_dimensions[1]
         row1.font = Font(name='Calibri', bold=True)
 
-        data = frappe.db.sql("""select item_code, item_name, schedule_date, description, item_group,brand, 
-                qty, stock_uom, warehouse, uom, conversion_factor, 
-                stock_qty, actual_qty, ordered_qty, received_qty, rate, amount,
-                project, cost_center, expense_account
+        # data = frappe.db.sql("""select item_code, item_name, schedule_date, description, item_group,brand,
+        #         qty, stock_uom, warehouse, uom, conversion_factor,
+        #         stock_qty, actual_qty, ordered_qty, received_qty, rate, amount,
+        #         project, cost_center, expense_account
+        #         from `tabMaterial Demand Item`
+        #         where parent = '{0}'""".format(res), as_list=True)
+        #
+        data = frappe.db.sql("""select item_code, item_name, qty, warehouse
                 from `tabMaterial Demand Item` 
                 where parent = '{0}'""".format(res), as_list=True)
 

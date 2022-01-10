@@ -13,7 +13,7 @@ frappe.listview_settings['Material Demand'] = {
         }
 	},
 	onload: function(list_view) {
-	   const action = () => {
+	    const action = () => {
             const selected_docs = list_view.get_checked_items();
             const docnames = list_view.get_checked_items(true);
             open_url_post(
@@ -23,7 +23,6 @@ frappe.listview_settings['Material Demand'] = {
                 }
             );
         };
-
 	    list_view.page.add_actions_menu_item(__('Export Excel'), action, false);
 	}
 };
