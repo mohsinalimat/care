@@ -11,5 +11,19 @@ frappe.listview_settings['Material Demand'] = {
         }else if (flt(doc.per_received, precision) == 100) {
             return [__("Received"), "green"];
         }
+	},
+	onload: function(list_view) {
+	   const action = () => {
+            const selected_docs = list_view.get_checked_items();
+            const docnames = list_view.get_checked_items(true);
+            open_url_post(
+                '/api/method/care.hook_events.make_xlsx_file.build_xlsx_response',
+                {
+                    material_demand_lst: docnames
+                }
+            );
+        };
+
+	    list_view.page.add_actions_menu_item(__('Export Excel'), action, false);
 	}
 };

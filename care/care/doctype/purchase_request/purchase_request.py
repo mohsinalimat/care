@@ -10,7 +10,7 @@ from erpnext.stock.get_item_details import get_conversion_factor
 from erpnext.stock.doctype.item.item import get_item_defaults
 from erpnext.setup.doctype.item_group.item_group import get_item_group_defaults
 from erpnext.setup.doctype.brand.brand import get_brand_defaults
-from care.hook_events.make_xlsx_file import build_xlsx_response
+from care.hook_events.make_xlsx_file import make_xlsx
 
 class PurchaseRequest(Document):
 
@@ -317,4 +317,13 @@ def get_default_cost_center(args, item=None, item_group=None, brand=None, compan
 @frappe.whitelist()
 def download_excel(purchase_request=None):
 	if purchase_request:
-		build_xlsx_response(purchase_request)
+		m_demands = frappe.db.sql("""select name  
+					from `tabMaterial Demand` 
+					where purchase_request ='{0}'""".format(purchase_request), as_list=True)
+		lst = []
+		for l in m_demands:
+			lst.append(l[0])
+		xlsx_file = make_xlsx(lst)
+		frappe.response['filename'] = str(purchase_request) + '.xlsx'
+		frappe.response['filecontent'] = xlsx_file.getvalue()
+		frappe.response['type'] = 'binary'

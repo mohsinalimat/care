@@ -1,3 +1,5 @@
+import json
+
 import frappe
 import re
 from io import BytesIO
@@ -15,17 +17,15 @@ columns_heading = ["Item Code", "Item Name", "Required By", "Description", "Item
                "Stock Qty", "Actual Qty", "Completed Qty", "Received Qty", "Rate", "Amount",
                "Project", "Cost Center", "Expense Account"]
 
-def make_xlsx(purchase_request, wb=None, column_widths=None):
+@frappe.whitelist()
+def make_xlsx(material_demand_lst, wb=None, column_widths=None):
     column_widths = column_widths or []
     if wb is None:
         wb = openpyxl.Workbook(write_only=True)
 
-    m_demand = frappe.db.sql("""select name, supplier, warehouse 
-                    from `tabMaterial Demand` 
-                    where purchase_request ='{0}'""".format(purchase_request),as_dict=True)
     number = 0
-    for res in m_demand:
-        sheet_name = str(res.warehouse) + "-" + str(res.supplier)
+    for res in material_demand_lst:
+        sheet_name = str(res)
         ws = wb.create_sheet(sheet_name, number)
 
         for i, column_width in enumerate(column_widths):
@@ -40,7 +40,7 @@ def make_xlsx(purchase_request, wb=None, column_widths=None):
                 stock_qty, actual_qty, ordered_qty, received_qty, rate, amount,
                 project, cost_center, expense_account
                 from `tabMaterial Demand Item` 
-                where parent = '{0}'""".format(res.name), as_list=True)
+                where parent = '{0}'""".format(res), as_list=True)
 
         ws.append(columns_heading)
         for row in data:
@@ -66,9 +66,11 @@ def make_xlsx(purchase_request, wb=None, column_widths=None):
     return xlsx_file
 
 
-def build_xlsx_response(purchase_request):
-    xlsx_file = make_xlsx(purchase_request)
-    # # write out response as a xlsx type
-    frappe.response['filename'] = purchase_request + '.xlsx'
-    frappe.response['filecontent'] = xlsx_file.getvalue()
-    frappe.response['type'] = 'binary'
+@frappe.whitelist()
+def build_xlsx_response(material_demand_lst):
+    if material_demand_lst:
+        m_lst = json.loads(str(material_demand_lst))
+        xlsx_file = make_xlsx(m_lst)
+        frappe.response['filename'] = 'Material Demands.xlsx'
+        frappe.response['filecontent'] = xlsx_file.getvalue()
+        frappe.response['type'] = 'binary'
