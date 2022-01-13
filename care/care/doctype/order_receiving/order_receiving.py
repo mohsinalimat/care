@@ -32,6 +32,7 @@ class OrderReceiving(Document):
 		if self.items:
 			if self.warehouse:
 				is_franchise = frappe.get_value("Warehouse", {'name': self.warehouse}, "is_franchise")
+				cost_center = frappe.get_value("Warehouse", {'name': self.warehouse}, "cost_center")
 				pi = frappe.new_doc("Purchase Invoice")
 				pi.supplier = self.supplier
 				pi.posting_date = nowdate()
@@ -40,6 +41,7 @@ class OrderReceiving(Document):
 				pi.order_receiving = self.name
 				pi.update_stock = 1 if not is_franchise else 0
 				pi.set_warehouse = self.warehouse
+				pi.cost_center = cost_center
 				for d in self.items:
 					md_item = frappe.get_value("Material Demand Item", {'item_code': d.get('item_code'), 'parent': ['in', m_list], "warehouse": self.warehouse}, "name")
 					if md_item:
@@ -110,6 +112,7 @@ class OrderReceiving(Document):
 						for key in item_details.keys():
 							try:
 								is_franchise = frappe.get_value("Warehouse", {'name': key}, "is_franchise")
+								cost_center = frappe.get_value("Warehouse", {'name': key}, "cost_center")
 								pi = frappe.new_doc("Purchase Invoice")
 								pi.supplier = self.supplier
 								pi.posting_date = nowdate()
@@ -119,6 +122,7 @@ class OrderReceiving(Document):
 								pi.purchase_request = self.purchase_request
 								pi.update_stock = 1 if not is_franchise else 0
 								pi.set_warehouse = key
+								pi.cost_center = cost_center
 								for d in item_details[key]['details']:
 									pi.append("items", d)
 								if pi.get('items'):

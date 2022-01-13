@@ -42,6 +42,7 @@ class PurchaseInvoiceCreationTool(Document):
 				bonus_un_odr = []
 				if self.warehouse:
 					is_franchise = frappe.get_value("Warehouse", {'name': self.warehouse}, "is_franchise")
+					cost_center = frappe.get_value("Warehouse", {'name': self.warehouse}, "cost_center")
 					pi = frappe.new_doc("Purchase Invoice")
 					pi.supplier = self.supplier
 					pi.posting_date = nowdate()
@@ -49,6 +50,7 @@ class PurchaseInvoiceCreationTool(Document):
 					pi.company = self.company
 					pi.purchase_invoice_creation_tool = self.name
 					pi.purchase_request = self.purchase_request
+					pi.cost_center = cost_center
 					pi.update_stock = 1 if not is_franchise else 0
 					for d in data:
 						line = d.get('doc')
@@ -180,11 +182,13 @@ class PurchaseInvoiceCreationTool(Document):
 						if item_details:
 							for key in item_details.keys():
 								try:
-									is_franchise = frappe.get_value("Warehouse", {'name': key},"is_franchise")
+									is_franchise = frappe.get_value("Warehouse", {'name': key}, "is_franchise")
+									cost_center = frappe.get_value("Warehouse", {'name': key}, "cost_center")
 									pi = frappe.new_doc("Purchase Invoice")
 									pi.supplier = self.supplier
 									pi.posting_date = nowdate()
 									pi.due_date = nowdate()
+									pi.cost_center = cost_center
 									pi.company = self.company
 									pi.purchase_invoice_creation_tool = self.name
 									pi.purchase_request = self.purchase_request
