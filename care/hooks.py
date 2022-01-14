@@ -116,10 +116,12 @@ doc_events = {
     "Sales Invoice": {
         "validate": ["care.hook_events.sales_invoice.updated_item_amendment_summary",
                      "care.hook_events.sales_invoice.apply_additional_discount"],
-        "before_insert": "care.hook_events.sales_invoice.disable_rounded_total"
+        "before_insert": "care.hook_events.sales_invoice.disable_rounded_total",
+        "before_submit": ["care.hook_events.sales_invoice.validate_cost_center"]
     },
     "Payment Entry": {
-        "validate": ["care.hook_events.payment_entry.set_out_grand_total"]
+        "validate": ["care.hook_events.payment_entry.set_out_grand_total"],
+        "before_submit": ["care.hook_events.purchase_invoice.validate_cost_center"]
     },
     "Stock Entry": {
         "on_submit": ["care.hook_events.stock_entry.make_journal_entry"]

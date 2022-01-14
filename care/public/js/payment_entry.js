@@ -43,6 +43,26 @@ frappe.ui.form.on('Payment Entry Reference', {
         });
         frm.set_value('grand_total', grand_total);
         frm.set_value('total_outstanding', out_total);
+    },
+    outstanding_amount: function(frm, cdt, cdn){
+        let grand_total = 0
+        let out_total = 0
+        $.each(frm.doc['references'] || [], function(i, row) {
+            grand_total += row.total_amount
+            out_total += row.outstanding_amount
+        });
+        frm.set_value('grand_total', grand_total);
+        frm.set_value('total_outstanding', out_total);
+    },
+    total_amount: function(frm, cdt, cdn){
+        let grand_total = 0
+        let out_total = 0
+        $.each(frm.doc['references'] || [], function(i, row) {
+            grand_total += row.total_amount
+            out_total += row.outstanding_amount
+        });
+        frm.set_value('grand_total', grand_total);
+        frm.set_value('total_outstanding', out_total);
     }
 })
 

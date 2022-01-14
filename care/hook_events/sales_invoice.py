@@ -1,4 +1,5 @@
 import frappe
+from frappe import _
 from frappe.utils import nowdate, now
 from care.hook_events.util import round_amount_by_2p5_diff
 
@@ -20,3 +21,7 @@ def apply_additional_discount(doc, method):
 
 def disable_rounded_total(doc, method):
     doc.disable_rounded_total = 1
+
+def validate_cost_center(doc, method):
+    if not doc.cost_center:
+        frappe.throw(_("Cost center is Mandatory in Accounting dimensions"))

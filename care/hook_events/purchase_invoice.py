@@ -79,7 +79,6 @@ def validate_cost_center(doc, method):
     if not doc.cost_center:
         frappe.throw(_("Cost center is Mandatory in Accounting dimensions"))
 
-
 @frappe.whitelist()
 def get_price_list_rate_for(item_code, args):
     """
