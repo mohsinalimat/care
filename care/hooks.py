@@ -145,7 +145,9 @@ scheduler_events = {
 # ------------------------------
 #
 override_whitelisted_methods = {
-	"erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry.get_pos_invoices": "care.hook_events.override_pos_closing.get_pos_invoices"
+    "erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry.get_pos_invoices": "care.hook_events.override_pos_closing.get_pos_invoices",
+    "erpnext.accounts.doctype.payment_entry.payment_entry.get_reference_details": "care.hook_events.payment_entry.get_reference_details",
+    "erpnext.accounts.doctype.payment_entry.payment_entry.get_outstanding_reference_documents": "care.hook_events.payment_entry.get_outstanding_reference_documents"
 }
 #
 # each overriding function accepts a `data` argument;
