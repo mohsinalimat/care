@@ -4,7 +4,11 @@ import frappe
 def round_amount_by_2p5_diff(amount=0.0):
     a = round(float(amount), 2)
     x = str(a).split(".")
-    amt = float(x[0][-1]) + (float(x[1]) / 100)
+    point_val = float(x[1])
+    if len(x[1]) == 1:
+        point_val = float(x[1]) * 10
+
+    amt = float(x[0][-1]) + (float(point_val) / 100)
     round_amt = 0
     if 0 < amt < 5:
         if amt >= 2.5:
