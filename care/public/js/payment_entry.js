@@ -9,6 +9,24 @@ frappe.ui.form.on('Payment Entry', {
             () => frm.trigger('set_cost_center')
         ])
     },
+    mode_of_payment: function(frm){
+        if(frm.doc.mode_of_payment && !frm.doc.cost_center) {
+            frappe.call({
+				method: "frappe.client.get",
+				args: {
+					doctype: "Mode of Payment",
+					filters: { "name": frm.doc.mode_of_payment }
+				},
+				callback: function (r) {
+				    r.message.accounts.forEach((d) => {
+				        if (frm.doc.company == d.company){
+				            frm.set_value("cost_center", d.cost_center)
+				        }
+				    })
+				}
+			})
+		}
+    },
     set_cost_center: function(frm){
         if(frm.doc.references){
             let grand_total = 0
