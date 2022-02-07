@@ -93,7 +93,7 @@ def get_data(filters):
 	query += """ ) as foo 
 		where foo.cost_center is not null 
 		group by foo.supplier, foo.supplier_name, foo.cost_center 
-		order by foo.cost_center """
+		order by foo.cost_center, foo.supplier"""
 
 	result = frappe.db.sql(query, as_dict=True)
 	return result
