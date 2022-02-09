@@ -86,9 +86,9 @@ frappe.ui.form.on('Purchase Invoice Creation Tool', {
             freeze: true,
             callback: function(r) {
                 if( r.message){
-                    frm.set_value("status", "Invoice Created")
-                    refresh_field("status");
-                    frm.save();
+//                    frm.set_value("status", "Invoice Created")
+//                    refresh_field("status");
+//                    frm.save();
                     frappe.set_route("List", "Purchase Invoice", {
                         purchase_invoice_creation_tool: frm.doc.name,
                     })

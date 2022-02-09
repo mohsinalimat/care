@@ -38,7 +38,7 @@ class PurchaseInvoiceCreationTool(Document):
 				m_list = []
 				for res in material_demand:
 					m_list.append(res.name)
-
+				count = 0
 				bonus_un_odr = []
 				if self.warehouse:
 					is_franchise = frappe.get_value("Warehouse", {'name': self.warehouse}, "is_franchise")
@@ -110,6 +110,7 @@ class PurchaseInvoiceCreationTool(Document):
 					if pi.get('items'):
 						pi.set_missing_values()
 						pi.insert(ignore_permissions=True)
+						count = 1
 
 				else:
 					item_details = {}
@@ -199,6 +200,7 @@ class PurchaseInvoiceCreationTool(Document):
 									if pi.get('items'):
 										pi.set_missing_values()
 										pi.insert(ignore_permissions=True)
+										count = 1
 								except:
 									continue
 				if len(bonus_un_odr) > 0:
@@ -235,6 +237,10 @@ class PurchaseInvoiceCreationTool(Document):
 						pi.append("items", s)
 					pi.set_missing_values()
 					pi.insert(ignore_permissions=True)
+					count = 1
+				if count:
+					self.status = 'Invoice Created'
+					self.db_update()
 				return True
 
 	@frappe.whitelist()
