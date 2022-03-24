@@ -43,7 +43,7 @@ class PurchaseInvoiceCreationTool(Document):
 				if self.warehouse:
 					is_franchise = frappe.get_value("Warehouse", {'name': self.warehouse}, "is_franchise")
 					cost_center = frappe.get_value("Warehouse", {'name': self.warehouse}, "cost_center")
-					pi = frappe.new_doc("Purchase Invoice")
+					pi = frappe.new_doc("Purchase Receipt")
 					pi.supplier = self.supplier
 					pi.posting_date = nowdate()
 					pi.due_date = nowdate()
@@ -185,7 +185,7 @@ class PurchaseInvoiceCreationTool(Document):
 								try:
 									is_franchise = frappe.get_value("Warehouse", {'name': key}, "is_franchise")
 									cost_center = frappe.get_value("Warehouse", {'name': key}, "cost_center")
-									pi = frappe.new_doc("Purchase Invoice")
+									pi = frappe.new_doc("Purchase Receipt")
 									pi.supplier = self.supplier
 									pi.posting_date = nowdate()
 									pi.due_date = nowdate()
@@ -204,7 +204,7 @@ class PurchaseInvoiceCreationTool(Document):
 								except:
 									continue
 				if len(bonus_un_odr) > 0:
-					pi = frappe.new_doc("Purchase Invoice")
+					pi = frappe.new_doc("Purchase Receipt")
 					pi.supplier = self.supplier
 					pi.posting_date = nowdate()
 					pi.due_date = nowdate()
@@ -239,7 +239,7 @@ class PurchaseInvoiceCreationTool(Document):
 					pi.insert(ignore_permissions=True)
 					count = 1
 				if count:
-					self.status = 'Invoice Created'
+					self.status = 'Receipt Created'
 					self.db_update()
 				return True
 

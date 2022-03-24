@@ -58,21 +58,21 @@ frappe.ui.form.on('Purchase Invoice Creation Tool', {
 		}
 
         frm.trigger('import_file');
-	    if (frm.doc.status != "Invoice Created"){
+	    if (frm.doc.status != "Invoice Created" && frm.doc.status != "Receipt Created"){
             if (frm.doc.status != "Success"){
                 frm.trigger('show_import_log');
                 let label = __('Validate File');
                 frm.page.set_primary_action(label, () => frm.events.start_import(frm));
             }
             if (frm.doc.status == "Success"){
-                let label = __('Make Purchase Invoice');
+                let label = __('Make Purchase Receipt');
                 frm.page.set_primary_action(label, () => frm.events.make_purchase_invoice(frm));
             }
         }
         else{
             frm.disable_save();
         }
-        if(frm.doc.status == "Success" || frm.doc.status == "Invoice Created"){
+        if(frm.doc.status == "Success" || frm.doc.status == "Invoice Created" || frm.doc.status == "Receipt Created"){
             frm.set_df_property('import_file', 'read_only', 1);
         }
         else{
@@ -89,7 +89,7 @@ frappe.ui.form.on('Purchase Invoice Creation Tool', {
 //                    frm.set_value("status", "Invoice Created")
 //                    refresh_field("status");
 //                    frm.save();
-                    frappe.set_route("List", "Purchase Invoice", {
+                    frappe.set_route("List", "Purchase Receipt", {
                         purchase_invoice_creation_tool: frm.doc.name,
                     })
                 }

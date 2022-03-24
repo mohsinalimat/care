@@ -162,7 +162,7 @@
    "in_standard_filter": 1,
    "label": "Status",
    "no_copy": 1,
-   "options": "Pending\nSuccess\nPartial Success\nError\nInvoice Created",
+   "options": "Pending\nSuccess\nPartial Success\nError\nInvoice Created\nReceipt Created",
    "read_only": 1
   },
   {
@@ -222,9 +222,13 @@
   {
    "link_doctype": "Purchase Invoice",
    "link_fieldname": "purchase_invoice_creation_tool"
+  },
+  {
+   "link_doctype": "Purchase Receipt",
+   "link_fieldname": "purchase_invoice_creation_tool"
   }
  ],
- "modified": "2021-11-24 11:32:27.032735",
+ "modified": "2022-03-24 18:18:30.597274",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Invoice Creation Tool",
