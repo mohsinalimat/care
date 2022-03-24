@@ -196,4 +196,8 @@ override_doctype_class = {
 # auth_hooks = [
 # 	"care.auth.validate"
 # ]
-
+jenv = {
+    "methods": [
+        "pur_req_pdf_summary:care.care.doctype.purchase_request.purchase_request.pur_req_pdf_summary"
+    ]
+}

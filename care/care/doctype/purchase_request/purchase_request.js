@@ -50,14 +50,22 @@ frappe.ui.form.on('Purchase Request', {
             }).addClass("btn-primary");
         }
         if(frm.doc.docstatus !=0){
-             frm.add_custom_button(__('Download Excel'), function(){
+            frm.add_custom_button(__('Download Excel'), function(){
                 open_url_post(
 					'/api/method/care.care.doctype.purchase_request.purchase_request.download_excel',
 					{
 						purchase_request: frm.doc.name
 					}
 				);
-            });
+            }, __("Downloads"));
+            frm.add_custom_button(__('Download Excel Summary'), function(){
+                open_url_post(
+					'/api/method/care.care.doctype.purchase_request.purchase_request.download_excel_summary',
+					{
+						purchase_request: frm.doc.name
+					}
+				);
+            }, __("Downloads"));
          }
 	},
 	get_items: function(frm){

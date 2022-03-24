@@ -82,3 +82,45 @@ def build_xlsx_response(material_demand_lst):
         frappe.response['filename'] = 'Material Demands.xlsx'
         frappe.response['filecontent'] = xlsx_file.getvalue()
         frappe.response['type'] = 'binary'
+
+
+@frappe.whitelist()
+def make_xlsx_summary(purchase_request, wb=None, column_widths=None):
+    column_widths = column_widths or []
+    if wb is None:
+        wb = openpyxl.Workbook(write_only=True)
+
+    sheet_name = purchase_request
+    ws = wb.create_sheet(purchase_request, 0)
+
+    for i, column_width in enumerate(column_widths):
+        if column_width:
+            ws.column_dimensions[get_column_letter(i + 1)].width = column_width
+
+    row1 = ws.row_dimensions[1]
+    row1.font = Font(name='Calibri', bold=True)
+    data = frappe.db.sql("""select item_code, item_name, brand, sum(pack_order_qty)
+            from `tabPurchase Request Item` 
+            where parent = '{0}'
+            group by item_code, item_name, brand 
+            order by item_code, item_name, brand""".format(purchase_request), as_list=True)
+
+    ws.append(["Item Code", "Item Name", "Brand", "Pack Order Qty"])
+    for row in data:
+        clean_row = []
+        for item in row:
+            pass
+            if isinstance(item, str) and (sheet_name not in ['Data Import Template', 'Data Export']):
+                value = handle_html(item)
+            else:
+                value = item
+
+            if isinstance(item, str) and next(ILLEGAL_CHARACTERS_RE.finditer(value), None):
+                # Remove illegal characters from the string
+                value = re.sub(ILLEGAL_CHARACTERS_RE, '', value)
+
+            clean_row.append(value)
+        ws.append(clean_row)
+    xlsx_file = BytesIO()
+    wb.save(xlsx_file)
+    return xlsx_file

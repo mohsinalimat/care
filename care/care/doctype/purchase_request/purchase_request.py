@@ -10,7 +10,7 @@ from erpnext.stock.get_item_details import get_conversion_factor
 from erpnext.stock.doctype.item.item import get_item_defaults
 from erpnext.setup.doctype.item_group.item_group import get_item_group_defaults
 from erpnext.setup.doctype.brand.brand import get_brand_defaults
-from care.hook_events.make_xlsx_file import make_xlsx
+from care.hook_events.make_xlsx_file import make_xlsx,make_xlsx_summary
 
 class PurchaseRequest(Document):
 
@@ -327,3 +327,21 @@ def download_excel(purchase_request=None):
 		frappe.response['filename'] = str(purchase_request) + '.xlsx'
 		frappe.response['filecontent'] = xlsx_file.getvalue()
 		frappe.response['type'] = 'binary'
+
+
+@frappe.whitelist()
+def download_excel_summary(purchase_request=None):
+	if purchase_request:
+		xlsx_file = make_xlsx_summary(purchase_request)
+		frappe.response['filename'] = str(purchase_request) + '_summary.xlsx'
+		frappe.response['filecontent'] = xlsx_file.getvalue()
+		frappe.response['type'] = 'binary'
+
+
+def pur_req_pdf_summary(doc):
+	data = frappe.db.sql("""select item_code, item_name, brand, sum(pack_order_qty) as pack_order_qty 
+		from `tabPurchase Request Item` 
+		where parent = '{0}'
+		group by item_code, item_name, brand 
+		order by item_code, item_name, brand""".format(doc.name), as_dict=True)
+	return data
