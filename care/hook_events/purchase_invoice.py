@@ -3,7 +3,9 @@ import json
 import frappe
 from frappe import _
 from frappe.utils import add_days, add_months, cint, cstr, flt, getdate
+from frappe.model.mapper import get_mapped_doc
 from erpnext.stock.get_item_details import get_item_price, check_packing_list
+from erpnext.stock.doctype.purchase_receipt.purchase_receipt import get_returned_qty_map, get_invoiced_qty_map
 
 def update_p_r_c_tool_status(doc, method):
     if doc.purchase_invoice_creation_tool:
@@ -132,10 +134,11 @@ def get_price_list_rate_for(item_code, args):
 def validate_price_and_rate(doc, method):
     if doc.items and not doc.update_buying_price:
         for res in doc.items:
-            if res.price_list_rate - 1 <= res.rate <= res.price_list_rate + 1:
-                pass
-            else:
-                frappe.throw(_("Item <b>{0}:{1}</b> Price List Rate and Rate did not match in row {2}.".format(res.item_code,res.item_name,res.idx)))
+            if res.item_code:
+                if res.price_list_rate - 1 <= res.rate <= res.price_list_rate + 1:
+                    pass
+                else:
+                    frappe.throw(_("Item <b>{0}:{1}</b> Price List Rate and Rate did not match in row {2}.".format(res.item_code,res.item_name,res.idx)))
 
 
 @frappe.whitelist()
@@ -223,3 +226,123 @@ def updated_price_list(doc, method):
                     item_price = frappe.get_doc("Item Price", selling_price_list)
                     item_price.price_list_rate = res.selling_price_list_rate / res.conversion_factor
                     item_price.save(ignore_permissions=True)
+
+@frappe.whitelist()
+def make_purchase_invoice(source_name, target_doc=None):
+    from erpnext.accounts.party import get_payment_terms_template
+
+    doc = frappe.get_doc('Purchase Receipt', source_name)
+    returned_qty_map = get_returned_qty_map(source_name)
+    invoiced_qty_map = get_invoiced_qty_map(source_name)
+
+    def set_missing_values(source, target):
+        if len(target.get("items")) == 0:
+            frappe.throw(_("All items have already been Invoiced/Returned"))
+
+        doc = frappe.get_doc(target)
+        doc.payment_terms_template = get_payment_terms_template(source.supplier, "Supplier", source.company)
+        doc.run_method("onload")
+        doc.run_method("set_missing_values")
+        doc.run_method("calculate_taxes_and_totals")
+        doc.set_payment_schedule()
+
+    def update_item(source_doc, target_doc, source_parent):
+        target_doc.qty, returned_qty = get_pending_qty(source_doc)
+        if frappe.db.get_single_value("Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice"):
+            target_doc.rejected_qty = 0
+        target_doc.stock_qty = flt(target_doc.qty) * flt(target_doc.conversion_factor, target_doc.precision("conversion_factor"))
+        returned_qty_map[source_doc.name] = returned_qty
+
+    def get_item_data(source_doc, target_doc, source_parent):
+        wr = source_doc.set_warehouse if source_doc.set_warehouse else ""
+        target_doc.append("items",{
+            'item_name': source_doc.name + "-" + wr,
+            'qty': 1,
+            'uom': 'Pack',
+            'rate': source_doc.rounded_total,
+            'purchase_receipt': source_doc.name
+        })
+    def get_pending_qty(item_row):
+        qty = item_row.qty
+        if frappe.db.get_single_value("Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice"):
+            qty = item_row.received_qty
+        pending_qty = qty - invoiced_qty_map.get(item_row.name, 0)
+        returned_qty = flt(returned_qty_map.get(item_row.name, 0))
+        if returned_qty:
+            if returned_qty >= pending_qty:
+                pending_qty = 0
+                returned_qty -= pending_qty
+            else:
+                pending_qty -= returned_qty
+                returned_qty = 0
+        return pending_qty, returned_qty
+
+
+    doclist = get_mapped_doc("Purchase Receipt", source_name,	{
+        "Purchase Receipt": {
+            "doctype": "Purchase Invoice",
+            "field_map": {
+                "supplier_warehouse":"supplier_warehouse",
+                "is_return": "is_return",
+                "bill_date": "bill_date"
+            },
+            "validation": {
+                "docstatus": ["=", 1],
+            },
+            "postprocess": get_item_data
+        },
+        # "Purchase Receipt Item": {
+        #     "doctype": "Purchase Invoice Item",
+        #     "field_map": {
+        #         "name": "pr_detail",
+        #         "parent": "purchase_receipt",
+        #         "purchase_order_item": "po_detail",
+        #         "purchase_order": "purchase_order",
+        #         "is_fixed_asset": "is_fixed_asset",
+        #         "asset_location": "asset_location",
+        #         "asset_category": 'asset_category'
+        #     },
+        #     "postprocess": update_item,
+        #     "filter": lambda d: get_pending_qty(d)[0] <= 0 if not doc.get("is_return") else get_pending_qty(d)[0] > 0
+        # },
+        "Purchase Taxes and Charges": {
+            "doctype": "Purchase Taxes and Charges",
+            "add_if_empty": True
+        }
+    }, target_doc, set_missing_values)
+
+    return doclist
+
+
+def update_billing_percentage(doc,method):
+    pr_recp =[]
+    for res in doc.items:
+        pr_recp.append(res.purchase_receipt)
+    if pr_recp:
+        for r in pr_recp:
+            query = """select sum(amount) as bill_amt from `tabPurchase Invoice Item` 
+                    where parent ='{0}' and purchase_receipt = '{1}'""".format(doc.name, r)
+            bill_amt = float(frappe.db.sql(query)[0][0] or 0)
+            pr_doc = frappe.get_doc("Purchase Receipt", r)
+            percent_billed = round(100 * (bill_amt / (pr_doc.rounded_total or 1)), 6)
+            pr_doc.db_set("per_billed", percent_billed)
+            pr_doc.load_from_db()
+            pr_doc.set_status(update=True)
+            pr_doc.notify_update()
+
+
+def rev_update_billing_percentage(doc,method):
+    pr_recp =[]
+    for res in doc.items:
+        pr_recp.append(res.purchase_receipt)
+    if pr_recp:
+        for r in pr_recp:
+            query = """select sum(amount) as bill_amt from `tabPurchase Invoice Item` 
+                    where parent !='{0}' and purchase_receipt = '{1}'""".format(doc.name, r)
+            bill_amt = float(frappe.db.sql(query)[0][0] or 0)
+            pr_doc = frappe.get_doc("Purchase Receipt", r)
+            percent_billed = round(100 * (bill_amt / (pr_doc.rounded_total or 1)), 6)
+            pr_doc.db_set("per_billed", percent_billed)
+            pr_doc.load_from_db()
+            pr_doc.set_status(update=True)
+            pr_doc.notify_update()

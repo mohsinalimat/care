@@ -33,7 +33,7 @@ class OrderReceiving(Document):
 			if self.warehouse:
 				is_franchise = frappe.get_value("Warehouse", {'name': self.warehouse}, "is_franchise")
 				cost_center = frappe.get_value("Warehouse", {'name': self.warehouse}, "cost_center")
-				pi = frappe.new_doc("Purchase Invoice")
+				pi = frappe.new_doc("Purchase Receipt")
 				pi.supplier = self.supplier
 				pi.posting_date = nowdate()
 				pi.due_date = nowdate()
@@ -113,7 +113,7 @@ class OrderReceiving(Document):
 							try:
 								is_franchise = frappe.get_value("Warehouse", {'name': key}, "is_franchise")
 								cost_center = frappe.get_value("Warehouse", {'name': key}, "cost_center")
-								pi = frappe.new_doc("Purchase Invoice")
+								pi = frappe.new_doc("Purchase Receipt")
 								pi.supplier = self.supplier
 								pi.posting_date = nowdate()
 								pi.due_date = nowdate()
@@ -130,7 +130,7 @@ class OrderReceiving(Document):
 									pi.insert(ignore_permissions=True)
 							except:
 								continue
-			frappe.msgprint(_("Purchase Invoice Created"), alert=1)
+			frappe.msgprint(_("Purchase Receipt Created"), alert=1)
 
 
 @frappe.whitelist()

@@ -106,9 +106,11 @@ doc_events = {
         "on_submit": ["care.hook_events.purchase_invoice.update_p_r_c_tool_status",
                       "care.hook_events.purchase_invoice.update_md_status",
                       "care.hook_events.purchase_invoice.create_franchise_purchase_invoice",
-                      "care.hook_events.purchase_invoice.updated_price_list"],
+                      "care.hook_events.purchase_invoice.updated_price_list",
+                      "care.hook_events.purchase_invoice.update_billing_percentage"],
         "on_cancel": ["care.hook_events.purchase_invoice.cancel_update_p_r_c_tool_status",
-                     "care.hook_events.purchase_invoice.cancel_update_md_status"],
+                     "care.hook_events.purchase_invoice.cancel_update_md_status",
+                    "care.hook_events.purchase_invoice.rev_update_billing_percentage"],
         "before_submit": ["care.hook_events.purchase_invoice.validate_cost_center",
                           "care.hook_events.purchase_invoice.validate_price_and_rate"],
         "before_insert": "care.hook_events.purchase_invoice.un_check_franchise_inv_generated"
@@ -146,7 +148,8 @@ scheduler_events = {
 override_whitelisted_methods = {
     "erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry.get_pos_invoices": "care.hook_events.override_pos_closing.get_pos_invoices",
     "erpnext.accounts.doctype.payment_entry.payment_entry.get_reference_details": "care.hook_events.payment_entry.get_reference_details",
-    "erpnext.accounts.doctype.payment_entry.payment_entry.get_outstanding_reference_documents": "care.hook_events.payment_entry.get_outstanding_reference_documents"
+    "erpnext.accounts.doctype.payment_entry.payment_entry.get_outstanding_reference_documents": "care.hook_events.payment_entry.get_outstanding_reference_documents",
+    "erpnext.stock.doctype.purchase_receipt.purchase_receipt.make_purchase_invoice": "care.hook_events.purchase_invoice.make_purchase_invoice"
 }
 #
 # each overriding function accepts a `data` argument;

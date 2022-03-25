@@ -175,12 +175,12 @@
  "links": [
   {
    "custom": 1,
-   "group": "Purchase Invoice",
-   "link_doctype": "Purchase Invoice",
+   "group": "Purchase Receipt",
+   "link_doctype": "Purchase Receipt",
    "link_fieldname": "order_receiving"
   }
  ],
- "modified": "2021-12-16 11:37:47.734644",
+ "modified": "2022-03-25 14:09:53.106157",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Order Receiving",
