@@ -36,8 +36,14 @@ frappe.ui.form.on('Order Receiving', {
 			frm.set_value("date", frappe.datetime.now_date())
 		}
 		frm.trigger("apply_item_filter")
+		frm.get_field("items").grid.toggle_display("split_qty", frm.doc.warehouse ? 0 : 1);
+	    refresh_field("items");
 	},
-	validate:function(frm, cdt, cdn){
+	warehouse: function(frm, cdt, cdn){
+	    frm.get_field("items").grid.toggle_display("split_qty", frm.doc.warehouse ? 0 : 1);
+	    refresh_field("items");
+	},
+	validate: function(frm, cdt, cdn){
 	    update_total_qty(frm, cdt, cdn)
 	},
     purchase_request: function (frm){
@@ -55,8 +61,15 @@ frappe.ui.form.on('Order Receiving', {
                 }
             }
         });
-    }
+    },
 });
+
+function apply_child_btn_color(frm, cdt, cdn){
+    frm.fields_dict["items"].$wrapper.find('.grid-body .rows').find(".grid-row").each(function(i, item) {
+        $(item).find('.grid-static-col').find('.field-area').find('.form-group').find('.btn').css({'background-color': ' #2690ef','color': 'white'});
+    });
+    refresh_field("split_qty", cdn, "items");
+}
 
 frappe.ui.form.on('Order Receiving Item', {
     item_code: function(frm, cdt, cdn){
@@ -93,6 +106,7 @@ frappe.ui.form.on('Order Receiving Item', {
                 new_row.set_focus_on_row();
             }
         }
+        apply_child_btn_color(frm, cdt, cdn)
     },
 
     qty: function(frm, cdt, cdn) {
@@ -110,6 +124,10 @@ frappe.ui.form.on('Order Receiving Item', {
         refresh_field("amount", cdn, "items");
         update_total_qty(frm, cdt, cdn)
 	},
+	split_qty: function(frm, cdt, cdn) {
+        var row = locals[cdt][cdn];
+	    split_warehouse_wise_qty(row, frm, cdt, cdn)
+	}
 
 })
 
@@ -260,4 +278,68 @@ function _get_item_list(item) {
         });
     }
     return item_list;
+}
+
+
+function split_warehouse_wise_qty(row, frm, cdt, cdn){
+    let data = JSON.parse(row.code || '[]')
+    let dialog = new frappe.ui.Dialog({
+        title: __('Split Qty'),
+        fields: [
+            {
+                fieldtype: 'Float',
+                fieldname: 'qty',
+                label: __('Qty'),
+                default: row.qty,
+                read_only: 1
+            },
+            {
+                fieldname: 'split_data',
+                fieldtype: 'Table',
+                label: __('Warehouses'),
+                in_editable_grid: true,
+                reqd: 1,
+                fields: [{
+                    fieldtype: 'Link',
+                    fieldname: 'warehouse',
+                    options: 'Warehouse',
+                    in_list_view: 1,
+                    label: __('Warehouse'),
+                    get_query: () => {
+                        return {
+                            filters: {
+                                "is_group": 0
+                            }
+                        };
+                    }
+                }, {
+                    fieldtype: 'Float',
+                    fieldname: 'qty',
+                    label: __('Qty'),
+                    in_list_view: 1,
+                    reqd: 1,
+                }],
+                data: data
+            },
+        ],
+        primary_action_label: __('Save'),
+        primary_action: function(values) {
+            let child_data = values.split_data;
+            let t_qty = 0
+            let lst = []
+            child_data.forEach((d) => {
+                t_qty = t_qty + d.qty
+                lst.push({"warehouse": d.warehouse, "qty": d.qty})
+            });
+            if (values.qty != t_qty){
+                frappe.throw(__("Total split qty must be equal to ") + values.qty);
+            }
+            else{
+                dialog.hide();
+                frappe.model.set_value(cdt,cdn,"code",JSON.stringify(lst));
+                refresh_field("code", cdn, "items");
+            }
+        }
+    });
+    dialog.show();
 }

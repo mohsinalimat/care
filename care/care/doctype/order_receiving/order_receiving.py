@@ -5,6 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import nowdate
 from frappe.model.document import Document
+import json
 
 class OrderReceiving(Document):
 
@@ -70,43 +71,82 @@ class OrderReceiving(Document):
 			else:
 				item_details = {}
 				for d in self.items:
-					md_item = frappe.get_list("Material Demand Item", {'item_code': d.get('item_code'), 'parent': ['in', m_list]}, ['name'])
-					received_qty = d.get('qty')
-					if md_item:
-						for p_tm in md_item:
-							if received_qty > 0:
-								md_doc = frappe.get_doc("Material Demand Item", p_tm.name)
-								if md_doc:
-									margin_type = None
-									if d.get("discount_percent"):
-										margin_type = "Percentage"
-									if d.get("discount"):
-										margin_type = "Amount"
-									d = {
-										"item_code": d.get('item_code'),
-										"warehouse": md_doc.warehouse,
-										"qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
-										"received_qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
-										"rate": d.get('rate'),
-										"expense_account": md_doc.expense_account,
-										"cost_center": md_doc.cost_center,
-										"uom": md_doc.uom,
-										"stock_Uom": md_doc.stock_uom,
-										"material_demand": md_doc.parent,
-										"material_demand_item": md_doc.name,
-										"margin_type": margin_type,
-										"discount_percentage": d.get("discount_percent"),
-										"discount_amount": d.get("discount"),
-									}
-									received_qty -= md_doc.qty
-
-									key = (md_doc.warehouse)
-									item_details.setdefault(key, {"details": []})
-									fifo_queue = item_details[key]["details"]
-									fifo_queue.append(d)
+					if d.code:
+						data = json.loads(d.code)
+						for res in data:
+							md_item = frappe.get_list("Material Demand Item", {'item_code': d.get('item_code'),
+																			'warehouse': res.get('warehouse'),
+																			'parent': ['in', m_list]}, ['name'])
+							if md_item:
+								for p_tm in md_item:
+									md_doc = frappe.get_doc("Material Demand Item", p_tm.name)
+									if md_doc:
+										margin_type = None
+										if d.get("discount_percent"):
+											margin_type = "Percentage"
+										if d.get("discount"):
+											margin_type = "Amount"
+										d = {
+											"item_code": d.get('item_code'),
+											"warehouse": md_doc.warehouse,
+											"qty": res.get('qty'),
+											"received_qty": res.get('qty'),
+											"rate": d.get('rate'),
+											"expense_account": md_doc.expense_account,
+											"cost_center": md_doc.cost_center,
+											"uom": md_doc.uom,
+											"stock_Uom": md_doc.stock_uom,
+											"material_demand": md_doc.parent,
+											"material_demand_item": md_doc.name,
+											"margin_type": margin_type,
+											"discount_percentage": d.get("discount_percent"),
+											"discount_amount": d.get("discount"),
+										}
+										key = (md_doc.warehouse)
+										item_details.setdefault(key, {"details": []})
+										fifo_queue = item_details[key]["details"]
+										fifo_queue.append(d)
+							else:
+								if not self.ignore_un_order_item:
+									frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
 					else:
-						if not self.ignore_un_order_item:
-							frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
+						md_item = frappe.get_list("Material Demand Item", {'item_code': d.get('item_code'), 'parent': ['in', m_list]}, ['name'])
+						received_qty = d.get('qty')
+						if md_item:
+							for p_tm in md_item:
+								if received_qty > 0:
+									md_doc = frappe.get_doc("Material Demand Item", p_tm.name)
+									if md_doc:
+										margin_type = None
+										if d.get("discount_percent"):
+											margin_type = "Percentage"
+										if d.get("discount"):
+											margin_type = "Amount"
+										d = {
+											"item_code": d.get('item_code'),
+											"warehouse": md_doc.warehouse,
+											"qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
+											"received_qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
+											"rate": d.get('rate'),
+											"expense_account": md_doc.expense_account,
+											"cost_center": md_doc.cost_center,
+											"uom": md_doc.uom,
+											"stock_Uom": md_doc.stock_uom,
+											"material_demand": md_doc.parent,
+											"material_demand_item": md_doc.name,
+											"margin_type": margin_type,
+											"discount_percentage": d.get("discount_percent"),
+											"discount_amount": d.get("discount"),
+										}
+										received_qty -= md_doc.qty
+
+										key = (md_doc.warehouse)
+										item_details.setdefault(key, {"details": []})
+										fifo_queue = item_details[key]["details"]
+										fifo_queue.append(d)
+						else:
+							if not self.ignore_un_order_item:
+								frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
 				if item_details:
 					if item_details:
 						for key in item_details.keys():
