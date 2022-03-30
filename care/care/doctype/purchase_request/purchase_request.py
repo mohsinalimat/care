@@ -20,7 +20,7 @@ class PurchaseRequest(Document):
 
 	@frappe.whitelist()
 	def get_warehouse(self):
-		wr = frappe.get_list("Warehouse", filters={'is_group': 0, 'auto_select_in_purchase_request': 1}, fields='*')
+		wr = frappe.get_list("Warehouse", filters={'is_group': 0, 'auto_select_in_purchase_request': 1}, fields='*', order_by='name')
 		return wr
 
 	@frappe.whitelist()
