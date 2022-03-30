@@ -11,6 +11,7 @@ class OrderReceiving(Document):
 
 	def on_submit(self):
 		self.make_purchase_invoice()
+		self.updated_price_list_and_dicsount()
 
 	@frappe.whitelist()
 	def get_item_code(self):
@@ -23,6 +24,59 @@ class OrderReceiving(Document):
 			for res in result:
 				i_lst.append(res.get('item_code'))
 		return i_lst
+
+	def updated_price_list_and_dicsount(self):
+		if self.update_buying_price or self.update_selling_price:
+			for res in self.items:
+				if self.update_buying_price and res.rate:
+					buying_price_list = frappe.get_value("Item Price", {'item_code': res.item_code,
+																	'price_list': self.buying_price_list,
+																	'buying': 1}, ['name'])
+					if buying_price_list:
+						item_price = frappe.get_doc("Item Price", buying_price_list)
+						item_price.price_list_rate = res.rate / res.conversion_factor
+						item_price.save(ignore_permissions=True)
+				if self.update_selling_price and res.selling_price_list_rate:
+					selling_price_list = frappe.get_value("Item Price", {'item_code': res.item_code,
+																		'price_list': self.base_selling_price_list,
+																		'selling': 1}, ['name'])
+					if selling_price_list:
+						item_price = frappe.get_doc("Item Price", selling_price_list)
+						item_price.price_list_rate = res.selling_price_list_rate / res.conversion_factor
+						item_price.save(ignore_permissions=True)
+				if self.update_discount and (res.discount or res.discount_percent):
+					query = """select p.name from `tabPricing Rule` as p 
+						inner join `tabPricing Rule Item Code` as pi on pi.parent = p.name 
+						where p.apply_on = 'Item Code' 
+							and p.disable = 0 
+							and p.price_or_product_discount = 'Price' 
+						"""
+					if res.discount:
+						query += """ and p.rate_or_discount = 'Discount Amount' 
+									and p.discount_amount = {0}""".format(res.discount)
+					if res.discount_percent:
+						query += """ and p.rate_or_discount = 'Discount Percentage' 
+								and p.discount_percentage = {0}""".format(res.discount_percent)
+
+					query += """ and valid_from <= '{0}' order by valid_from desc limit 1""".format(nowdate())
+					result = frappe.db.sql(query)
+					if len(result) == 0:
+						p_rule = frappe.new_doc("Pricing Rule")
+						p_rule.title = 'Discount'
+						p_rule.apply_on = 'Item Code'
+						p_rule.price_or_product_discount = 'Price'
+						p_rule.currency = self.currency
+						p_rule.company = self.company
+						p_rule.buying = 1
+						p_rule.valid_from = nowdate()
+						p_rule.append("items", {'item_code': res.item_code})
+						if res.discount:
+							p_rule.rate_or_discount = 'Discount Amount'
+							p_rule.discount_amount = res.discount
+						if res.discount_percent:
+							p_rule.rate_or_discount = 'Discount Percentage'
+							p_rule.discount_percentage = res.discount_percent
+						p_rule.save(ignore_permissions=True)
 
 
 	def make_purchase_invoice(self):

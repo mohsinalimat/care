@@ -20,6 +20,7 @@
   "discount_percent",
   "amount",
   "section_break_14",
+  "selling_price_list_rate",
   "split_qty",
   "column_break_16",
   "code"
@@ -140,12 +141,17 @@
   {
    "fieldname": "column_break_16",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "selling_price_list_rate",
+   "fieldtype": "Currency",
+   "label": "Selling Price List Rate"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-03-30 14:26:15.878104",
+ "modified": "2022-03-30 15:21:19.157842",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Order Receiving Item",

@@ -22,6 +22,13 @@
   "currency",
   "column_break_12",
   "buying_price_list",
+  "base_selling_price_list",
+  "section_break_17",
+  "update_buying_price",
+  "column_break_19",
+  "update_selling_price",
+  "column_break_21",
+  "update_discount",
   "items_section",
   "items",
   "summary_section",
@@ -168,6 +175,42 @@
    "label": "Company",
    "options": "Company",
    "reqd": 1
+  },
+  {
+   "fieldname": "base_selling_price_list",
+   "fieldtype": "Link",
+   "label": "Base Selling Price List",
+   "options": "Price List"
+  },
+  {
+   "fieldname": "section_break_17",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "update_buying_price",
+   "fieldtype": "Check",
+   "label": "Update Buying Price"
+  },
+  {
+   "fieldname": "column_break_19",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "update_selling_price",
+   "fieldtype": "Check",
+   "label": " Update Selling Price"
+  },
+  {
+   "fieldname": "column_break_21",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "update_discount",
+   "fieldtype": "Check",
+   "label": " Update Discount"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -180,7 +223,7 @@
    "link_fieldname": "order_receiving"
   }
  ],
- "modified": "2022-03-25 14:09:53.106157",
+ "modified": "2022-03-30 15:16:21.044477",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Order Receiving",

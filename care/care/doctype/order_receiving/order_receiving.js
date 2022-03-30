@@ -8,6 +8,7 @@ frappe.ui.form.on('Order Receiving', {
 		}
 		frm.set_value("buying_price_list", frappe.defaults.get_default('buying_price_list'))
 		frm.set_value("currency", frappe.defaults.get_default('Currency'))
+		frm.set_value("base_selling_price_list", frappe.defaults.get_default('selling_price_list'))
         frm.set_query("warehouse", () => {
 			return {
 				"filters": {
@@ -35,6 +36,9 @@ frappe.ui.form.on('Order Receiving', {
 	    if (frm.doc.__islocal) {
 			frm.set_value("date", frappe.datetime.now_date())
 		}
+		if(!frm.doc.base_selling_price_list){
+            frm.set_value("base_selling_price_list", frappe.defaults.get_default('selling_price_list'))
+        }
 		frm.trigger("apply_item_filter")
 		frm.get_field("items").grid.toggle_display("split_qty", frm.doc.warehouse ? 0 : 1);
 	    refresh_field("items");
@@ -82,6 +86,7 @@ frappe.ui.form.on('Order Receiving Item', {
             if (row.item_code){
                 frappe.run_serially([
                     ()=>update_price_rate(frm, cdt, cdn),
+                    ()=>update_selling_price_rate(frm, cdt, cdn),
                     ()=>{
                         frappe.call({
                             method: "care.care.doctype.order_receiving.order_receiving.get_item_qty",
@@ -177,6 +182,48 @@ function update_price_rate(frm, cdt, cdn){
                     },
                     callback: function(r) {
                         frappe.model.set_value( cdt, cdn, 'rate',r.message)
+                    }
+                })
+            }
+        }
+    });
+}
+
+function update_selling_price_rate(frm, cdt, cdn){
+    var item = locals[cdt][cdn];
+    frappe.call({
+        method: "erpnext.stock.get_item_details.get_conversion_factor",
+        args: {
+            item_code: item.item_code,
+            uom: item.uom
+        },
+        callback: function(r) {
+            if(!r.exc) {
+                var conversion_factor = r.message.conversion_factor
+                frappe.model.set_value(cdt,cdn,"conversion_factor",r.message.conversion_factor);
+                frm.call({
+                    method: "care.hook_events.purchase_invoice.get_price_list_rate_for",
+                    args: {
+                        item_code: item.item_code,
+                        args: {
+                            item_code: item.item_code,
+                            supplier: frm.doc.supplier,
+                            currency: frm.doc.currency,
+                            price_list: frm.doc.base_selling_price_list,
+                            price_list_currency: frm.doc.currency,
+                            company: frm.doc.company,
+                            transaction_date: frm.doc.date ,
+                            doctype: frm.doc.doctype,
+                            name: frm.doc.name,
+                            qty: item.qty || 1,
+                            child_docname: item.name,
+                            uom: item.uom,
+                            stock_uom: item.stock_uom,
+                            conversion_factor: conversion_factor
+                        }
+                    },
+                    callback: function(r) {
+                        frappe.model.set_value( cdt, cdn, 'selling_price_list_rate',r.message || 0)
                     }
                 })
             }
