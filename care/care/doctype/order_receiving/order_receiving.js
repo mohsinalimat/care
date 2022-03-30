@@ -334,12 +334,21 @@ function split_warehouse_wise_qty(row, frm, cdt, cdn){
         title: __('Split Qty'),
         fields: [
             {
+                fieldtype: 'Data',
+                fieldname: 'item',
+                 label: __('Item'),
+                read_only: 1,
+                default: row.item_code + ":" + row.item_name
+            },
+            { fieldtype: "Column Break" },
+            {
                 fieldtype: 'Float',
                 fieldname: 'qty',
                 label: __('Qty'),
                 default: row.qty,
                 read_only: 1
             },
+            { fieldtype: "Section Break" },
             {
                 fieldname: 'split_data',
                 fieldtype: 'Table',
