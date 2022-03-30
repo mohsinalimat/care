@@ -131,7 +131,14 @@ frappe.ui.form.on('Order Receiving Item', {
 	},
 	split_qty: function(frm, cdt, cdn) {
         var row = locals[cdt][cdn];
-	    split_warehouse_wise_qty(row, frm, cdt, cdn)
+        frappe.call({
+            method: "get_warehouse",
+            doc: frm.doc,
+            callback: function(r) {
+                split_warehouse_wise_qty(row, frm, cdt, cdn, r.message)
+            }
+        });
+
 	}
 
 })
@@ -327,9 +334,11 @@ function _get_item_list(item) {
     return item_list;
 }
 
-
-function split_warehouse_wise_qty(row, frm, cdt, cdn){
+function split_warehouse_wise_qty(row, frm, cdt, cdn, warhs){
     let data = JSON.parse(row.code || '[]')
+    if (data.length === 0){
+        data = warhs;
+    }
     let dialog = new frappe.ui.Dialog({
         title: __('Split Qty'),
         fields: [
