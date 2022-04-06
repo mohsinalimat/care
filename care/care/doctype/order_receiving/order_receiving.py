@@ -9,6 +9,13 @@ import json
 
 class OrderReceiving(Document):
 
+	def validate(self):
+		for res in self.items:
+			margin = -100
+			if res.selling_price_list_rate > 0:
+				margin = (res.selling_price_list_rate - res.rate) / res.selling_price_list_rate * 100
+			res.margin_percent = margin
+
 	def on_submit(self):
 		self.make_purchase_invoice()
 		self.updated_price_list_and_dicsount()
@@ -36,7 +43,7 @@ class OrderReceiving(Document):
 	def updated_price_list_and_dicsount(self):
 		if self.update_buying_price or self.update_selling_price:
 			for res in self.items:
-				if self.update_buying_price and res.rate:
+				if self.update_buying_price and res.rate != res.base_buying_price_list_rate:
 					buying_price_list = frappe.get_value("Item Price", {'item_code': res.item_code,
 																	'price_list': self.buying_price_list,
 																	'buying': 1}, ['name'])
@@ -44,7 +51,7 @@ class OrderReceiving(Document):
 						item_price = frappe.get_doc("Item Price", buying_price_list)
 						item_price.price_list_rate = res.rate / res.conversion_factor
 						item_price.save(ignore_permissions=True)
-				if self.update_selling_price and res.selling_price_list_rate:
+				if self.update_selling_price and res.selling_price_list_rate != res.base_selling_price_list_rate:
 					selling_price_list = frappe.get_value("Item Price", {'item_code': res.item_code,
 																		'price_list': self.base_selling_price_list,
 																		'selling': 1}, ['name'])

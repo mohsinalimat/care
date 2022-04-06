@@ -121,13 +121,16 @@ frappe.ui.form.on('Order Receiving Item', {
         refresh_field("amount", cdn, "items");
         update_total_qty(frm, cdt, cdn)
 	},
-
     rate: function(frm, cdt, cdn) {
         var row = locals[cdt][cdn];
         let amount = row.rate * row.qty
         frappe.model.set_value(cdt,cdn,"amount",amount);
         refresh_field("amount", cdn, "items");
         update_total_qty(frm, cdt, cdn)
+        calculate_margin(frm, cdt, cdn)
+	},
+    selling_price_list_rate: function(frm, cdt, cdn) {
+        calculate_margin(frm, cdt, cdn)
 	},
 	split_qty: function(frm, cdt, cdn) {
         var row = locals[cdt][cdn];
@@ -140,7 +143,6 @@ frappe.ui.form.on('Order Receiving Item', {
         });
 
 	}
-
 })
 
 function update_total_qty(frm, cdt, cdn){
@@ -152,6 +154,15 @@ function update_total_qty(frm, cdt, cdn){
     });
     frm.set_value("total_qty", total_qty);
     frm.set_value("total_amount", total_amt);
+}
+
+function calculate_margin(frm, cdt, cdn){
+     var item = locals[cdt][cdn];
+     let margin = -100;
+     if (item.selling_price_list_rate > 0){
+        margin = (item.selling_price_list_rate - item.rate) / item.selling_price_list_rate * 100;
+     }
+     frappe.model.set_value( cdt, cdn, 'margin_percent',margin)
 }
 
 function update_price_rate(frm, cdt, cdn){
@@ -188,7 +199,8 @@ function update_price_rate(frm, cdt, cdn){
                         }
                     },
                     callback: function(r) {
-                        frappe.model.set_value( cdt, cdn, 'rate',r.message)
+                        frappe.model.set_value( cdt, cdn, 'rate',r.message || 0)
+                        frappe.model.set_value( cdt, cdn, 'base_buying_price_list_rate',r.message || 0)
                     }
                 })
             }
@@ -231,6 +243,7 @@ function update_selling_price_rate(frm, cdt, cdn){
                     },
                     callback: function(r) {
                         frappe.model.set_value( cdt, cdn, 'selling_price_list_rate',r.message || 0)
+                        frappe.model.set_value( cdt, cdn, 'base_selling_price_list_rate',r.message || 0)
                     }
                 })
             }

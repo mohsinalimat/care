@@ -12,15 +12,22 @@
   "section_break_4",
   "qty",
   "uom",
+  "column_break_7",
   "stock_uom",
   "conversion_factor",
-  "column_break_6",
+  "section_break_10",
   "rate",
+  "selling_price_list_rate",
+  "column_break_6",
+  "base_buying_price_list_rate",
+  "base_selling_price_list_rate",
+  "section_break_16",
   "discount",
   "discount_percent",
+  "column_break_18",
+  "margin_percent",
   "amount",
   "section_break_14",
-  "selling_price_list_rate",
   "split_qty",
   "column_break_16",
   "code"
@@ -145,13 +152,47 @@
   {
    "fieldname": "selling_price_list_rate",
    "fieldtype": "Currency",
-   "label": "Selling Price List Rate"
+   "label": "New Selling Price List Rate"
+  },
+  {
+   "fieldname": "base_selling_price_list_rate",
+   "fieldtype": "Currency",
+   "label": "Base Selling Price List Rate",
+   "read_only": 1
+  },
+  {
+   "fieldname": "base_buying_price_list_rate",
+   "fieldtype": "Currency",
+   "label": "Base Buying Price List Rate",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_10",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_16",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_18",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "margin_percent",
+   "fieldtype": "Percent",
+   "label": "Margin %",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-03-30 15:21:19.157842",
+ "modified": "2022-04-06 15:20:11.510840",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Order Receiving Item",
