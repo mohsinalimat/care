@@ -39,7 +39,7 @@ frappe.ui.form.on('Order Receiving', {
 		if(!frm.doc.base_selling_price_list){
             frm.set_value("base_selling_price_list", frappe.defaults.get_default('selling_price_list'))
         }
-		frm.trigger("apply_item_filter")
+		apply_item_filters(frm)
 		frm.get_field("items").grid.toggle_display("split_qty", frm.doc.warehouse ? 0 : 1);
 	    refresh_field("items");
 	},
@@ -51,22 +51,24 @@ frappe.ui.form.on('Order Receiving', {
 	    update_total_qty(frm, cdt, cdn)
 	},
     purchase_request: function (frm){
-	    frm.trigger("apply_item_filter")
-    },
-    apply_item_filter: function (frm){
-	    frappe.call({
-            method: "get_item_code",
-            doc: frm.doc,
-            callback: function(r) {
-                frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
-                    return {
-                        filters: {'name':['in',r.message]}
-                    }
+	    apply_item_filters(frm)
+    }
+});
+
+
+function apply_item_filters(frm){
+    frappe.call({
+        method: "get_item_code",
+        doc: frm.doc,
+        callback: function(r) {
+            frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
+                return {
+                    filters: {'name':['in',r.message]}
                 }
             }
-        });
-    },
-});
+        }
+    });
+}
 
 function apply_child_btn_color(frm, cdt, cdn){
     frm.fields_dict["items"].$wrapper.find('.grid-body .rows').find(".grid-row").each(function(i, item) {
@@ -85,6 +87,7 @@ frappe.ui.form.on('Order Receiving Item', {
         else{
             if (row.item_code){
                 frappe.run_serially([
+                    ()=>apply_item_filters(frm),
                     ()=>update_price_rate(frm, cdt, cdn),
                     ()=>update_selling_price_rate(frm, cdt, cdn),
                     ()=>{
@@ -102,13 +105,14 @@ frappe.ui.form.on('Order Receiving Item', {
                             }
                         });
                     },
-                    ()=>apply_pricing_rule(row, frm, cdt, cdn)
+                    ()=>apply_pricing_rule(row, frm, cdt, cdn),
+                    ()=> {
+                        var new_row = frm.fields_dict.items.grid;
+                        new_row.add_new_row(null, null, true, null, true);
+                        new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
+                        new_row.set_focus_on_row();
+                    }
                 ])
-
-                var new_row = frm.fields_dict.items.grid;
-                new_row.add_new_row(null, null, true, null, true);
-                new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
-                new_row.set_focus_on_row();
             }
         }
         apply_child_btn_color(frm, cdt, cdn)
