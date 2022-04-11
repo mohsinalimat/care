@@ -26,7 +26,7 @@ frappe.ui.form.on('Purchase Invoice Creation Tool', {
 				}
 			};
 		})
-		frm.set_query("bonus_warehouse", () => {
+		frm.set_query("c_b_warehouse", () => {
 			return {
 				"filters": {
 					"is_group": 0
