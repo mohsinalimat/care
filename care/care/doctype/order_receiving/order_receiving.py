@@ -70,7 +70,10 @@ class OrderReceiving(Document):
 						where p.apply_on = 'Item Code' 
 							and p.disable = 0 
 							and p.price_or_product_discount = 'Price' 
-						"""
+							and p.applicable_for = 'Supplier' 
+							and p.supplier = '{0}' 
+							and pi.item_code = '{1}' 
+						""".format(self.supplier, res.item_code)
 					if res.discount:
 						query += """ and p.rate_or_discount = 'Discount Amount' 
 									and p.discount_amount = {0}""".format(res.discount)
@@ -81,13 +84,24 @@ class OrderReceiving(Document):
 					query += """ and valid_from <= '{0}' order by valid_from desc limit 1""".format(nowdate())
 					result = frappe.db.sql(query)
 					if len(result) == 0:
+						priority = 1
+						existing_priority = frappe.db.sql("""select p.priority from `tabPricing Rule` as p 
+									inner join `tabPricing Rule Item Code` as pi on pi.parent = p.name 
+									where p.apply_on = 'Item Code' 
+									and p.supplier = '{0}' 
+									and pi.item_code = '{1}' 
+									order by p.priority desc limit 1""".format(self.supplier, res.item_code))
+						if existing_priority:
+							priority = int(existing_priority[0][0]) + 1
 						p_rule = frappe.new_doc("Pricing Rule")
 						p_rule.title = 'Discount'
 						p_rule.apply_on = 'Item Code'
 						p_rule.price_or_product_discount = 'Price'
 						p_rule.currency = self.currency
-						p_rule.company = self.company
+						p_rule.applicable_for = "Supplier"
+						p_rule.supplier = self.supplier
 						p_rule.buying = 1
+						p_rule.priority = priority
 						p_rule.valid_from = nowdate()
 						p_rule.append("items", {'item_code': res.item_code})
 						if res.discount:

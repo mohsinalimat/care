@@ -78,6 +78,9 @@ function apply_child_btn_color(frm, cdt, cdn){
 }
 
 frappe.ui.form.on('Order Receiving Item', {
+    items_remove: function(frm, cdt, cdn){
+        apply_item_filters(frm)
+    },
     item_code: function(frm, cdt, cdn){
         var row = locals[cdt][cdn];
         if(!frm.doc.purchase_request || !frm.doc.supplier){
@@ -113,6 +116,9 @@ frappe.ui.form.on('Order Receiving Item', {
                         new_row.set_focus_on_row();
                     }
                 ])
+            }
+            else{
+                apply_item_filters(frm)
             }
         }
         apply_child_btn_color(frm, cdt, cdn)
