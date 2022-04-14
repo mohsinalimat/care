@@ -74,25 +74,26 @@ class OrderReceiving(Document):
 							and p.supplier = '{0}' 
 							and pi.item_code = '{1}' 
 						""".format(self.supplier, res.item_code)
-					if res.discount:
-						query += """ and p.rate_or_discount = 'Discount Amount' 
-									and p.discount_amount = {0}""".format(res.discount)
-					if res.discount_percent:
-						query += """ and p.rate_or_discount = 'Discount Percentage' 
-								and p.discount_percentage = {0}""".format(res.discount_percent)
 
 					query += """ and valid_from <= '{0}' order by valid_from desc limit 1""".format(nowdate())
 					result = frappe.db.sql(query)
-					if len(result) == 0:
+					if result:
+						p_rule = frappe.get_doc("Pricing Rule", result[0][0])
+						text = ""
+						if res.discount:
+							text = f"""Updated Discount Amount {p_rule.discount_amount} to {res.discount} From Order Receiving"""
+							p_rule.rate_or_discount = 'Discount Amount'
+							p_rule.discount_amount = res.discount
+
+						if res.discount_percent:
+							text = f"""Updated Discount Percentage {p_rule.discount_percentage} 
+										to {res.discount_percent} From Order Receiving"""
+							p_rule.rate_or_discount = 'Discount Percentage'
+							p_rule.discount_percentage = res.discount_percent
+						p_rule.save(ignore_permissions=True)
+						p_rule.add_comment(comment_type='Info', text=text, link_doctype=p_rule.doctype, link_name=p_rule.name)
+					else:
 						priority = 1
-						existing_priority = frappe.db.sql("""select p.priority from `tabPricing Rule` as p 
-									inner join `tabPricing Rule Item Code` as pi on pi.parent = p.name 
-									where p.apply_on = 'Item Code' 
-									and p.supplier = '{0}' 
-									and pi.item_code = '{1}' 
-									order by p.priority desc limit 1""".format(self.supplier, res.item_code))
-						if existing_priority:
-							priority = int(existing_priority[0][0]) + 1
 						p_rule = frappe.new_doc("Pricing Rule")
 						p_rule.title = 'Discount'
 						p_rule.apply_on = 'Item Code'
@@ -111,6 +112,8 @@ class OrderReceiving(Document):
 							p_rule.rate_or_discount = 'Discount Percentage'
 							p_rule.discount_percentage = res.discount_percent
 						p_rule.save(ignore_permissions=True)
+						text = "Pricing Rule created from Order Receiving"
+						p_rule.add_comment(comment_type='Info', text=text, link_doctype=p_rule.doctype, link_name=p_rule.name)
 
 
 	def make_purchase_invoice(self):
