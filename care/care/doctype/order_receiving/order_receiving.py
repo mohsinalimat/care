@@ -10,15 +10,30 @@ import json
 class OrderReceiving(Document):
 
 	def validate(self):
+		if self.get("__islocal"):
+			self.status = 'Draft'
 		for res in self.items:
 			margin = -100
 			if res.selling_price_list_rate > 0:
 				margin = (res.selling_price_list_rate - res.rate) / res.selling_price_list_rate * 100
 			res.margin_percent = margin
 
+	def on_cancel(self):
+		frappe.db.set(self, 'status', 'Cancelled')
+
 	def on_submit(self):
-		self.make_purchase_invoice()
-		self.updated_price_list_and_dicsount()
+		if len(self.items) <= 100 and self.warehouse:
+			make_purchase_invoice(self)
+			self.updated_price_list_and_dicsount()
+			self.updated_price_list_and_dicsount()
+			frappe.db.set(self, 'status', 'Submitted')
+		elif len(self.items) <= 50:
+			make_purchase_invoice(self)
+			self.updated_price_list_and_dicsount()
+			frappe.db.set(self, 'status', 'Submitted')
+		else:
+			frappe.enqueue(make_purchase_invoice, doc=self, queue='long')
+			frappe.db.set(self, 'status', 'Queue')
 
 	@frappe.whitelist()
 	def get_warehouse(self):
@@ -116,97 +131,61 @@ class OrderReceiving(Document):
 						p_rule.add_comment(comment_type='Info', text=text, link_doctype=p_rule.doctype, link_name=p_rule.name)
 
 
-	def make_purchase_invoice(self):
-		material_demand = frappe.get_list("Material Demand", {'supplier': self.supplier, 'purchase_request': self.purchase_request},['name'])
-		m_list = []
-		for res in material_demand:
-			m_list.append(res.name)
-		if self.items:
-			if self.warehouse:
-				is_franchise = frappe.get_value("Warehouse", {'name': self.warehouse}, "is_franchise")
-				cost_center = frappe.get_value("Warehouse", {'name': self.warehouse}, "cost_center")
-				pi = frappe.new_doc("Purchase Receipt")
-				pi.supplier = self.supplier
-				pi.posting_date = nowdate()
-				pi.due_date = nowdate()
-				pi.company = self.company
-				pi.order_receiving = self.name
-				pi.update_stock = 1 if not is_franchise else 0
-				pi.set_warehouse = self.warehouse
-				pi.cost_center = cost_center
-				for d in self.items:
-					md_item = frappe.get_value("Material Demand Item", {'item_code': d.get('item_code'), 'parent': ['in', m_list], "warehouse": self.warehouse}, "name")
-					if md_item:
-						md_doc = frappe.get_doc("Material Demand Item", md_item)
-						pi.append("items", {
-							"item_code": d.get('item_code'),
-							"warehouse": md_doc.warehouse,
-							"qty": d.get('qty'),
-							"received_qty": d.get('qty'),
-							"rate": d.get('rate'),
-							"expense_account": md_doc.expense_account,
-							"cost_center": md_doc.cost_center,
-							"uom": md_doc.uom,
-							"stock_Uom": md_doc.stock_uom,
-							"material_demand": md_doc.parent,
-							"material_demand_item": md_doc.name,
-						})
+def make_purchase_invoice(doc):
+	material_demand = frappe.get_list("Material Demand", {'supplier': doc.supplier, 'purchase_request': doc.purchase_request},['name'])
+	m_list = []
+	for res in material_demand:
+		m_list.append(res.name)
+	if doc.items:
+		if doc.warehouse:
+			is_franchise = frappe.get_value("Warehouse", {'name': doc.warehouse}, "is_franchise")
+			cost_center = frappe.get_value("Warehouse", {'name': doc.warehouse}, "cost_center")
+			pi = frappe.new_doc("Purchase Receipt")
+			pi.supplier = doc.supplier
+			pi.posting_date = nowdate()
+			pi.due_date = nowdate()
+			pi.company = doc.company
+			pi.order_receiving = doc.name
+			pi.update_stock = 1 if not is_franchise else 0
+			pi.set_warehouse = doc.warehouse
+			pi.cost_center = cost_center
+			for d in doc.items:
+				md_item = frappe.get_value("Material Demand Item", {'item_code': d.get('item_code'), 'parent': ['in', m_list], "warehouse": doc.warehouse}, "name")
+				if md_item:
+					md_doc = frappe.get_doc("Material Demand Item", md_item)
+					pi.append("items", {
+						"item_code": d.get('item_code'),
+						"warehouse": md_doc.warehouse,
+						"qty": d.get('qty'),
+						"received_qty": d.get('qty'),
+						"rate": d.get('rate'),
+						"expense_account": md_doc.expense_account,
+						"cost_center": md_doc.cost_center,
+						"uom": md_doc.uom,
+						"stock_Uom": md_doc.stock_uom,
+						"material_demand": md_doc.parent,
+						"material_demand_item": md_doc.name,
+					})
 
-					else:
-						if not self.ignore_un_order_item:
-							frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
-				if pi.get('items'):
-					pi.set_missing_values()
-					pi.insert(ignore_permissions=True)
+				else:
+					if not doc.ignore_un_order_item:
+						frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
+			if pi.get('items'):
+				pi.set_missing_values()
+				pi.insert(ignore_permissions=True)
 
-			else:
-				item_details = {}
-				for d in self.items:
-					if d.code:
-						data = json.loads(d.code)
-						for res in data:
-							if res.get('qty') > 0:
-								md_item = frappe.get_list("Material Demand Item", {'item_code': d.get('item_code'),
-																				'warehouse': res.get('warehouse'),
-																				'parent': ['in', m_list]}, ['name'])
-								if md_item:
-									for p_tm in md_item:
-										md_doc = frappe.get_doc("Material Demand Item", p_tm.name)
-										if md_doc:
-											margin_type = None
-											if d.get("discount_percent"):
-												margin_type = "Percentage"
-											if d.get("discount"):
-												margin_type = "Amount"
-											d = {
-												"item_code": d.get('item_code'),
-												"warehouse": md_doc.warehouse,
-												"qty": res.get('qty'),
-												"received_qty": res.get('qty'),
-												"rate": d.get('rate'),
-												"expense_account": md_doc.expense_account,
-												"cost_center": md_doc.cost_center,
-												"uom": md_doc.uom,
-												"stock_Uom": md_doc.stock_uom,
-												"material_demand": md_doc.parent,
-												"material_demand_item": md_doc.name,
-												"margin_type": margin_type,
-												"discount_percentage": d.get("discount_percent"),
-												"discount_amount": d.get("discount"),
-											}
-											key = (md_doc.warehouse)
-											item_details.setdefault(key, {"details": []})
-											fifo_queue = item_details[key]["details"]
-											fifo_queue.append(d)
-								else:
-									if not self.ignore_un_order_item:
-										frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
-					else:
-						md_item = frappe.get_list("Material Demand Item", {'item_code': d.get('item_code'), 'parent': ['in', m_list]}, ['name'])
-						received_qty = d.get('qty')
-						if md_item:
-							for p_tm in md_item:
-								if received_qty > 0:
+		else:
+			item_details = {}
+			for d in doc.items:
+				if d.code:
+					data = json.loads(d.code)
+					for res in data:
+						if res.get('qty') > 0:
+							md_item = frappe.get_list("Material Demand Item", {'item_code': d.get('item_code'),
+																			'warehouse': res.get('warehouse'),
+																			'parent': ['in', m_list]}, ['name'])
+							if md_item:
+								for p_tm in md_item:
 									md_doc = frappe.get_doc("Material Demand Item", p_tm.name)
 									if md_doc:
 										margin_type = None
@@ -217,8 +196,8 @@ class OrderReceiving(Document):
 										d = {
 											"item_code": d.get('item_code'),
 											"warehouse": md_doc.warehouse,
-											"qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
-											"received_qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
+											"qty": res.get('qty'),
+											"received_qty": res.get('qty'),
 											"rate": d.get('rate'),
 											"expense_account": md_doc.expense_account,
 											"cost_center": md_doc.cost_center,
@@ -230,40 +209,77 @@ class OrderReceiving(Document):
 											"discount_percentage": d.get("discount_percent"),
 											"discount_amount": d.get("discount"),
 										}
-										received_qty -= md_doc.qty
-
 										key = (md_doc.warehouse)
 										item_details.setdefault(key, {"details": []})
 										fifo_queue = item_details[key]["details"]
 										fifo_queue.append(d)
-						else:
-							if not self.ignore_un_order_item:
-								frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
-				if item_details:
-					if item_details:
-						for key in item_details.keys():
-							try:
-								is_franchise = frappe.get_value("Warehouse", {'name': key}, "is_franchise")
-								cost_center = frappe.get_value("Warehouse", {'name': key}, "cost_center")
-								pi = frappe.new_doc("Purchase Receipt")
-								pi.supplier = self.supplier
-								pi.posting_date = nowdate()
-								pi.due_date = nowdate()
-								pi.company = self.company
-								pi.order_receiving = self.name
-								pi.purchase_request = self.purchase_request
-								pi.update_stock = 1 if not is_franchise else 0
-								pi.set_warehouse = key
-								pi.cost_center = cost_center
-								for d in item_details[key]['details']:
-									pi.append("items", d)
-								if pi.get('items'):
-									pi.set_missing_values()
-									pi.insert(ignore_permissions=True)
-							except:
-								continue
-			frappe.msgprint(_("Purchase Receipt Created"), alert=1)
+							else:
+								if not doc.ignore_un_order_item:
+									frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
+				else:
+					md_item = frappe.get_list("Material Demand Item", {'item_code': d.get('item_code'), 'parent': ['in', m_list]}, ['name'])
+					received_qty = d.get('qty')
+					if md_item:
+						for p_tm in md_item:
+							if received_qty > 0:
+								md_doc = frappe.get_doc("Material Demand Item", p_tm.name)
+								if md_doc:
+									margin_type = None
+									if d.get("discount_percent"):
+										margin_type = "Percentage"
+									if d.get("discount"):
+										margin_type = "Amount"
+									d = {
+										"item_code": d.get('item_code'),
+										"warehouse": md_doc.warehouse,
+										"qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
+										"received_qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
+										"rate": d.get('rate'),
+										"expense_account": md_doc.expense_account,
+										"cost_center": md_doc.cost_center,
+										"uom": md_doc.uom,
+										"stock_Uom": md_doc.stock_uom,
+										"material_demand": md_doc.parent,
+										"material_demand_item": md_doc.name,
+										"margin_type": margin_type,
+										"discount_percentage": d.get("discount_percent"),
+										"discount_amount": d.get("discount"),
+									}
+									received_qty -= md_doc.qty
 
+									key = (md_doc.warehouse)
+									item_details.setdefault(key, {"details": []})
+									fifo_queue = item_details[key]["details"]
+									fifo_queue.append(d)
+					else:
+						if not doc.ignore_un_order_item:
+							frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
+			if item_details:
+				if item_details:
+					for key in item_details.keys():
+						try:
+							is_franchise = frappe.get_value("Warehouse", {'name': key}, "is_franchise")
+							cost_center = frappe.get_value("Warehouse", {'name': key}, "cost_center")
+							pi = frappe.new_doc("Purchase Receipt")
+							pi.supplier = doc.supplier
+							pi.posting_date = nowdate()
+							pi.due_date = nowdate()
+							pi.company = doc.company
+							pi.order_receiving = doc.name
+							pi.purchase_request = doc.purchase_request
+							pi.update_stock = 1 if not is_franchise else 0
+							pi.set_warehouse = key
+							pi.cost_center = cost_center
+							for d in item_details[key]['details']:
+								pi.append("items", d)
+							if pi.get('items'):
+								pi.set_missing_values()
+								pi.insert(ignore_permissions=True)
+						except:
+							continue
+		frappe.msgprint(_("Purchase Receipt Created"), alert=1)
+
+	frappe.db.set(doc, 'status', 'Submitted')
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs

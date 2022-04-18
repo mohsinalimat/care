@@ -8,6 +8,7 @@
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
+  "status",
   "column_break_2",
   "company",
   "section_break_2",
@@ -211,6 +212,17 @@
    "fieldname": "update_discount",
    "fieldtype": "Check",
    "label": " Update Discount"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "ignore_user_permissions": 1,
+   "label": "Status",
+   "no_copy": 1,
+   "options": "Draft\nSubmitted\nCancelled\nQueue",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
@@ -223,7 +235,7 @@
    "link_fieldname": "order_receiving"
   }
  ],
- "modified": "2022-03-30 15:16:21.044477",
+ "modified": "2022-04-18 10:10:31.078033",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Order Receiving",
