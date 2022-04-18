@@ -238,9 +238,11 @@ def make_purchase_invoice(source_name, target_doc=None):
     def set_missing_values(source, target):
         if len(target.get("items")) == 0:
             frappe.throw(_("All items have already been Invoiced/Returned"))
+        cost_center = frappe.get_value('Company', source.get("company"), "cost_center")
 
         doc = frappe.get_doc(target)
         doc.payment_terms_template = get_payment_terms_template(source.supplier, "Supplier", source.company)
+        doc.cost_center = cost_center
         doc.run_method("onload")
         doc.run_method("set_missing_values")
         doc.run_method("calculate_taxes_and_totals")
@@ -255,12 +257,16 @@ def make_purchase_invoice(source_name, target_doc=None):
 
     def get_item_data(source_doc, target_doc, source_parent):
         wr = source_doc.set_warehouse if source_doc.set_warehouse else ""
+        account = frappe.get_value('Company', source_doc.get("company"), "stock_received_but_not_billed")
+        cost_center = frappe.get_value('Company', source_doc.get("company"), "cost_center")
         target_doc.append("items",{
             'item_name': source_doc.name + "-" + wr,
             'qty': 1,
             'uom': 'Pack',
             'rate': source_doc.rounded_total,
-            'purchase_receipt': source_doc.name
+            'purchase_receipt': source_doc.name,
+            'expense_account': account,
+            'cost_center': cost_center
         })
     def get_pending_qty(item_row):
         qty = item_row.qty

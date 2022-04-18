@@ -145,8 +145,11 @@ frappe.ui.form.on('Order Receiving Item', {
 	split_qty: function(frm, cdt, cdn) {
         var row = locals[cdt][cdn];
         frappe.call({
-            method: "get_warehouse",
-            doc: frm.doc,
+            method: "care.care.doctype.order_receiving.order_receiving.get_warehouse",
+            args: {
+                purchase_request:frm.doc.purchase_request,
+                item:row.item_code
+            },
             callback: function(r) {
                 split_warehouse_wise_qty(row, frm, cdt, cdn, r.message)
             }
@@ -393,6 +396,7 @@ function split_warehouse_wise_qty(row, frm, cdt, cdn, warhs){
                     options: 'Warehouse',
                     in_list_view: 1,
                     label: __('Warehouse'),
+                    columns: 4,
                     get_query: () => {
                         return {
                             filters: {
@@ -401,11 +405,19 @@ function split_warehouse_wise_qty(row, frm, cdt, cdn, warhs){
                         };
                     }
                 }, {
+                    fieldtype: 'Read Only',
+                    fieldname: 'order_qty',
+                    label: __('Order Qty'),
+                    in_list_view: 1,
+                    columns: 2
+                }, {
                     fieldtype: 'Float',
                     fieldname: 'qty',
                     label: __('Qty'),
                     in_list_view: 1,
                     reqd: 1,
+                    default: 0,
+                    columns: 2
                 }],
                 data: data
             },
@@ -417,7 +429,7 @@ function split_warehouse_wise_qty(row, frm, cdt, cdn, warhs){
             let lst = []
             child_data.forEach((d) => {
                 t_qty = t_qty + d.qty
-                lst.push({"warehouse": d.warehouse, "qty": d.qty})
+                lst.push({"warehouse": d.warehouse, "order_qty": d.order_qty, "qty": d.qty})
             });
             if (values.qty != t_qty){
                 frappe.throw(__("Total split qty must be equal to ") + values.qty);

@@ -36,14 +36,6 @@ class OrderReceiving(Document):
 			frappe.db.set(self, 'status', 'Queue')
 
 	@frappe.whitelist()
-	def get_warehouse(self):
-		wr = frappe.get_list("Warehouse", filters={'is_group': 0, 'auto_select_in_purchase_request': 1}, fields='*', order_by='name')
-		lst = []
-		for res in wr:
-			lst.append({"warehouse": res.name, "qty": 0})
-		return lst
-
-	@frappe.whitelist()
 	def get_item_code(self):
 		i_lst = []
 		select_item_list =[]
@@ -311,3 +303,16 @@ def get_item_qty(purchase_request, item, supplier, warehouse=None):
 			return qty
 	else:
 		return 0
+
+@frappe.whitelist()
+def get_warehouse(purchase_request,item):
+	if purchase_request and item:
+		result = frappe.db.sql("""select w.name as warehouse, 
+							IFNULL(sum(p.pack_order_qty), 0) as order_qty,
+							0 as qty
+							from `tabWarehouse` as w 
+							left join `tabPurchase Request Item` as p on w.name = p.warehouse and p.parent ='{0}' and p.item_code ='{1}'
+							where w.is_group = 0 and w.auto_select_in_purchase_request = 1 
+							group by w.name""".format(purchase_request,item), as_dict=True)
+		return result
+	return []
