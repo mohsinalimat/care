@@ -93,6 +93,13 @@ frappe.ui.form.on('Order Receiving Item', {
                     ()=>apply_item_filters(frm),
                     ()=>update_price_rate(frm, cdt, cdn),
                     ()=>update_selling_price_rate(frm, cdt, cdn),
+                    ()=>apply_pricing_rule(row, frm, cdt, cdn),
+                    ()=> {
+                        var new_row = frm.fields_dict.items.grid;
+                        new_row.add_new_row(null, null, true, null, true);
+                        new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
+                        new_row.set_focus_on_row();
+                    },
                     ()=>{
                         frappe.call({
                             method: "care.care.doctype.order_receiving.order_receiving.get_item_qty",
@@ -108,20 +115,13 @@ frappe.ui.form.on('Order Receiving Item', {
                             }
                         });
                     },
-                    ()=>apply_pricing_rule(row, frm, cdt, cdn),
-                    ()=> {
-                        var new_row = frm.fields_dict.items.grid;
-                        new_row.add_new_row(null, null, true, null, true);
-                        new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
-                        new_row.set_focus_on_row();
-                    }
                 ])
             }
             else{
                 apply_item_filters(frm)
             }
         }
-        apply_child_btn_color(frm, cdt, cdn)
+//        apply_child_btn_color(frm, cdt, cdn)
     },
 
     qty: function(frm, cdt, cdn) {
