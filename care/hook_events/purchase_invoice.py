@@ -255,7 +255,7 @@ def make_purchase_invoice(source_name, target_doc=None):
         target_doc.stock_qty = flt(target_doc.qty) * flt(target_doc.conversion_factor, target_doc.precision("conversion_factor"))
         returned_qty_map[source_doc.name] = returned_qty
 
-    def get_item_data(source_doc, target_doc, source_parent):
+    def get_item_data_taxes(source_doc, target_doc, source_parent):
         wr = source_doc.set_warehouse if source_doc.set_warehouse else ""
         account = frappe.get_value('Company', source_doc.get("company"), "stock_received_but_not_billed")
         cost_center = frappe.get_value('Company', source_doc.get("company"), "cost_center")
@@ -263,11 +263,26 @@ def make_purchase_invoice(source_name, target_doc=None):
             'item_name': source_doc.name + "-" + wr,
             'qty': 1,
             'uom': 'Pack',
-            'rate': source_doc.rounded_total,
+            'rate': source_doc.total,
             'purchase_receipt': source_doc.name,
             'expense_account': account,
             'cost_center': cost_center
         })
+
+        for res in source_doc.taxes:
+            tax_dict = res.as_dict()
+            tax_dict.pop('name')
+            tax_dict.pop('owner')
+            tax_dict.pop('creation')
+            tax_dict.pop('modified')
+            tax_dict.pop('modified_by')
+            tax_dict.pop('parent')
+            tax_dict.pop('parentfield')
+            tax_dict.pop('parenttype')
+            if tax_dict['charge_type'] == 'On Net Total':
+                tax_dict['charge_type'] = 'Actual'
+            target_doc.append("taxes",tax_dict)
+
     def get_pending_qty(item_row):
         qty = item_row.qty
         if frappe.db.get_single_value("Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice"):
@@ -295,7 +310,7 @@ def make_purchase_invoice(source_name, target_doc=None):
             "validation": {
                 "docstatus": ["=", 1],
             },
-            "postprocess": get_item_data
+            "postprocess": get_item_data_taxes
         },
         # "Purchase Receipt Item": {
         #     "doctype": "Purchase Invoice Item",

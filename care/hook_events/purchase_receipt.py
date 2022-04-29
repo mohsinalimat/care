@@ -1,6 +1,7 @@
 
 import frappe
-from frappe import _
+from frappe.utils import flt
+from erpnext.controllers.taxes_and_totals import get_itemised_tax_breakup_data
 
 def update_p_r_c_tool_status(doc, method):
     if doc.purchase_invoice_creation_tool:
@@ -65,3 +66,25 @@ def cancel_update_md_status(doc, method):
         else:
             md.status = "Received"
         md.db_update()
+
+
+def calculate_item_level_tax_breakup(doc, method):
+    if doc:
+        itemised_tax, itemised_taxable_amount = get_itemised_tax_breakup_data(doc)
+        if itemised_tax:
+            for res in doc.items:
+                total = 0
+                if res.item_code in itemised_tax.keys():
+                    for key in itemised_tax[res.item_code].keys():
+                        if 'Sales Tax' in key:
+                            res.sales_tax = flt(itemised_tax[res.item_code][key]['tax_amount']) if itemised_tax[res.item_code][key]['tax_amount'] else 0
+                            total += flt(res.sales_tax)
+                        if 'Further Tax' in key:
+                            res.further_tax = flt(itemised_tax[res.item_code][key]['tax_amount']) if itemised_tax[res.item_code][key]['tax_amount'] else 0
+                            total += flt(res.further_tax)
+                        if 'Advance Tax' in key:
+                            res.advance_tax = flt(itemised_tax[res.item_code][key]['tax_amount'])if itemised_tax[res.item_code][key]['tax_amount'] else 0
+                res.total_includetaxes = flt(res.sales_tax + res.further_tax + res.advance_tax)
+        else:
+            for res in doc.items:
+                res.sales_tax = res.further_tax = res.advance_tax = res.total_includetaxes = 0
