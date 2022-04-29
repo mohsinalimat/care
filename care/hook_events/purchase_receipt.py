@@ -84,7 +84,7 @@ def calculate_item_level_tax_breakup(doc, method):
                             total += flt(res.further_tax)
                         if 'Advance Tax' in key:
                             res.advance_tax = flt(itemised_tax[res.item_code][key]['tax_amount'])if itemised_tax[res.item_code][key]['tax_amount'] else 0
-                res.total_includetaxes = flt(res.sales_tax + res.further_tax + res.advance_tax)
+                res.total_includetaxes = flt(res.sales_tax + res.further_tax + res.advance_tax) + res.amount
         else:
             for res in doc.items:
                 res.sales_tax = res.further_tax = res.advance_tax = res.total_includetaxes = 0
