@@ -1,4 +1,9 @@
 frappe.ui.form.on('Payment Entry', {
+    setup: function(frm){
+        if(frm.doc.__islocal){
+            frm.set_value("custom_series", null)
+        }
+    },
     validate: function(frm){
         frm.trigger('set_cost_center')
     },

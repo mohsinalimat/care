@@ -127,7 +127,8 @@ doc_events = {
     },
     "Payment Entry": {
         "validate": ["care.hook_events.payment_entry.set_out_grand_total"],
-        "before_submit": ["care.hook_events.purchase_invoice.validate_cost_center"]
+        "before_submit": ["care.hook_events.purchase_invoice.validate_cost_center"],
+        "on_submit": ["care.hook_events.payment_entry.create_custom_series"]
     },
     "Stock Entry": {
         "on_submit": ["care.hook_events.stock_entry.make_journal_entry"]

@@ -8,6 +8,7 @@ import erpnext
 from erpnext.accounts.utils import get_account_currency, get_held_invoices
 from erpnext.controllers.accounts_controller import get_supplier_block_status
 from erpnext.setup.utils import get_exchange_rate
+from frappe.model.naming import make_autoname
 from erpnext.accounts.doctype.payment_entry.payment_entry import (get_outstanding_on_journal_entry,
                                                                   split_invoices_based_on_payment_terms,
                                                                   get_orders_to_be_billed,
@@ -298,3 +299,11 @@ def get_outstanding_invoices(party_type, party, account, condition=None, filters
 
     outstanding_invoices = sorted(outstanding_invoices, key=lambda k: k['due_date'] or getdate(nowdate()))
     return outstanding_invoices
+
+
+def create_custom_series(doc, method):
+    if doc:
+        series = "PE-.DD.-.MM.-.YY.-.###"
+        name = make_autoname(series)
+        doc.custom_series = name
+        doc.db_update()
