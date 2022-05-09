@@ -1,10 +1,18 @@
 // Copyright (c) 2021, RF and contributors
 // For license information, please see license.txt
 
+{% include 'care/public/js/tax_contoller.js' %};
+
+cur_frm.cscript.tax_table = "Purchase Taxes and Charges";
+
+{% include 'erpnext/accounts/doctype/purchase_taxes_and_charges_template/purchase_taxes_and_charges_template.js' %}
+
+frappe.provide("care.care");
+
 frappe.ui.form.on('Order Receiving', {
 	setup: function(frm, cdt, cdn) {
 	    if (frm.doc.__islocal) {
-			frm.set_value("date", frappe.datetime.now_date())
+			frm.set_value("posting_date", frappe.datetime.now_date())
 		}
 		frm.set_value("buying_price_list", frappe.defaults.get_default('buying_price_list'))
 		frm.set_value("currency", frappe.defaults.get_default('Currency'))
@@ -20,7 +28,7 @@ frappe.ui.form.on('Order Receiving', {
 			return {
 				"filters": {
 					"docstatus": 1,
-					"date": frm.doc.date
+					"date": frm.doc.posting_date
 				}
 			};
 		})
@@ -31,10 +39,15 @@ frappe.ui.form.on('Order Receiving', {
             }
         });
 	    frm.trigger("apply_item_filter")
+	    frm.set_query("taxes_and_charges", function() {
+			return {
+				filters: {'company': frm.doc.company }
+			}
+		});
 	},
 	refresh: function(frm){
 	    if (frm.doc.__islocal) {
-			frm.set_value("date", frappe.datetime.now_date())
+			frm.set_value("posting_date", frappe.datetime.now_date())
 		}
 		if(!frm.doc.base_selling_price_list){
             frm.set_value("base_selling_price_list", frappe.defaults.get_default('selling_price_list'))
@@ -135,7 +148,15 @@ frappe.ui.form.on('Order Receiving Item', {
         var row = locals[cdt][cdn];
         let amount = row.rate * row.qty
         frappe.model.set_value(cdt,cdn,"amount",amount);
+        frappe.model.set_value(cdt,cdn,"net_amount",amount);
+        frappe.model.set_value(cdt,cdn,"base_net_amount",amount);
+        frappe.model.set_value(cdt,cdn,"net_rate",row.rate);
+        frappe.model.set_value(cdt,cdn,"base_net_rate",row.rate);
         refresh_field("amount", cdn, "items");
+        refresh_field("net_amount", cdn, "items");
+        refresh_field("net_amount", cdn, "items");
+        refresh_field("net_rate", cdn, "items");
+        refresh_field("base_net_rate", cdn, "items");
         update_total_qty(frm, cdt, cdn)
         calculate_margin(frm, cdt, cdn)
 	},
@@ -166,7 +187,8 @@ function update_total_qty(frm, cdt, cdn){
         total_amt = total_amt + row.amount
     });
     frm.set_value("total_qty", total_qty);
-    frm.set_value("total_amount", total_amt);
+    frm.set_value("total", total_amt);
+    frm.set_value("grand_total", total_amt);
 }
 
 function calculate_margin(frm, cdt, cdn){
@@ -201,7 +223,7 @@ function update_price_rate(frm, cdt, cdn){
                             price_list: frm.doc.buying_price_list,
                             price_list_currency: frm.doc.currency,
                             company: frm.doc.company,
-                            transaction_date: frm.doc.date ,
+                            transaction_date: frm.doc.posting_date ,
                             doctype: frm.doc.doctype,
                             name: frm.doc.name,
                             qty: item.qty || 1,
@@ -244,7 +266,7 @@ function update_selling_price_rate(frm, cdt, cdn){
                             price_list: frm.doc.base_selling_price_list,
                             price_list_currency: frm.doc.currency,
                             company: frm.doc.company,
-                            transaction_date: frm.doc.date ,
+                            transaction_date: frm.doc.posting_date ,
                             doctype: frm.doc.doctype,
                             name: frm.doc.name,
                             qty: item.qty || 1,
@@ -443,3 +465,93 @@ function split_warehouse_wise_qty(row, frm, cdt, cdn, warhs){
     });
     dialog.show();
 }
+
+function calculate_taxes_and_totals(){
+//    this.calculate_net_total();
+    this.calculate_taxes();
+//    this.calculate_totals();
+}
+
+function calculate_taxes(){
+    var me = this;
+    this.frm.doc.rounding_adjustment = 0;
+    var actual_tax_dict = {};
+
+    // maintain actual tax rate based on idx
+    $.each(this.frm.doc["taxes"] || [], function(i, tax) {
+        if (tax.charge_type == "Actual") {
+            actual_tax_dict[tax.idx] = flt(tax.tax_amount, precision("tax_amount", tax));
+        }
+    });
+
+    $.each(this.frm.doc["items"] || [], function(n, item) {
+        var item_tax_map = me._load_item_tax_rate(item.item_tax_rate);
+        $.each(me.frm.doc["taxes"] || [], function(i, tax) {
+            // tax_amount represents the amount of tax for the current step
+            var current_tax_amount = me.get_current_tax_amount(item, tax, item_tax_map);
+
+            // Adjust divisional loss to the last item
+            if (tax.charge_type == "Actual") {
+                actual_tax_dict[tax.idx] -= current_tax_amount;
+                if (n == me.frm.doc["items"].length - 1) {
+                    current_tax_amount += actual_tax_dict[tax.idx];
+                }
+            }
+
+            // accumulate tax amount into tax.tax_amount
+            if (tax.charge_type != "Actual" &&
+                !(me.discount_amount_applied && me.frm.doc.apply_discount_on=="Grand Total")) {
+                tax.tax_amount += current_tax_amount;
+            }
+
+            // store tax_amount for current item as it will be used for
+            // charge type = 'On Previous Row Amount'
+            tax.tax_amount_for_current_item = current_tax_amount;
+
+            // tax amount after discount amount
+            tax.tax_amount_after_discount_amount += current_tax_amount;
+
+            // for buying
+            if(tax.category) {
+                // if just for valuation, do not add the tax amount in total
+                // hence, setting it as 0 for further steps
+                current_tax_amount = (tax.category == "Valuation") ? 0.0 : current_tax_amount;
+
+                current_tax_amount *= (tax.add_deduct_tax == "Deduct") ? -1.0 : 1.0;
+            }
+
+            // note: grand_total_for_current_item contains the contribution of
+            // item's amount, previously applied tax and the current tax on that item
+            if(i==0) {
+                tax.grand_total_for_current_item = flt(item.net_amount + current_tax_amount);
+            } else {
+                tax.grand_total_for_current_item =
+                    flt(me.frm.doc["taxes"][i-1].grand_total_for_current_item + current_tax_amount);
+            }
+
+            // set precision in the last item iteration
+            if (n == me.frm.doc["items"].length - 1) {
+                me.round_off_totals(tax);
+                me.set_in_company_currency(tax,
+                    ["tax_amount", "tax_amount_after_discount_amount"]);
+
+                me.round_off_base_values(tax);
+
+                // in tax.total, accumulate grand total for each item
+                me.set_cumulative_total(i, tax);
+
+                me.set_in_company_currency(tax, ["total"]);
+
+                // adjust Discount Amount loss in last tax iteration
+                if ((i == me.frm.doc["taxes"].length - 1) && me.discount_amount_applied
+                    && me.frm.doc.apply_discount_on == "Grand Total" && me.frm.doc.discount_amount) {
+                    me.frm.doc.rounding_adjustment = flt(me.frm.doc.grand_total -
+                        flt(me.frm.doc.discount_amount) - tax.total, precision("rounding_adjustment"));
+                }
+            }
+        });
+    });
+}
+
+// for backward compatibility: combine new and previous states
+$.extend(cur_frm.cscript, new care.care.ReceivingController({frm: cur_frm}));

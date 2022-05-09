@@ -14,7 +14,9 @@ app_license = "MIT"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/care/css/care.css"
-app_include_js = "/assets/care/js/data_import_tools1.min.js"
+app_include_js = ["/assets/care/js/data_import_tools1.min.js",
+                  "/assets/care/js/care.min.js"
+                  ]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/care/css/care.css"
@@ -34,7 +36,8 @@ app_include_js = "/assets/care/js/data_import_tools1.min.js"
 doctype_js = {
     "Payment Entry": "public/js/payment_entry.js",
     "Purchase Invoice": "public/js/purchase_invoice.js",
-    "Stock Entry": "public/js/stock_entry.js"
+    "Stock Entry": "public/js/stock_entry.js",
+    "Purchase Receipt": "public/js/purchase_receipt.js",
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}

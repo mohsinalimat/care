@@ -16,14 +16,17 @@
   "supplier",
   "supplier_name",
   "column_break_6",
-  "date",
+  "posting_date",
   "warehouse",
   "ignore_un_order_item",
   "currency_and_price_list_section",
   "currency",
+  "conversion_rate",
+  "plc_conversion_rate",
   "column_break_12",
   "buying_price_list",
   "base_selling_price_list",
+  "price_list_currency",
   "section_break_17",
   "update_buying_price",
   "column_break_19",
@@ -35,7 +38,15 @@
   "summary_section",
   "total_qty",
   "column_break_20",
-  "total_amount",
+  "total",
+  "section_break_26",
+  "taxes_and_charges",
+  "taxes",
+  "section_break_33",
+  "s",
+  "column_break_34",
+  "taxes_and_charges_added",
+  "grand_total",
   "section_break_9",
   "amended_from"
  ],
@@ -82,12 +93,6 @@
    "label": "Purchase Request",
    "options": "Purchase Request",
    "reqd": 1
-  },
-  {
-   "fieldname": "date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Date"
   },
   {
    "description": "Set up only when order received against particular Warehouse",
@@ -148,8 +153,7 @@
   },
   {
    "fieldname": "summary_section",
-   "fieldtype": "Section Break",
-   "label": "Summary"
+   "fieldtype": "Section Break"
   },
   {
    "fieldname": "total_qty",
@@ -159,12 +163,6 @@
   {
    "fieldname": "column_break_20",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "total_amount",
-   "fieldtype": "Currency",
-   "label": "Total Amount",
-   "options": "currency"
   },
   {
    "fieldname": "column_break_2",
@@ -223,6 +221,83 @@
    "no_copy": 1,
    "options": "Draft\nSubmitted\nCancelled\nQueue",
    "read_only": 1
+  },
+  {
+   "fieldname": "section_break_26",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "taxes_and_charges",
+   "fieldtype": "Link",
+   "label": "Taxes and Charges Template",
+   "no_copy": 1,
+   "options": "Purchase Taxes and Charges Template"
+  },
+  {
+   "fieldname": "taxes",
+   "fieldtype": "Table",
+   "label": "Taxes and Charges",
+   "no_copy": 1,
+   "options": "Purchase Taxes and Charges"
+  },
+  {
+   "fieldname": "total",
+   "fieldtype": "Currency",
+   "label": "Total",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_33",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_34",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "taxes_and_charges_added",
+   "fieldtype": "Currency",
+   "label": "Taxes and Charges Added",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "grand_total",
+   "fieldtype": "Currency",
+   "label": "Total Amount",
+   "options": "currency"
+  },
+  {
+   "fieldname": "s",
+   "fieldtype": "Heading"
+  },
+  {
+   "default": "1",
+   "fieldname": "conversion_rate",
+   "fieldtype": "Float",
+   "label": "Conversion Rate",
+   "read_only": 1
+  },
+  {
+   "fieldname": "plc_conversion_rate",
+   "fieldtype": "Float",
+   "label": "plc_conversion_rate",
+   "read_only": 1
+  },
+  {
+   "fieldname": "price_list_currency",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Price List Currency",
+   "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -235,7 +310,7 @@
    "link_fieldname": "order_receiving"
   }
  ],
- "modified": "2022-04-18 10:10:31.078033",
+ "modified": "2022-05-09 13:00:15.502147",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Order Receiving",

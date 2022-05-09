@@ -137,6 +137,7 @@ def make_purchase_invoice(doc):
 			pi.posting_date = nowdate()
 			pi.due_date = nowdate()
 			pi.company = doc.company
+			pi.taxes_and_charges = doc.taxes_and_charges
 			pi.order_receiving = doc.name
 			pi.update_stock = 1 if not is_franchise else 0
 			pi.set_warehouse = doc.warehouse
@@ -154,6 +155,7 @@ def make_purchase_invoice(doc):
 						"expense_account": md_doc.expense_account,
 						"cost_center": md_doc.cost_center,
 						"uom": md_doc.uom,
+						"item_tax_template": d.get('item_tax_template'),
 						"stock_Uom": md_doc.stock_uom,
 						"material_demand": md_doc.parent,
 						"material_demand_item": md_doc.name,
@@ -164,7 +166,8 @@ def make_purchase_invoice(doc):
 						frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
 			if pi.get('items'):
 				pi.set_missing_values()
-				pi.insert(ignore_permissions=True)
+				pi.calculate_taxes_and_totals()
+				pi.save(ignore_permissions=True)
 
 		else:
 			item_details = {}
@@ -185,7 +188,7 @@ def make_purchase_invoice(doc):
 											margin_type = "Percentage"
 										if d.get("discount"):
 											margin_type = "Amount"
-										d = {
+										s = {
 											"item_code": d.get('item_code'),
 											"warehouse": md_doc.warehouse,
 											"qty": res.get('qty'),
@@ -197,6 +200,7 @@ def make_purchase_invoice(doc):
 											"stock_Uom": md_doc.stock_uom,
 											"material_demand": md_doc.parent,
 											"material_demand_item": md_doc.name,
+											"item_tax_template": d.get('item_tax_template'),
 											"margin_type": margin_type,
 											"discount_percentage": d.get("discount_percent"),
 											"discount_amount": d.get("discount"),
@@ -204,7 +208,7 @@ def make_purchase_invoice(doc):
 										key = (md_doc.warehouse)
 										item_details.setdefault(key, {"details": []})
 										fifo_queue = item_details[key]["details"]
-										fifo_queue.append(d)
+										fifo_queue.append(s)
 							else:
 								if not doc.ignore_un_order_item:
 									frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
@@ -233,6 +237,7 @@ def make_purchase_invoice(doc):
 										"stock_Uom": md_doc.stock_uom,
 										"material_demand": md_doc.parent,
 										"material_demand_item": md_doc.name,
+										"item_tax_template": d.get('item_tax_template'),
 										"margin_type": margin_type,
 										"discount_percentage": d.get("discount_percent"),
 										"discount_amount": d.get("discount"),
@@ -257,6 +262,7 @@ def make_purchase_invoice(doc):
 							pi.posting_date = nowdate()
 							pi.due_date = nowdate()
 							pi.company = doc.company
+							pi.taxes_and_charges = doc.taxes_and_charges
 							pi.order_receiving = doc.name
 							pi.purchase_request = doc.purchase_request
 							pi.update_stock = 1 if not is_franchise else 0
@@ -266,7 +272,8 @@ def make_purchase_invoice(doc):
 								pi.append("items", d)
 							if pi.get('items'):
 								pi.set_missing_values()
-								pi.insert(ignore_permissions=True)
+								pi.calculate_taxes_and_totals()
+								pi.save(ignore_permissions=True)
 						except:
 							continue
 		frappe.msgprint(_("Purchase Receipt Created"), alert=1)
