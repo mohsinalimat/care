@@ -297,7 +297,8 @@
    "fieldname": "posting_date",
    "fieldtype": "Date",
    "in_list_view": 1,
-   "label": "Date"
+   "label": "Date",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
@@ -310,7 +311,7 @@
    "link_fieldname": "order_receiving"
   }
  ],
- "modified": "2022-05-09 13:00:15.502147",
+ "modified": "2022-05-09 17:47:09.850001",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Order Receiving",
