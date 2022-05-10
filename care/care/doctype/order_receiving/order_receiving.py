@@ -3,11 +3,12 @@
 
 import frappe
 from frappe import _
-from frappe.utils import nowdate
+from frappe.utils import nowdate,getdate,cstr
 from frappe.model.document import Document
 import json
 from frappe.utils import flt
 from erpnext.controllers.taxes_and_totals import get_itemised_tax_breakup_data
+from erpnext.stock.get_item_details import _get_item_tax_template
 
 
 class OrderReceiving(Document):
@@ -351,3 +352,27 @@ def get_warehouse(purchase_request,item):
 							group by w.name""".format(purchase_request,item), as_dict=True)
 		return result
 	return []
+
+
+@frappe.whitelist()
+def get_item_tax_template(item, args, out= None):
+	"""
+	args = {
+	        "tax_category": None
+	        "item_tax_template": None
+	}
+	"""
+
+	item = frappe.get_doc("Item", item)
+	item_tax_template = None
+	args = json.loads(args)
+	if item.taxes:
+		item_tax_template = _get_item_tax_template(args, item.taxes, out)
+		return item_tax_template
+
+	if not item_tax_template:
+		item_group = item.item_group
+		while item_group and not item_tax_template:
+			item_group_doc = frappe.get_cached_doc("Item Group", item_group)
+			item_tax_template = _get_item_tax_template(args, item_group_doc.taxes, out)
+			return item_tax_template

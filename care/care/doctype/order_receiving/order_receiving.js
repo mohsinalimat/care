@@ -105,6 +105,7 @@ frappe.ui.form.on('Order Receiving Item', {
                 frappe.run_serially([
                     ()=>apply_item_filters(frm),
                     ()=>update_price_rate(frm, cdt, cdn),
+                    ()=>get_item_tax_template(frm, cdt, cdn),
                     ()=>update_selling_price_rate(frm, cdt, cdn),
                     ()=>apply_pricing_rule(row, frm, cdt, cdn),
                     ()=> {
@@ -553,5 +554,44 @@ function calculate_taxes(){
     });
 }
 
+
+function get_item_tax_template(frm, cdt, cdn) {
+    var item = frappe.get_doc(cdt, cdn);
+    var update_stock = 0
+
+    item.weight_per_unit = 0;
+    item.weight_uom = '';
+    // clear barcode if setting item (else barcode will take priority)
+    if(item.item_code || item.barcode || item.serial_no) {
+        frm.call({
+            method: "care.care.doctype.order_receiving.order_receiving.get_item_tax_template",
+            child: item,
+            args: {
+                item: item.item_code,
+                args: {
+                    item_code: item.item_code,
+                    supplier: frm.doc.supplier,
+                    currency: frm.doc.currency,
+                    company: frm.doc.company,
+                    transaction_date: frm.doc.posting_date,
+                    doctype: frm.doc.doctype,
+                    name: frm.doc.name,
+                    qty: item.qty || 1,
+                    net_rate: item.rate,
+                    stock_qty: item.stock_qty,
+                    conversion_factor: item.conversion_factor,
+                    stock_uom: item.stock_uom,
+                    child_docname: item.name
+                }
+            },
+
+            callback: function(r) {
+                if(!r.exc) {
+                     frappe.model.set_value(cdt,cdn,"item_tax_template",r.message);
+                }
+            }
+        });
+    }
+}
 // for backward compatibility: combine new and previous states
 $.extend(cur_frm.cscript, new care.care.ReceivingController({frm: cur_frm}));
