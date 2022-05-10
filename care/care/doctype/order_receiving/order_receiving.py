@@ -6,6 +6,9 @@ from frappe import _
 from frappe.utils import nowdate
 from frappe.model.document import Document
 import json
+from frappe.utils import flt
+from erpnext.controllers.taxes_and_totals import get_itemised_tax_breakup_data
+
 
 class OrderReceiving(Document):
 
@@ -17,6 +20,7 @@ class OrderReceiving(Document):
 			if res.selling_price_list_rate > 0:
 				margin = (res.selling_price_list_rate - res.rate) / res.selling_price_list_rate * 100
 			res.margin_percent = margin
+		self.calculate_item_level_tax_breakup()
 
 	def on_cancel(self):
 		frappe.db.set(self, 'status', 'Cancelled')
@@ -34,6 +38,30 @@ class OrderReceiving(Document):
 		else:
 			frappe.enqueue(make_purchase_invoice, doc=self, queue='long')
 			frappe.db.set(self, 'status', 'Queue')
+
+	def calculate_item_level_tax_breakup(self):
+		if self:
+			itemised_tax, itemised_taxable_amount = get_itemised_tax_breakup_data(self)
+			if itemised_tax:
+				for res in self.items:
+					total = 0
+					if res.item_code in itemised_tax.keys():
+						for key in itemised_tax[res.item_code].keys():
+							if 'Sales Tax' in key:
+								res.sales_tax = flt(itemised_tax[res.item_code][key]['tax_amount']) if \
+								itemised_tax[res.item_code][key]['tax_amount'] else 0
+								total += flt(res.sales_tax)
+							if 'Further Tax' in key:
+								res.further_tax = flt(itemised_tax[res.item_code][key]['tax_amount']) if \
+								itemised_tax[res.item_code][key]['tax_amount'] else 0
+								total += flt(res.further_tax)
+							if 'Advance Tax' in key:
+								res.advance_tax = flt(itemised_tax[res.item_code][key]['tax_amount']) if \
+								itemised_tax[res.item_code][key]['tax_amount'] else 0
+					res.total_include_taxes = flt(res.sales_tax + res.further_tax + res.advance_tax) + res.amount
+			else:
+				for res in self.items:
+					res.sales_tax = res.further_tax = res.advance_tax = res.total_include_taxes = 0
 
 	@frappe.whitelist()
 	def get_item_code(self):
