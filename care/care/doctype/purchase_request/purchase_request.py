@@ -11,6 +11,7 @@ from erpnext.stock.doctype.item.item import get_item_defaults
 from erpnext.setup.doctype.item_group.item_group import get_item_group_defaults
 from erpnext.setup.doctype.brand.brand import get_brand_defaults
 from care.hook_events.make_xlsx_file import make_xlsx,make_xlsx_summary
+from care.hook_events.purchase_invoice import get_price_list_rate_for
 
 class PurchaseRequest(Document):
 
@@ -103,7 +104,6 @@ class PurchaseRequest(Document):
 			if conversion:
 				conversion_factor = conversion['conversion_factor']
 			res['conversion_factor'] = conversion_factor
-
 		if f_w_lst:
 			for w in f_w_lst:
 				try:
@@ -157,6 +157,23 @@ class PurchaseRequest(Document):
 				percent = warehouse_dict[d.get('warehouse')]
 				qty = order_qty * (percent / 100)
 				d['order_qty'] = qty
+				j_d = json.dumps({
+							"item_code": d.get('item_code'),
+							"price_list": frappe.defaults.get_defaults().buying_price_list,
+							"currency": frappe.defaults.get_defaults().currency,
+							"price_list_currency": frappe.defaults.get_defaults().currency,
+							"supplier": d.get('default_supplier'),
+							"uom": self.order_uom,
+							"stock_uom": d.get('stock_uom'),
+							"qty": d.get('order_qty'),
+							"transaction_date": self.date,
+							"doctype": self.doctype,
+							"name": self.name,
+							"conversion_factor": d.get('conversion_factor')
+						})
+				rate = get_price_list_rate_for(d.get('item_code'),j_d )
+				d['last_purchase_rate'] = rate if rate else 0
+
 		return item_details
 
 	def on_submit(self):

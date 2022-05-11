@@ -68,7 +68,7 @@ frappe.ui.form.on('Purchase Request', {
             }, __("Downloads"));
          }
 	},
-	get_items: function(frm){
+	get_items: function(frm, cdt, cdn){
 	    frappe.call({
             method: "get_items",
             doc: frm.doc,
@@ -157,10 +157,39 @@ frappe.ui.form.on("Purchase Request Item", {
                     if(!r.exc) {
                         frappe.model.set_value(cdt,cdn,"conversion_factor",r.message.conversion_factor);
                         refresh_field("conversion_factor", cdn, "items");
+                        update_price_rate(item,frm, cdt, cdn);
                     }
+
                 }
             });
         }
 	}
 })
 
+function update_price_rate(item,frm, cdt, cdn){
+    frm.call({
+        method: "care.hook_events.purchase_invoice.get_price_list_rate_for",
+        args: {
+            item_code: item.item_code,
+            args: {
+                item_code: item.item_code,
+                supplier: item.supplier,
+                currency: frappe.defaults.get_default('Currency'),
+                price_list: frappe.defaults.get_default('buying_price_list'),
+                price_list_currency: frappe.defaults.get_default('Currency'),
+                company: frm.doc.company,
+                transaction_date: frm.doc.date ,
+                doctype: frm.doc.doctype,
+                name: frm.doc.name,
+                qty: item.qty || 1,
+                child_docname: item.name,
+                uom: frm.doc.order_uom,
+                stock_uom: item.stock_uom,
+                conversion_factor: item.conversion_factor
+            }
+        },
+        callback: function(r) {
+            frappe.model.set_value( cdt, cdn, 'rate',r.message || 0)
+        }
+    })
+}

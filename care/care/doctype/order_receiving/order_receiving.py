@@ -116,16 +116,16 @@ class OrderReceiving(Document):
 					if result:
 						p_rule = frappe.get_doc("Pricing Rule", result[0][0])
 						text = ""
-						if res.discount:
-							text = f"""Updated Discount Amount {p_rule.discount_amount} to {res.discount} From Order Receiving"""
-							p_rule.rate_or_discount = 'Discount Amount'
-							p_rule.discount_amount = res.discount
+						# if res.discount:
+						# 	text = f"""Updated Discount Amount {p_rule.discount_amount} to {res.discount} From Order Receiving"""
+						# 	p_rule.rate_or_discount = 'Discount Amount'
+						# 	p_rule.discount_amount = res.discount
 
-						if res.discount_percent:
-							text = f"""Updated Discount Percentage {p_rule.discount_percentage} 
-										to {res.discount_percent} From Order Receiving"""
-							p_rule.rate_or_discount = 'Discount Percentage'
-							p_rule.discount_percentage = res.discount_percent
+						# if res.discount_percent:
+						text = f"""Updated Discount Percentage {p_rule.discount_percentage} 
+									to {res.discount_percent} From Order Receiving"""
+						p_rule.rate_or_discount = 'Discount Percentage'
+						p_rule.discount_percentage = res.discount_percent
 						p_rule.save(ignore_permissions=True)
 						p_rule.add_comment(comment_type='Info', text=text, link_doctype=p_rule.doctype, link_name=p_rule.name)
 					else:
@@ -141,12 +141,12 @@ class OrderReceiving(Document):
 						p_rule.priority = priority
 						p_rule.valid_from = nowdate()
 						p_rule.append("items", {'item_code': res.item_code})
-						if res.discount:
-							p_rule.rate_or_discount = 'Discount Amount'
-							p_rule.discount_amount = res.discount
-						if res.discount_percent:
-							p_rule.rate_or_discount = 'Discount Percentage'
-							p_rule.discount_percentage = res.discount_percent
+						# if res.discount:
+						# 	p_rule.rate_or_discount = 'Discount Amount'
+						# 	p_rule.discount_amount = res.discount
+						# if res.discount_percent:
+						p_rule.rate_or_discount = 'Discount Percentage'
+						p_rule.discount_percentage = res.discount_percent
 						p_rule.save(ignore_permissions=True)
 						text = "Pricing Rule created from Order Receiving"
 						p_rule.add_comment(comment_type='Info', text=text, link_doctype=p_rule.doctype, link_name=p_rule.name)
