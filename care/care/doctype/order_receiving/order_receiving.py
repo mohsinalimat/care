@@ -277,6 +277,30 @@ def make_purchase_invoice(doc):
 									item_details.setdefault(key, {"details": []})
 									fifo_queue = item_details[key]["details"]
 									fifo_queue.append(d)
+						if received_qty > 0:
+							margin_type = None
+							if d.get("discount_percent"):
+								margin_type = "Percentage"
+							if d.get("discount"):
+								margin_type = "Amount"
+							d = {
+								"item_code": d.get('item_code'),
+								"warehouse": doc.c_b_warehouse,
+								"qty": received_qty,
+								"received_qty": received_qty,
+								"rate": d.get('rate'),
+								"uom": d.get('uom'),
+								"stock_Uom": d.get('stock_uom'),
+								"item_tax_template": d.get('item_tax_template'),
+								"margin_type": margin_type,
+								"discount_percentage": d.get("discount_percent"),
+								"discount_amount": d.get("discount"),
+							}
+							key = (doc.c_b_warehouse)
+							item_details.setdefault(key, {"details": []})
+							fifo_queue = item_details[key]["details"]
+							fifo_queue.append(d)
+
 					else:
 						if not doc.ignore_un_order_item:
 							frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
@@ -345,7 +369,7 @@ def get_warehouse(purchase_request,item):
 	if purchase_request and item:
 		result = frappe.db.sql("""select w.name as warehouse, 
 							IFNULL(sum(p.pack_order_qty), 0) as order_qty,
-							0 as qty
+							IFNULL(sum(p.pack_order_qty), 0) as qty
 							from `tabWarehouse` as w 
 							left join `tabPurchase Request Item` as p on w.name = p.warehouse and p.parent ='{0}' and p.item_code ='{1}'
 							where w.is_group = 0 and w.auto_select_in_purchase_request = 1 

@@ -17,6 +17,7 @@
   "supplier_name",
   "column_break_6",
   "posting_date",
+  "c_b_warehouse",
   "warehouse",
   "ignore_un_order_item",
   "currency_and_price_list_section",
@@ -299,6 +300,14 @@
    "in_list_view": 1,
    "label": "Date",
    "reqd": 1
+  },
+  {
+   "description": "Accepted Extra Order Qty",
+   "fieldname": "c_b_warehouse",
+   "fieldtype": "Link",
+   "label": "Corporate Warehouse",
+   "options": "Warehouse",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
@@ -311,7 +320,7 @@
    "link_fieldname": "order_receiving"
   }
  ],
- "modified": "2022-05-09 17:47:09.850001",
+ "modified": "2022-05-12 12:58:40.996521",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Order Receiving",

@@ -24,6 +24,13 @@ frappe.ui.form.on('Order Receiving', {
 				}
 			};
 		})
+		frm.set_query("c_b_warehouse", () => {
+			return {
+				"filters": {
+					"is_group": 0
+				}
+			};
+		})
 		frm.set_query("purchase_request", () => {
 			return {
 				"filters": {
