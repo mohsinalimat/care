@@ -190,7 +190,7 @@ def make_purchase_invoice(doc):
 						"stock_Uom": md_doc.stock_uom,
 						"material_demand": md_doc.parent,
 						"material_demand_item": md_doc.name,
-						"margin_type": "Percentage" if d.get("discount_percent") else 0,
+						"margin_type": "Percentage" if d.get("discount_percent") else None,
 						"discount_percentage": d.get("discount_percent"),
 					})
 
@@ -228,7 +228,7 @@ def make_purchase_invoice(doc):
 											"material_demand": md_doc.parent,
 											"material_demand_item": md_doc.name,
 											"item_tax_template": d.get('item_tax_template'),
-											"margin_type": "Percentage" if d.get("discount_percent") else 0,
+											"margin_type": "Percentage" if d.get("discount_percent") else None,
 											"discount_percentage": d.get("discount_percent"),
 										}
 										key = (md_doc.warehouse)
@@ -259,7 +259,7 @@ def make_purchase_invoice(doc):
 										"material_demand": md_doc.parent,
 										"material_demand_item": md_doc.name,
 										"item_tax_template": d.get('item_tax_template'),
-										"margin_type": "Percentage" if d.get("discount_percent") else 0,
+										"margin_type": "Percentage" if d.get("discount_percent") else None,
 										"discount_percentage": d.get("discount_percent"),
 									}
 									received_qty -= md_doc.qty
@@ -278,7 +278,7 @@ def make_purchase_invoice(doc):
 								"uom": d.get('uom'),
 								"stock_Uom": d.get('stock_uom'),
 								"item_tax_template": d.get('item_tax_template'),
-								"margin_type": "Percentage" if d.get("discount_percent") else 0,
+								"margin_type": "Percentage" if d.get("discount_percent") else None,
 								"discount_percentage": d.get("discount_percent"),
 							}
 							key = (doc.c_b_warehouse)
