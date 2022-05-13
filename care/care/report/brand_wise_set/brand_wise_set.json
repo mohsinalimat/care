@@ -1,0 +1,39 @@
+{
+ "add_total_row": 0,
+ "columns": [],
+ "creation": "2022-05-13 12:12:22.512368",
+ "disable_prepared_report": 0,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "json": "{\"filters\":[[\"Purchase Receipt\",\"company\",\"=\",\"Care Pharmacy\"]],\"fields\":[[\"name\",\"Purchase Receipt\"],[\"docstatus\",\"Purchase Receipt\"],[\"brand\",\"Purchase Receipt Item\"],[\"item_name\",\"Purchase Receipt Item\"],[\"set_warehouse\",\"Purchase Receipt\"],[\"qty\",\"Purchase Receipt Item\"]],\"order_by\":\"`tabPurchase Receipt`.`modified` desc\",\"add_totals_row\":0,\"page_length\":20,\"column_widths\":{\"name\":120,\"Purchase Receipt Item:brand\":120,\"Purchase Receipt Item:item_name\":120,\"set_warehouse\":120,\"Purchase Receipt Item:qty\":100},\"group_by\":null}",
+ "modified": "2022-05-13 12:16:39.011623",
+ "modified_by": "Administrator",
+ "module": "Care",
+ "name": "Brand Wise Set",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Purchase Receipt",
+ "report_name": "Brand Wise Set",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "Stock User"
+  },
+  {
+   "role": "Purchase User"
+  },
+  {
+   "role": "Stock Manager"
+  },
+  {
+   "role": "Accounts User"
+  },
+  {
+   "role": "Care Purchase"
+  }
+ ]
+}
