@@ -61,10 +61,15 @@ frappe.ui.form.on('Order Receiving', {
         }
 		apply_item_filters(frm)
 		frm.get_field("items").grid.toggle_display("split_qty", frm.doc.warehouse ? 0 : 1);
+		frm.get_field("items").grid.toggle_enable("rate", frm.doc.update_buying_price ? 1 : 0);
 	    refresh_field("items");
 	},
 	warehouse: function(frm, cdt, cdn){
 	    frm.get_field("items").grid.toggle_display("split_qty", frm.doc.warehouse ? 0 : 1);
+	    refresh_field("items");
+	},
+	update_buying_price: function(frm, cdt, cdn){
+		frm.get_field("items").grid.toggle_enable("rate", frm.doc.update_buying_price ? 1 : 0);
 	    refresh_field("items");
 	},
 	validate: function(frm, cdt, cdn){
@@ -195,14 +200,16 @@ frappe.ui.form.on('Order Receiving Item', {
 function update_amount(frm, cdt, cdn){
     var row = locals[cdt][cdn];
     let amt = row.rate * row.qty
-    var discount_amount = row.discount
     let amount = amt - row.discount
+    let dis_aft_rate = amount/ row.qty
     frappe.model.set_value(cdt,cdn,"amount",amount);
     frappe.model.set_value(cdt,cdn,"net_amount",amount);
     frappe.model.set_value(cdt,cdn,"base_net_amount",amount);
+    frappe.model.set_value(cdt,cdn,"discount_after_rate",dis_aft_rate);
     refresh_field("amount", cdn, "items");
     refresh_field("net_amount", cdn, "items");
     refresh_field("base_net_amount", cdn, "items");
+    refresh_field("discount_after_rate", cdn, "items");
 }
 function update_total_qty(frm, cdt, cdn){
     let total_qty = 0

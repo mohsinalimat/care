@@ -21,6 +21,7 @@ class OrderReceiving(Document):
 			if res.selling_price_list_rate > 0:
 				margin = (res.selling_price_list_rate - res.rate) / res.selling_price_list_rate * 100
 			res.margin_percent = margin
+			res.discount_after_rate = round(res.amount,2) / res.qty
 		self.calculate_item_level_tax_breakup()
 
 	def on_cancel(self):
@@ -28,15 +29,15 @@ class OrderReceiving(Document):
 
 	def on_submit(self):
 		if len(self.items) <= 100 and self.warehouse:
+			self.updated_price_list_and_dicsount()
 			make_purchase_invoice(self)
-			self.updated_price_list_and_dicsount()
-			self.updated_price_list_and_dicsount()
 			frappe.db.set(self, 'status', 'Submitted')
 		elif len(self.items) <= 50:
-			make_purchase_invoice(self)
 			self.updated_price_list_and_dicsount()
+			make_purchase_invoice(self)
 			frappe.db.set(self, 'status', 'Submitted')
 		else:
+			self.updated_price_list_and_dicsount()
 			frappe.enqueue(make_purchase_invoice, doc=self, queue='long')
 			frappe.db.set(self, 'status', 'Queue')
 
@@ -171,6 +172,7 @@ def make_purchase_invoice(doc):
 			pi.update_stock = 1 if not is_franchise else 0
 			pi.set_warehouse = doc.warehouse
 			pi.cost_center = cost_center
+			pi.ignore_pricing_rule = 1
 			for d in doc.items:
 				md_item = frappe.get_value("Material Demand Item", {'item_code': d.get('item_code'), 'parent': ['in', m_list], "warehouse": doc.warehouse}, "name")
 				if md_item:
@@ -180,7 +182,7 @@ def make_purchase_invoice(doc):
 						"warehouse": md_doc.warehouse,
 						"qty": d.get('qty'),
 						"received_qty": d.get('qty'),
-						"rate": d.get('rate'),
+						"rate": d.get('discount_after_rate'),
 						"expense_account": md_doc.expense_account,
 						"cost_center": md_doc.cost_center,
 						"uom": md_doc.uom,
@@ -188,6 +190,8 @@ def make_purchase_invoice(doc):
 						"stock_Uom": md_doc.stock_uom,
 						"material_demand": md_doc.parent,
 						"material_demand_item": md_doc.name,
+						"margin_type": "Percentage" if d.get("discount_percent") else 0,
+						"discount_percentage": d.get("discount_percent"),
 					})
 
 				else:
@@ -195,7 +199,6 @@ def make_purchase_invoice(doc):
 						frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
 			if pi.get('items'):
 				pi.set_missing_values()
-				pi.calculate_taxes_and_totals()
 				pi.save(ignore_permissions=True)
 
 		else:
@@ -212,17 +215,12 @@ def make_purchase_invoice(doc):
 								for p_tm in md_item:
 									md_doc = frappe.get_doc("Material Demand Item", p_tm.name)
 									if md_doc:
-										margin_type = None
-										if d.get("discount_percent"):
-											margin_type = "Percentage"
-										if d.get("discount"):
-											margin_type = "Amount"
 										s = {
 											"item_code": d.get('item_code'),
 											"warehouse": md_doc.warehouse,
 											"qty": res.get('qty'),
 											"received_qty": res.get('qty'),
-											"rate": d.get('rate'),
+											"rate": d.get('discount_after_rate'),
 											"expense_account": md_doc.expense_account,
 											"cost_center": md_doc.cost_center,
 											"uom": md_doc.uom,
@@ -230,9 +228,8 @@ def make_purchase_invoice(doc):
 											"material_demand": md_doc.parent,
 											"material_demand_item": md_doc.name,
 											"item_tax_template": d.get('item_tax_template'),
-											"margin_type": margin_type,
+											"margin_type": "Percentage" if d.get("discount_percent") else 0,
 											"discount_percentage": d.get("discount_percent"),
-											"discount_amount": d.get("discount"),
 										}
 										key = (md_doc.warehouse)
 										item_details.setdefault(key, {"details": []})
@@ -249,17 +246,12 @@ def make_purchase_invoice(doc):
 							if received_qty > 0:
 								md_doc = frappe.get_doc("Material Demand Item", p_tm.name)
 								if md_doc:
-									margin_type = None
-									if d.get("discount_percent"):
-										margin_type = "Percentage"
-									if d.get("discount"):
-										margin_type = "Amount"
 									d = {
 										"item_code": d.get('item_code'),
 										"warehouse": md_doc.warehouse,
 										"qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
 										"received_qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
-										"rate": d.get('rate'),
+										"rate": d.get('discount_after_rate'),
 										"expense_account": md_doc.expense_account,
 										"cost_center": md_doc.cost_center,
 										"uom": md_doc.uom,
@@ -267,9 +259,8 @@ def make_purchase_invoice(doc):
 										"material_demand": md_doc.parent,
 										"material_demand_item": md_doc.name,
 										"item_tax_template": d.get('item_tax_template'),
-										"margin_type": margin_type,
+										"margin_type": "Percentage" if d.get("discount_percent") else 0,
 										"discount_percentage": d.get("discount_percent"),
-										"discount_amount": d.get("discount"),
 									}
 									received_qty -= md_doc.qty
 
@@ -278,23 +269,17 @@ def make_purchase_invoice(doc):
 									fifo_queue = item_details[key]["details"]
 									fifo_queue.append(d)
 						if received_qty > 0:
-							margin_type = None
-							if d.get("discount_percent"):
-								margin_type = "Percentage"
-							if d.get("discount"):
-								margin_type = "Amount"
 							d = {
 								"item_code": d.get('item_code'),
 								"warehouse": doc.c_b_warehouse,
 								"qty": received_qty,
 								"received_qty": received_qty,
-								"rate": d.get('rate'),
+								"rate": d.get('discount_after_rate'),
 								"uom": d.get('uom'),
 								"stock_Uom": d.get('stock_uom'),
 								"item_tax_template": d.get('item_tax_template'),
-								"margin_type": margin_type,
+								"margin_type": "Percentage" if d.get("discount_percent") else 0,
 								"discount_percentage": d.get("discount_percent"),
-								"discount_amount": d.get("discount"),
 							}
 							key = (doc.c_b_warehouse)
 							item_details.setdefault(key, {"details": []})
@@ -321,11 +306,11 @@ def make_purchase_invoice(doc):
 							pi.update_stock = 1 if not is_franchise else 0
 							pi.set_warehouse = key
 							pi.cost_center = cost_center
+							pi.ignore_pricing_rule = 1
 							for d in item_details[key]['details']:
 								pi.append("items", d)
 							if pi.get('items'):
 								pi.set_missing_values()
-								pi.calculate_taxes_and_totals()
 								pi.save(ignore_permissions=True)
 						except:
 							continue
