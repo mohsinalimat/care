@@ -71,6 +71,44 @@ frappe.ui.form.on('Order Receiving', {
 	update_buying_price: function(frm, cdt, cdn){
 		frm.get_field("items").grid.toggle_enable("rate", frm.doc.update_buying_price ? 1 : 0);
 	    refresh_field("items");
+	    if(!frm.doc.update_buying_price){
+	        $.each(frm.doc['items'] || [], function(i, item) {
+                frm.call({
+                    method: "care.hook_events.purchase_invoice.get_price_list_rate_for",
+                    args: {
+                        item_code: item.item_code,
+                        args: {
+                            item_code: item.item_code,
+                            supplier: frm.doc.supplier,
+                            currency: frm.doc.currency,
+                            price_list: frm.doc.buying_price_list,
+                            price_list_currency: frm.doc.currency,
+                            company: frm.doc.company,
+                            transaction_date: frm.doc.posting_date ,
+                            doctype: frm.doc.doctype,
+                            name: frm.doc.name,
+                            qty: item.qty || 1,
+                            child_docname: item.name,
+                            uom: item.uom,
+                            stock_uom: item.stock_uom,
+                            conversion_factor: item.conversion_factor
+                        }
+                    },
+                    callback: function(r) {
+                        item.rate = r.message || 0
+                        let amt = item.rate * item.qty
+                        let discount_amount = (amt / 100) * item.discount_percent
+                        let amount = amt - discount_amount
+                        let dis_aft_rate = amount/ item.qty
+                        item.amount = amount
+                        item.net_amount = amount
+                        item.base_net_amount = amount
+                        item.discount = discount_amount
+                        item.discount_after_rate = dis_aft_rate
+                    }
+                })
+            });
+	    }
 	},
 	validate: function(frm, cdt, cdn){
 	    update_total_qty(frm, cdt, cdn)
@@ -242,7 +280,6 @@ function update_price_rate(frm, cdt, cdn){
         callback: function(r) {
             if(!r.exc) {
                 var conversion_factor = r.message.conversion_factor
-                frappe.model.set_value(cdt,cdn,"conversion_factor",r.message.conversion_factor);
                 frm.call({
                     method: "care.hook_events.purchase_invoice.get_price_list_rate_for",
                     args: {
@@ -266,6 +303,7 @@ function update_price_rate(frm, cdt, cdn){
                     },
                     callback: function(r) {
                         frappe.model.set_value( cdt, cdn, 'rate',r.message || 0)
+                        frappe.model.set_value(cdt,cdn,"conversion_factor",conversion_factor || 0);
                         frappe.model.set_value( cdt, cdn, 'base_buying_price_list_rate',r.message || 0)
                     }
                 })
