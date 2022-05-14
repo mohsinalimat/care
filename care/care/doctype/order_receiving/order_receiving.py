@@ -246,7 +246,7 @@ def make_purchase_invoice(doc):
 							if received_qty > 0:
 								md_doc = frappe.get_doc("Material Demand Item", p_tm.name)
 								if md_doc:
-									d = {
+									s = {
 										"item_code": d.get('item_code'),
 										"warehouse": md_doc.warehouse,
 										"qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
@@ -267,9 +267,9 @@ def make_purchase_invoice(doc):
 									key = (md_doc.warehouse)
 									item_details.setdefault(key, {"details": []})
 									fifo_queue = item_details[key]["details"]
-									fifo_queue.append(d)
+									fifo_queue.append(s)
 						if received_qty > 0:
-							d = {
+							s = {
 								"item_code": d.get('item_code'),
 								"warehouse": doc.c_b_warehouse,
 								"qty": received_qty,
@@ -284,7 +284,7 @@ def make_purchase_invoice(doc):
 							key = (doc.c_b_warehouse)
 							item_details.setdefault(key, {"details": []})
 							fifo_queue = item_details[key]["details"]
-							fifo_queue.append(d)
+							fifo_queue.append(s)
 
 					else:
 						if not doc.ignore_un_order_item:

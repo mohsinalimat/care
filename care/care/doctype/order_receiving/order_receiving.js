@@ -172,11 +172,7 @@ frappe.ui.form.on('Order Receiving Item', {
         update_amount(frm, cdt, cdn)
 	},
     discount_percent: function(frm, cdt, cdn) {
-        var row = locals[cdt][cdn];
-        let amt = row.rate * row.qty
-        let discount_amount = (amt / 100) * row.discount_percent
-        frappe.model.set_value(cdt,cdn,"discount",discount_amount);
-        refresh_field("discount", cdn, "items");
+        update_amount(frm, cdt, cdn)
 	},
     selling_price_list_rate: function(frm, cdt, cdn) {
         calculate_margin(frm, cdt, cdn)
@@ -200,15 +196,18 @@ frappe.ui.form.on('Order Receiving Item', {
 function update_amount(frm, cdt, cdn){
     var row = locals[cdt][cdn];
     let amt = row.rate * row.qty
-    let amount = amt - row.discount
+    let discount_amount = (amt / 100) * row.discount_percent
+    let amount = amt - discount_amount
     let dis_aft_rate = amount/ row.qty
     frappe.model.set_value(cdt,cdn,"amount",amount);
     frappe.model.set_value(cdt,cdn,"net_amount",amount);
     frappe.model.set_value(cdt,cdn,"base_net_amount",amount);
+    frappe.model.set_value(cdt,cdn,"discount",discount_amount);
     frappe.model.set_value(cdt,cdn,"discount_after_rate",dis_aft_rate);
     refresh_field("amount", cdn, "items");
     refresh_field("net_amount", cdn, "items");
     refresh_field("base_net_amount", cdn, "items");
+    refresh_field("discount", cdn, "items");
     refresh_field("discount_after_rate", cdn, "items");
 }
 function update_total_qty(frm, cdt, cdn){
