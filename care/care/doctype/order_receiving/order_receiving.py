@@ -194,6 +194,7 @@ def make_purchase_invoice(doc):
 						"stock_Uom": md_doc.stock_uom,
 						"material_demand": md_doc.parent,
 						"material_demand_item": md_doc.name,
+						"order_receiving_item": d.name,
 						"margin_type": "Percentage" if d.get("discount_percent") else None,
 						"discount_percentage": d.get("discount_percent"),
 					})
@@ -203,7 +204,13 @@ def make_purchase_invoice(doc):
 						frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
 			if pi.get('items'):
 				pi.set_missing_values()
+				for res in pi.items:
+					if res.order_receiving_item:
+						if not frappe.get_value("Order Receiving Item", res.order_receiving_item, 'item_tax_template'):
+							res.item_tax_template = None
+							res.item_tax_rate = '{}'
 				pi.save(ignore_permissions=True)
+
 
 		else:
 			item_details = {}
@@ -231,6 +238,7 @@ def make_purchase_invoice(doc):
 											"stock_Uom": md_doc.stock_uom,
 											"material_demand": md_doc.parent,
 											"material_demand_item": md_doc.name,
+											"order_receiving_item": d.name,
 											"item_tax_template": d.get('item_tax_template'),
 											"margin_type": "Percentage" if d.get("discount_percent") else None,
 											"discount_percentage": d.get("discount_percent"),
@@ -262,6 +270,7 @@ def make_purchase_invoice(doc):
 										"stock_Uom": md_doc.stock_uom,
 										"material_demand": md_doc.parent,
 										"material_demand_item": md_doc.name,
+										"order_receiving_item": d.name,
 										"item_tax_template": d.get('item_tax_template'),
 										"margin_type": "Percentage" if d.get("discount_percent") else None,
 										"discount_percentage": d.get("discount_percent"),
@@ -282,6 +291,7 @@ def make_purchase_invoice(doc):
 								"uom": d.get('uom'),
 								"stock_Uom": d.get('stock_uom'),
 								"item_tax_template": d.get('item_tax_template'),
+								"order_receiving_item": d.name,
 								"margin_type": "Percentage" if d.get("discount_percent") else None,
 								"discount_percentage": d.get("discount_percent"),
 							}
@@ -315,6 +325,12 @@ def make_purchase_invoice(doc):
 								pi.append("items", d)
 							if pi.get('items'):
 								pi.set_missing_values()
+								for res in pi.items:
+									if res.order_receiving_item:
+										if not frappe.get_value("Order Receiving Item", res.order_receiving_item,
+																'item_tax_template'):
+											res.item_tax_template = None
+											res.item_tax_rate = '{}'
 								pi.save(ignore_permissions=True)
 						except:
 							continue
