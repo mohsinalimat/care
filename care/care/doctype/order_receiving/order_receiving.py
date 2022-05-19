@@ -9,6 +9,7 @@ import json
 from frappe.utils import flt
 from erpnext.controllers.taxes_and_totals import get_itemised_tax_breakup_data
 from erpnext.stock.get_item_details import _get_item_tax_template
+from erpnext.controllers.accounts_controller import get_taxes_and_charges
 
 
 class OrderReceiving(Document):
@@ -191,6 +192,7 @@ def make_purchase_invoice(doc):
 						"cost_center": md_doc.cost_center,
 						"uom": md_doc.uom,
 						"item_tax_template": d.get('item_tax_template'),
+						"item_tax_rate": d.get('item_tax_rate'),
 						"stock_Uom": md_doc.stock_uom,
 						"material_demand": md_doc.parent,
 						"material_demand_item": md_doc.name,
@@ -203,14 +205,16 @@ def make_purchase_invoice(doc):
 					if not doc.ignore_un_order_item:
 						frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
 			if pi.get('items'):
+				taxes = get_taxes_and_charges('Purchase Taxes and Charges Template', doc.taxes_and_charges)
+				for tax in taxes:
+					pi.append('taxes',tax)
 				pi.set_missing_values()
 				for res in pi.items:
 					if res.order_receiving_item:
 						if not frappe.get_value("Order Receiving Item", res.order_receiving_item, 'item_tax_template'):
 							res.item_tax_template = None
 							res.item_tax_rate = '{}'
-				pi.save(ignore_permissions=True)
-
+				pi.insert(ignore_permissions=True)
 
 		else:
 			item_details = {}
@@ -240,6 +244,7 @@ def make_purchase_invoice(doc):
 											"material_demand_item": md_doc.name,
 											"order_receiving_item": d.name,
 											"item_tax_template": d.get('item_tax_template'),
+											"item_tax_rate": d.get('item_tax_rate'),
 											"margin_type": "Percentage" if d.get("discount_percent") else None,
 											"discount_percentage": d.get("discount_percent"),
 										}
@@ -272,6 +277,7 @@ def make_purchase_invoice(doc):
 										"material_demand_item": md_doc.name,
 										"order_receiving_item": d.name,
 										"item_tax_template": d.get('item_tax_template'),
+										"item_tax_rate": d.get('item_tax_rate'),
 										"margin_type": "Percentage" if d.get("discount_percent") else None,
 										"discount_percentage": d.get("discount_percent"),
 									}
@@ -291,6 +297,7 @@ def make_purchase_invoice(doc):
 								"uom": d.get('uom'),
 								"stock_Uom": d.get('stock_uom'),
 								"item_tax_template": d.get('item_tax_template'),
+								"item_tax_rate": d.get('item_tax_rate'),
 								"order_receiving_item": d.name,
 								"margin_type": "Percentage" if d.get("discount_percent") else None,
 								"discount_percentage": d.get("discount_percent"),
@@ -324,6 +331,9 @@ def make_purchase_invoice(doc):
 							for d in item_details[key]['details']:
 								pi.append("items", d)
 							if pi.get('items'):
+								taxes = get_taxes_and_charges('Purchase Taxes and Charges Template', doc.taxes_and_charges)
+								for tax in taxes:
+									pi.append('taxes', tax)
 								pi.set_missing_values()
 								for res in pi.items:
 									if res.order_receiving_item:
@@ -331,7 +341,7 @@ def make_purchase_invoice(doc):
 																'item_tax_template'):
 											res.item_tax_template = None
 											res.item_tax_rate = '{}'
-								pi.save(ignore_permissions=True)
+								pi.insert(ignore_permissions=True)
 						except:
 							continue
 		frappe.msgprint(_("Purchase Receipt Created"), alert=1)

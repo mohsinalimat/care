@@ -110,7 +110,7 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 		}
 	},
 	validate: function() {
-		this.calculate_taxes_and_totals(false);
+	    this.calculate_taxes_and_totals(false);
 	},
 	taxes_and_charges: function() {
 		var me = this;
