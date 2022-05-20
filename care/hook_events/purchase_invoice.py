@@ -244,10 +244,10 @@ def make_purchase_invoice(source_name, target_doc=None):
 
         doc = frappe.get_doc(target)
         doc.payment_terms_template = get_payment_terms_template(source.supplier, "Supplier", source.company)
-        if doc.taxes_and_charges and not doc.taxes:
-            taxes = get_taxes_and_charges('Purchase Taxes and Charges Template', doc.taxes_and_charges)
-            for tax in taxes:
-                doc.append('taxes', tax)
+        # if doc.taxes_and_charges and not doc.taxes:
+        #     taxes = get_taxes_and_charges('Purchase Taxes and Charges Template', doc.taxes_and_charges)
+        #     for tax in taxes:
+        #         doc.append('taxes', tax)
         doc.cost_center = cost_center
         doc.run_method("onload")
         doc.run_method("set_missing_values")
