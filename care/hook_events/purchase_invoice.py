@@ -294,14 +294,17 @@ def make_purchase_invoice(source_name, target_doc=None):
             if tax_dict['charge_type'] == 'On Net Total':
                 tax_dict['charge_type'] = 'Actual'
             not_present = 1
-            for t_tax in target_doc.taxes:
-                if t_tax.charge_type == tax_dict.charge_type and t_tax.account_head == tax_dict.account_head:
-                    if t_tax.rate and tax_dict.rate and t_tax.rate == tax_dict.rate:
-                        not_present = 0
-                    elif not t_tax.rate and not tax_dict.rate:
-                        t_tax.tax_amount = res.tax_amount + (t_tax.tax_amount if t_tax.tax_amount else 0)
-                        not_present = 0
-            if not_present:
+            if 'taxes' in target_doc.as_dict().keys():
+                for t_tax in target_doc.taxes:
+                    if t_tax.charge_type == tax_dict.charge_type and t_tax.account_head == tax_dict.account_head:
+                        if t_tax.rate and tax_dict.rate and t_tax.rate == tax_dict.rate:
+                            not_present = 0
+                        elif not t_tax.rate and not tax_dict.rate:
+                            t_tax.tax_amount = res.tax_amount + (t_tax.tax_amount if t_tax.tax_amount else 0)
+                            not_present = 0
+                if not_present:
+                    target_doc.append("taxes", tax_dict)
+            else:
                 target_doc.append("taxes", tax_dict)
 
     def get_pending_qty(item_row):
