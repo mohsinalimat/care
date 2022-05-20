@@ -119,18 +119,19 @@ doc_events = {
         "on_cancel": ["care.hook_events.purchase_invoice.cancel_update_p_r_c_tool_status",
                      # "care.hook_events.purchase_invoice.cancel_update_md_status",
                     "care.hook_events.purchase_invoice.rev_update_billing_percentage"],
-        "before_submit": ["care.hook_events.purchase_invoice.validate_cost_center",
-                          "care.hook_events.purchase_invoice.validate_price_and_rate"],
+        "before_submit": [
+                    # "care.hook_events.purchase_invoice.validate_cost_center",
+                    "care.hook_events.purchase_invoice.validate_price_and_rate"],
         "before_insert": "care.hook_events.purchase_invoice.un_check_franchise_inv_generated"
     },
     "Sales Invoice": {
         "validate": ["care.hook_events.sales_invoice.updated_item_amendment_summary"],
         "before_insert": "care.hook_events.sales_invoice.disable_rounded_total",
-        "before_submit": ["care.hook_events.sales_invoice.validate_cost_center"]
+        # "before_submit": ["care.hook_events.sales_invoice.validate_cost_center"]
     },
     "Payment Entry": {
         "validate": ["care.hook_events.payment_entry.set_out_grand_total"],
-        "before_submit": ["care.hook_events.purchase_invoice.validate_cost_center"],
+        # "before_submit": ["care.hook_events.purchase_invoice.validate_cost_center"],
         "on_submit": ["care.hook_events.payment_entry.create_custom_series"]
     },
     "Stock Entry": {
