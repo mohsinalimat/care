@@ -273,6 +273,7 @@ def make_purchase_invoice(source_name, target_doc=None):
         for res in source_doc.taxes:
             tax_dict = res.as_dict()
             tax_dict.pop('name')
+            tax_dict.pop('idx')
             tax_dict.pop('owner')
             tax_dict.pop('creation')
             tax_dict.pop('modified')

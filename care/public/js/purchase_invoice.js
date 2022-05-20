@@ -234,6 +234,7 @@ $.extend(cur_frm.cscript, {
 			}, __("Get Items From"));
 
 			this.frm.add_custom_button(__('Purchase Receipt'), function() {
+			    me.frm.clear_table("taxes");
 				erpnext.utils.map_current_doc({
 					method: "care.hook_events.purchase_invoice.make_purchase_invoice",
 					source_doctype: "Purchase Receipt",
