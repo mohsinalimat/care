@@ -6,6 +6,7 @@ from frappe.utils import add_days, add_months, cint, cstr, flt, getdate
 from frappe.model.mapper import get_mapped_doc
 from erpnext.stock.get_item_details import get_item_price, check_packing_list
 from erpnext.stock.doctype.purchase_receipt.purchase_receipt import get_returned_qty_map, get_invoiced_qty_map
+from erpnext.controllers.accounts_controller import get_taxes_and_charges
 
 def update_p_r_c_tool_status(doc, method):
     if doc.purchase_invoice_creation_tool:
@@ -243,6 +244,10 @@ def make_purchase_invoice(source_name, target_doc=None):
 
         doc = frappe.get_doc(target)
         doc.payment_terms_template = get_payment_terms_template(source.supplier, "Supplier", source.company)
+        if doc.taxes_and_charges and not doc.taxes:
+            taxes = get_taxes_and_charges('Purchase Taxes and Charges Template', doc.taxes_and_charges)
+            for tax in taxes:
+                doc.append('taxes', tax)
         doc.cost_center = cost_center
         doc.run_method("onload")
         doc.run_method("set_missing_values")
