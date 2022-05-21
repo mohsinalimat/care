@@ -3,9 +3,9 @@
 
 {% include 'care/public/js/tax_contoller.js' %};
 
-cur_frm.cscript.tax_table = "Purchase Taxes and Charges";
+//cur_frm.cscript.tax_table = "Purchase Taxes and Charges";
 
-{% include 'erpnext/accounts/doctype/purchase_taxes_and_charges_template/purchase_taxes_and_charges_template.js' %}
+//{% include 'erpnext/accounts/doctype/purchase_taxes_and_charges_template/purchase_taxes_and_charges_template.js' %}
 
 frappe.provide("care.care");
 
@@ -145,6 +145,9 @@ frappe.ui.form.on('Order Receiving Item', {
     items_remove: function(frm, cdt, cdn){
         apply_item_filters(frm)
     },
+    items_add: function(frm, cdt, cdn){
+        apply_item_filters(frm)
+    },
     item_code: function(frm, cdt, cdn){
         var row = locals[cdt][cdn];
         if(!frm.doc.purchase_request || !frm.doc.supplier){
@@ -153,35 +156,24 @@ frappe.ui.form.on('Order Receiving Item', {
         }
         else{
             if (row.item_code){
-                frappe.run_serially([
-                    ()=>apply_item_filters(frm),
-                    ()=>update_price_rate(frm, cdt, cdn),
-                    ()=>get_item_tax_template(frm, cdt, cdn),
-                    ()=>update_selling_price_rate(frm, cdt, cdn),
-                    ()=>apply_pricing_rule(row, frm, cdt, cdn),
-                    ()=> {
-                        var new_row = frm.fields_dict.items.grid;
-                        new_row.add_new_row(null, null, true, null, true);
-                        new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
-                        new_row.set_focus_on_row();
+                update_price_rate(frm, cdt, cdn),
+                get_item_tax_template(frm, cdt, cdn)
+                update_selling_price_rate(frm, cdt, cdn),
+                apply_pricing_rule(row, frm, cdt, cdn),
+                frappe.call({
+                    method: "care.care.doctype.order_receiving.order_receiving.get_item_qty",
+                    args: {
+                        "purchase_request": frm.doc.purchase_request,
+                        "item": row.item_code,
+                        "supplier": frm.doc.supplier,
+                        "warehouse": frm.doc.warehouse
                     },
-                    ()=>{
-                        frappe.call({
-                            method: "care.care.doctype.order_receiving.order_receiving.get_item_qty",
-                            args: {
-                                "purchase_request": frm.doc.purchase_request,
-                                "item": row.item_code,
-                                "supplier": frm.doc.supplier,
-                                "warehouse": frm.doc.warehouse
-                            },
-                            callback: function(r) {
-                                 console.log("get Qty")
-                                frappe.model.set_value(cdt,cdn,"qty",r.message);
-                                refresh_field("qty", cdn, "items");
-                            }
-                        });
-                    },
-                ])
+                    callback: function(r) {
+                         console.log("get Qty")
+                        frappe.model.set_value(cdt,cdn,"qty",r.message);
+                        refresh_field("qty", cdn, "items");
+                    }
+                });
             }
 //            else{
 //                apply_item_filters(frm)
