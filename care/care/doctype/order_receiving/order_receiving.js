@@ -120,6 +120,7 @@ frappe.ui.form.on('Order Receiving', {
 
 
 function apply_item_filters(frm){
+    console.log("apply_item_filters")
     frappe.call({
         method: "get_item_code",
         doc: frm.doc,
@@ -174,6 +175,7 @@ frappe.ui.form.on('Order Receiving Item', {
                                 "warehouse": frm.doc.warehouse
                             },
                             callback: function(r) {
+                                 console.log("get Qty")
                                 frappe.model.set_value(cdt,cdn,"qty",r.message);
                                 refresh_field("qty", cdn, "items");
                             }
@@ -181,9 +183,9 @@ frappe.ui.form.on('Order Receiving Item', {
                     },
                 ])
             }
-            else{
-                apply_item_filters(frm)
-            }
+//            else{
+//                apply_item_filters(frm)
+//            }
         }
 //        apply_child_btn_color(frm, cdt, cdn)
     },
@@ -270,6 +272,7 @@ function calculate_margin(frm, cdt, cdn){
 }
 
 function update_price_rate(frm, cdt, cdn){
+    console.log("update_price_rate")
     var item = locals[cdt][cdn];
     frappe.call({
         method: "erpnext.stock.get_item_details.get_conversion_factor",
@@ -313,6 +316,8 @@ function update_price_rate(frm, cdt, cdn){
 }
 
 function update_selling_price_rate(frm, cdt, cdn){
+
+    console.log("update_selling_price_rate")
     var item = locals[cdt][cdn];
     frappe.call({
         method: "erpnext.stock.get_item_details.get_conversion_factor",
@@ -357,6 +362,7 @@ function update_selling_price_rate(frm, cdt, cdn){
 
 
 function apply_pricing_rule(item, frm, cdt, cdn) {
+    console.log('apply_pricing_rule')
     var args = _get_args(item, frm, cdt, cdn);
     return frm.call({
         method: "erpnext.accounts.doctype.pricing_rule.pricing_rule.apply_pricing_rule",
