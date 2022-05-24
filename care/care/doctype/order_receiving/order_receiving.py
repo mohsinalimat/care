@@ -17,7 +17,7 @@ class OrderReceiving(Document):
 	def validate(self):
 		if self.get("__islocal"):
 			self.status = 'Draft'
-			self.update_total_margin()
+		self.update_total_margin()
 
 	@frappe.whitelist()
 	def update_total_margin(self):
