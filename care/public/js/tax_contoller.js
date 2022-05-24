@@ -32,14 +32,14 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 			}
 		});
     },
-    onload: function(doc, cdt, cdn){
-        var me = this;
-        if(this.frm.fields_dict["items"].grid.get_field('item_code')) {
-			this.frm.set_query("item_tax_template", "items", function(doc, cdt, cdn) {
-				return me.set_query_for_item_tax_template(doc, cdt, cdn)
-			});
-		}
-    },
+//    onload: function(doc, cdt, cdn){
+//        var me = this;
+//        if(this.frm.fields_dict["items"].grid.get_field('item_code')) {
+//			this.frm.set_query("item_tax_template", "items", function(doc, cdt, cdn) {
+//				return me.set_query_for_item_tax_template(doc, cdt, cdn)
+//			});
+//		}
+//    },
     onload_post_render: function() {
 		if(this.frm.doc.__islocal && !(this.frm.doc.taxes || []).length
 			&& !(this.frm.doc.__onload ? this.frm.doc.__onload.load_after_mapping : false)) {
