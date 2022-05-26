@@ -211,11 +211,11 @@ class OrderReceiving(Document):
                     'stock_uom': itm.stock_uom,
                     'conversion_factor': itm.conversion_factor
                 }
-                buying_rate = get_price_list_rate_for(itm, json.dumps(args)) or 0
+                buying_rate = get_price_list_rate_for(itm.item_code, json.dumps(args)) or 0
                 itm.base_buying_price_list_rate = buying_rate
 
                 args['price_list'] = self.base_selling_price_list
-                selling_rate = get_price_list_rate_for(itm, json.dumps(args)) or 0
+                selling_rate = get_price_list_rate_for(itm.item_code, json.dumps(args)) or 0
                 itm.selling_price_list_rate = selling_rate
                 itm.base_selling_price_list_rate = selling_rate
 
@@ -421,7 +421,6 @@ def make_purchase_invoice(doc):
                         except:
                             continue
         frappe.msgprint(_("Purchase Receipt Created"), alert=1)
-    print("--------------status-----------")
     frappe.db.set(doc, 'status', 'Submitted')
 
 

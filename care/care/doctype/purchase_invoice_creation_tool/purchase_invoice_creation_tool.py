@@ -296,7 +296,7 @@ class PurchaseInvoiceCreationTool(Document):
 							"qty": line.get('qty'),
 							"rate": line.get('rate'),
 							"uom": 'Pack',
-							"stock_Uom": item_doc.stock_uom,
+							"stock_uom": item_doc.stock_uom,
 							"discount_percent": line.get("discount_percent") or 0 ,
 							"discount": line.get("discount") or 0
 						})

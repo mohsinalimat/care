@@ -52,7 +52,7 @@ frappe.ui.form.on('Order Receiving', {
 			}
 		});
 	},
-	refresh: function(frm){
+	refresh: function(frm, cdt, cdn){
 	    if (frm.doc.__islocal) {
 			frm.set_value("posting_date", frappe.datetime.now_date())
 		}
@@ -63,6 +63,7 @@ frappe.ui.form.on('Order Receiving', {
 		frm.get_field("items").grid.toggle_display("split_qty", frm.doc.warehouse ? 0 : 1);
 		frm.get_field("items").grid.toggle_enable("rate", frm.doc.update_buying_price ? 1 : 0);
 	    refresh_field("items");
+	    validate_item_rate(frm, cdt, cdn)
 	},
 	warehouse: function(frm, cdt, cdn){
 	    frm.get_field("items").grid.toggle_display("split_qty", frm.doc.warehouse ? 0 : 1);
@@ -112,11 +113,27 @@ frappe.ui.form.on('Order Receiving', {
 	},
 	validate: function(frm, cdt, cdn){
 	    update_total_qty(frm, cdt, cdn)
+	    validate_item_rate(frm, cdt, cdn)
 	},
     purchase_request: function (frm){
 	    apply_item_filters(frm)
+    },
+    onload: function (frm, cdt, cdn){
+	    validate_item_rate(frm, cdt, cdn)
     }
 });
+
+function validate_item_rate(frm, cdt, cdn){
+    cur_frm.fields_dict["items"].$wrapper.find('.grid-body .rows').find(".grid-row").each(function(i, item) {
+        let d = locals[cur_frm.fields_dict["items"].grid.doctype][$(item).attr('data-name')];
+        if( d['base_buying_price_list_rate'] - 1 <= d["rate"] && d["rate"] <= d['base_buying_price_list_rate'] + 1){
+            $(item).find('.grid-static-col').css({'background-color': '#ffffff'});
+        }
+        else{
+            $(item).find('.grid-static-col').css({'background-color': '#ffff80'});
+        }
+    });
+}
 
 
 function apply_item_filters(frm){
