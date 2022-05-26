@@ -142,9 +142,9 @@ function apply_child_btn_color(frm, cdt, cdn){
 }
 
 frappe.ui.form.on('Order Receiving Item', {
-    items_remove: function(frm, cdt, cdn){
-        apply_item_filters(frm)
-    },
+//    items_remove: function(frm, cdt, cdn){
+//        apply_item_filters(frm)
+//    },
     items_add: function(frm, cdt, cdn){
         apply_item_filters(frm)
     },

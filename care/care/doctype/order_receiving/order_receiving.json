@@ -13,6 +13,7 @@
   "company",
   "section_break_2",
   "purchase_request",
+  "purchase_invoice_creation_tool",
   "supplier",
   "supplier_name",
   "column_break_6",
@@ -308,6 +309,14 @@
    "label": "Corporate Warehouse",
    "options": "Warehouse",
    "reqd": 1
+  },
+  {
+   "fieldname": "purchase_invoice_creation_tool",
+   "fieldtype": "Link",
+   "label": "Purchase Invoice Creation Tool",
+   "no_copy": 1,
+   "options": "Purchase Invoice Creation Tool",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
@@ -320,7 +329,7 @@
    "link_fieldname": "order_receiving"
   }
  ],
- "modified": "2022-05-12 12:58:40.996521",
+ "modified": "2022-05-26 11:48:25.625290",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Order Receiving",

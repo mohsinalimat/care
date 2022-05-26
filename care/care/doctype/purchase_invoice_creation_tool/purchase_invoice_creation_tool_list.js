@@ -25,5 +25,8 @@ frappe.listview_settings['Purchase Invoice Creation Tool'] = {
 		else if (doc.status== "Receipt Created" ) {
 			return [__("Receipt Created" ), "purple"]
 		}
+		else if (doc.status== "Order Created" ) {
+			return [__("Order Created" ), "purple"]
+		}
 	}
 };
