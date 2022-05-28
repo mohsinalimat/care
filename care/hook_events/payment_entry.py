@@ -13,10 +13,27 @@ from erpnext.accounts.doctype.payment_entry.payment_entry import (get_outstandin
                                                                   split_invoices_based_on_payment_terms,
                                                                   get_orders_to_be_billed,
                                                                   get_negative_outstanding_invoices)
+from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 
 
 class InvalidPaymentEntry(ValidationError):
     pass
+
+
+class OverridePaymentEntry(PaymentEntry):
+    def on_submit(self):
+        super(OverridePaymentEntry, self).on_submit()
+        if self.apply_tax_withholding_amount and self.tax_withholding_category:
+            category = frappe.get_doc('Tax Withholding Category', self.tax_withholding_category)
+            for res in category.accounts:
+                gl = frappe.get_value("GL Entry",
+                                    {"voucher_no": self.name, "voucher_type": 'Payment Entry',
+                                    'account': res.account}, "name")
+                if gl:
+                    gl_doc = frappe.get_doc("GL Entry",gl)
+                    gl_doc.party_type = self.party_type
+                    gl_doc.party = self.party
+                    gl_doc.db_update()
 
 
 def set_out_grand_total(doc, method):
@@ -307,3 +324,4 @@ def create_custom_series(doc, method):
         name = make_autoname(series)
         doc.custom_series = name
         doc.db_update()
+

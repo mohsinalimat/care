@@ -178,6 +178,7 @@ override_doctype_class = {
     'POS Invoice Merge Log': 'care.hook_events.override_pos_merge_log.OverridePOSInvoiceMergeLog',
     'Sales Invoice': 'care.hook_events.override_sales_invoice.OverrideSalesInvoice',
     'Purchase Receipt': 'care.hook_events.purchase_receipt.OverridePurchaseReceipt',
+    'Payment Entry': 'care.hook_events.payment_entry.OverridePaymentEntry',
 }
 
 # User Data Protection
