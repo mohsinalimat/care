@@ -61,6 +61,7 @@ frappe.ui.form.on('Order Receiving', {
         }
 		apply_item_filters(frm)
 		frm.get_field("items").grid.toggle_display("split_qty", frm.doc.warehouse ? 0 : 1);
+		frm.get_field("items").grid.toggle_display("received_qty", frm.doc.is_return ? 1 : 0);
 		frm.get_field("items").grid.toggle_enable("rate", frm.doc.update_buying_price ? 1 : 0);
 	    refresh_field("items");
 	    validate_item_rate(frm, cdt, cdn)
@@ -148,6 +149,7 @@ frappe.ui.form.on('Order Receiving', {
     },
     onload: function (frm, cdt, cdn){
 	    validate_item_rate(frm, cdt, cdn)
+		frm.get_field("items").grid.toggle_display("received_qty", frm.doc.is_return ? 1 : 0);
     }
 });
 

@@ -25,6 +25,9 @@ class OrderReceiving(Document):
     @frappe.whitelist()
     def update_total_margin(self):
         for res in self.items:
+            if self.is_return:
+                if res.qty != res.received_qty and not res.code:
+                    frappe.throw("Return qty is not equal to Received qty in row <b>{0}</b>. <span style='color:red'>please split the Qty.</span>".format(res.idx))
             margin = -100
             if res.selling_price_list_rate > 0:
                 margin = (res.selling_price_list_rate - res.rate) / res.selling_price_list_rate * 100
@@ -39,11 +42,18 @@ class OrderReceiving(Document):
         if len(self.items) <= 100 and self.warehouse:
             self.updated_price_list_and_dicsount()
             make_purchase_invoice(self)
-            frappe.db.set(self, 'status', 'Submitted')
+            if self.is_return:
+                frappe.db.set(self, 'status', 'Return')
+            else:
+                frappe.db.set(self, 'status', 'Submitted')
+
         elif len(self.items) <= 50:
             self.updated_price_list_and_dicsount()
             make_purchase_invoice(self)
-            frappe.db.set(self, 'status', 'Submitted')
+            if self.is_return:
+                frappe.db.set(self, 'status', 'Return')
+            else:
+                frappe.db.set(self, 'status', 'Submitted')
         else:
             self.ignore_un_order_item = 1
             self.updated_price_list_and_dicsount()
@@ -272,6 +282,7 @@ def make_purchase_invoice(doc):
             pi.set_warehouse = doc.warehouse
             pi.cost_center = cost_center
             pi.ignore_pricing_rule = 1
+            pi.is_return = doc.is_return
             for d in doc.items:
                 md_item = frappe.get_value("Material Demand Item",
                                            {'item_code': d.get('item_code'), 'parent': ['in', m_list],
@@ -281,8 +292,8 @@ def make_purchase_invoice(doc):
                     pi.append("items", {
                         "item_code": d.get('item_code'),
                         "warehouse": md_doc.warehouse,
-                        "qty": d.get('qty'),
-                        "received_qty": d.get('qty'),
+                        "qty":  0 - d.get('qty') if doc.is_return else d.get('qty'),
+                        "received_qty": 0 - d.get('qty') if doc.is_return else d.get('qty'),
                         "rate": d.get('discount_after_rate'),
                         "expense_account": md_doc.expense_account,
                         "cost_center": md_doc.cost_center,
@@ -329,8 +340,8 @@ def make_purchase_invoice(doc):
                                         s = {
                                             "item_code": d.get('item_code'),
                                             "warehouse": md_doc.warehouse,
-                                            "qty": res.get('qty'),
-                                            "received_qty": res.get('qty'),
+                                            "qty": 0 - res.get('qty') if doc.is_return else res.get('qty'),
+                                            "received_qty": 0 - res.get('qty') if doc.is_return else res.get('qty'),
                                             "rate": d.get('discount_after_rate'),
                                             "expense_account": md_doc.expense_account,
                                             "cost_center": md_doc.cost_center,
@@ -361,11 +372,12 @@ def make_purchase_invoice(doc):
                             if received_qty > 0:
                                 md_doc = frappe.get_doc("Material Demand Item", p_tm.name)
                                 if md_doc:
+                                    qty = md_doc.qty if md_doc.qty <= received_qty else received_qty
                                     s = {
                                         "item_code": d.get('item_code'),
                                         "warehouse": md_doc.warehouse,
-                                        "qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
-                                        "received_qty": md_doc.qty if md_doc.qty <= received_qty else received_qty,
+                                        "qty": 0 - qty if doc.is_return else qty,
+                                        "received_qty": 0 - qty if doc.is_return else qty,
                                         "rate": d.get('discount_after_rate'),
                                         "expense_account": md_doc.expense_account,
                                         "cost_center": md_doc.cost_center,
@@ -389,8 +401,8 @@ def make_purchase_invoice(doc):
                             s = {
                                 "item_code": d.get('item_code'),
                                 "warehouse": doc.c_b_warehouse,
-                                "qty": received_qty,
-                                "received_qty": received_qty,
+                                "qty": 0 - received_qty if doc.is_return else received_qty,
+                                "received_qty": 0 - received_qty if doc.is_return else received_qty,
                                 "rate": d.get('discount_after_rate'),
                                 "uom": d.get('uom'),
                                 "stock_Uom": d.get('stock_uom'),
@@ -426,6 +438,7 @@ def make_purchase_invoice(doc):
                             pi.set_warehouse = key
                             pi.cost_center = cost_center
                             pi.ignore_pricing_rule = 1
+                            pi.is_return = doc.is_return
                             for d in item_details[key]['details']:
                                 pi.append("items", d)
                             if pi.get('items'):
@@ -444,7 +457,10 @@ def make_purchase_invoice(doc):
                         except:
                             continue
         frappe.msgprint(_("Purchase Receipt Created"), alert=1)
-    frappe.db.set(doc, 'status', 'Submitted')
+    if doc.is_return:
+        frappe.db.set(doc, 'status', 'Return')
+    else:
+        frappe.db.set(doc, 'status', 'Submitted')
 
 
 @frappe.whitelist()
@@ -520,8 +536,10 @@ def get_item_tax_template(item, args, out=None):
 @frappe.whitelist()
 def get_total_receive_qty(doc_name,item):
     if doc_name and item:
-        qty = float(frappe.db.sql("""select ifnull(sum(qty),0) from `tabOrder Receiving Item` where parent = '{0}' and item_code ='{1}'""".format(doc_name, item))[0][0] or 0)
-        rate = float(frappe.db.sql("""select ifnull(sum(rate),0) from `tabOrder Receiving Item` where parent = '{0}' and item_code ='{1}'""".format(doc_name, item))[0][0] or 0)
+        qty = float(frappe.db.sql("""select ifnull(sum(qty),0) from `tabOrder Receiving Item` 
+                    where parent = '{0}' and item_code ='{1}'""".format(doc_name, item))[0][0] or 0)
+        rate = float(frappe.db.sql("""select ifnull(sum(rate),0) from `tabOrder Receiving Item` 
+                    where parent = '{0}' and item_code ='{1}'""".format(doc_name, item))[0][0] or 0)
         return {'qty': qty,'rate': rate}
     return {'qty': 0,'rate': 0}
 

@@ -52,7 +52,8 @@
   "taxes_and_charges_added",
   "grand_total",
   "section_break_9",
-  "amended_from"
+  "amended_from",
+  "retrun_ref"
  ],
  "fields": [
   {
@@ -324,15 +325,20 @@
    "default": "0",
    "fieldname": "is_return",
    "fieldtype": "Check",
-   "label": "Is Return"
+   "label": "Is Return",
+   "read_only": 1
   },
   {
-   "depends_on": "is_return",
    "fieldname": "return_ref",
    "fieldtype": "Link",
    "label": "Return Ref",
    "options": "Order Receiving",
    "read_only": 1
+  },
+  {
+   "fieldname": "retrun_ref",
+   "fieldtype": "Data",
+   "label": "retrun_ref"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -347,10 +353,10 @@
   {
    "group": "Return",
    "link_doctype": "Order Receiving",
-   "link_fieldname": "retrun_ref"
+   "link_fieldname": "return_ref"
   }
  ],
- "modified": "2022-05-28 11:28:13.859644",
+ "modified": "2022-05-28 11:46:16.332836",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Order Receiving",
