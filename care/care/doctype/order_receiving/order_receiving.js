@@ -71,7 +71,8 @@ frappe.ui.form.on('Order Receiving', {
                  make_return_entry(frm);
 
             }, __('Create'));
-
+        }
+        if(frm.doc.docstatus == 1){
             frappe.call({
                 method: "check_purchase_receipt_created",
                 doc: frm.doc,
@@ -91,8 +92,8 @@ frappe.ui.form.on('Order Receiving', {
                     }
                 }
             });
-            frm.page.set_inner_btn_group_as_primary(__('Create'));
         }
+        frm.page.set_inner_btn_group_as_primary(__('Create'));
 	},
 	warehouse: function(frm, cdt, cdn){
 	    frm.get_field("items").grid.toggle_display("split_qty", frm.doc.warehouse ? 0 : 1);

@@ -283,6 +283,9 @@ def make_purchase_invoice(doc):
             pi.cost_center = cost_center
             pi.ignore_pricing_rule = 1
             pi.is_return = doc.is_return
+            if doc.is_return:
+                pr_rec = frappe.get_value("Purchase Receipt", {"order_receiving": doc.return_ref,'set_warehouse': doc.warehouse}, "name")
+                pi.return_against = pr_rec
             for d in doc.items:
                 md_item = frappe.get_value("Material Demand Item",
                                            {'item_code': d.get('item_code'), 'parent': ['in', m_list],
@@ -439,6 +442,9 @@ def make_purchase_invoice(doc):
                             pi.cost_center = cost_center
                             pi.ignore_pricing_rule = 1
                             pi.is_return = doc.is_return
+                            if doc.is_return:
+                                pr_rec = frappe.get_value("Purchase Receipt", {"order_receiving": doc.return_ref, "set_warehouse": key}, ["name"])
+                                pi.return_against = pr_rec
                             for d in item_details[key]['details']:
                                 pi.append("items", d)
                             if pi.get('items'):
@@ -454,7 +460,8 @@ def make_purchase_invoice(doc):
                                             res.item_tax_template = None
                                             res.item_tax_rate = '{}'
                                 pi.insert(ignore_permissions=True)
-                        except:
+                        except Exception as e:
+                            print("---------error: ",e)
                             continue
         frappe.msgprint(_("Purchase Receipt Created"), alert=1)
     if doc.is_return:
