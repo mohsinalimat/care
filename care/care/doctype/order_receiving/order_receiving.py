@@ -51,6 +51,19 @@ class OrderReceiving(Document):
             frappe.db.set(self, 'status', 'Queue')
         self.update_p_r_c_tool_status()
 
+    @frappe.whitelist()
+    def create_purchase_receipt(self):
+        make_purchase_invoice(self)
+
+    @frappe.whitelist()
+    def check_purchase_receipt_created(self):
+        result = frappe.db.sql("""select name from `tabPurchase Receipt` 
+                            where order_receiving = '{0}'""".format(self.name))
+        if result:
+            return True
+        else:
+            return False
+
     def calculate_item_level_tax_breakup(self):
         if self:
             itemised_tax, itemised_taxable_amount = get_itemised_tax_breakup_data(self)
@@ -227,6 +240,16 @@ class OrderReceiving(Document):
             prc_doc = frappe.get_doc("Purchase Invoice Creation Tool", self.purchase_invoice_creation_tool)
             prc_doc.status = "Order Created"
             prc_doc.db_update()
+
+
+    @frappe.whitelist()
+    def get_item_filter(self):
+        itm_lst = []
+        items = frappe.db.sql("select item_code from `tabOrder Receiving Item` where parent = '{0}'".format(self.name), as_dict=True)
+        for res in items:
+            itm_lst.append(res.item_code)
+        return itm_lst
+
 
 def make_purchase_invoice(doc):
     material_demand = frappe.get_list("Material Demand",
@@ -492,3 +515,45 @@ def get_item_tax_template(item, args, out=None):
             item_group_doc = frappe.get_cached_doc("Item Group", item_group)
             item_tax_template = _get_item_tax_template(args, item_group_doc.taxes, out)
             return item_tax_template
+
+
+@frappe.whitelist()
+def get_total_receive_qty(doc_name,item):
+    if doc_name and item:
+        qty = float(frappe.db.sql("""select ifnull(sum(qty),0) from `tabOrder Receiving Item` where parent = '{0}' and item_code ='{1}'""".format(doc_name, item))[0][0] or 0)
+        rate = float(frappe.db.sql("""select ifnull(sum(rate),0) from `tabOrder Receiving Item` where parent = '{0}' and item_code ='{1}'""".format(doc_name, item))[0][0] or 0)
+        return {'qty': qty,'rate': rate}
+    return {'qty': 0,'rate': 0}
+
+@frappe.whitelist()
+def make_return_entry(doc_name, items):
+    if doc_name and items:
+        self = frappe.get_doc("Order Receiving", doc_name)
+        doc = frappe.new_doc("Order Receiving")
+        doc.posting_date = nowdate()
+        doc.company = self.company
+        doc.c_b_warehouse = self.c_b_warehouse
+        doc.purchase_request = self.purchase_request
+        doc.supplier = self.supplier
+        doc.ignore_un_order_item = self.ignore_un_order_item
+        doc.warehouse = self.warehouse
+        doc.return_ref = self.name
+        doc.is_return = 1
+        # doc.status = 'Return'
+        data = json.loads(items)
+        if len(data) > 0:
+            for d in data:
+                item_doc = frappe.get_doc("Item", d.get('item_code'))
+                doc.append("items", {
+                    "item_code": item_doc.name,
+                    "item_name": item_doc.item_name,
+                    "received_qty": d.get('rec_qty'),
+                    "qty": d.get('return_qty'),
+                    "rate": d.get('rate'),
+                    "uom": 'Pack',
+                    "stock_uom": item_doc.stock_uom,
+                    "discount_percent": 0,
+                    "discount": 0
+                })
+        doc.set_missing_value()
+        return doc.as_dict()

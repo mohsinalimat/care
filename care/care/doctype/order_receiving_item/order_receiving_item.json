@@ -10,6 +10,7 @@
   "column_break_2",
   "item_name",
   "section_break_4",
+  "received_qty",
   "qty",
   "uom",
   "column_break_7",
@@ -314,12 +315,19 @@
    "label": "Discount After Rate",
    "options": "Company:company:default_currency",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "received_qty",
+   "fieldtype": "Float",
+   "label": "Received Qty",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-05-19 11:04:48.815152",
+ "modified": "2022-05-28 11:40:02.441615",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Order Receiving Item",

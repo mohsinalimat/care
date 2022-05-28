@@ -64,6 +64,34 @@ frappe.ui.form.on('Order Receiving', {
 		frm.get_field("items").grid.toggle_enable("rate", frm.doc.update_buying_price ? 1 : 0);
 	    refresh_field("items");
 	    validate_item_rate(frm, cdt, cdn)
+
+        if (frm.doc.status == 'Submitted'){
+            frm.add_custom_button(__('Return'), function(){
+                 make_return_entry(frm);
+
+            }, __('Create'));
+
+            frappe.call({
+                method: "check_purchase_receipt_created",
+                doc: frm.doc,
+                freeze: true,
+                callback: function(r) {
+                    if(!r.message){
+                        frm.add_custom_button(__('Purchase Receipt'), function(){
+                        frappe.call({
+                            method: "create_purchase_receipt",
+                            doc: frm.doc,
+                            freeze: true,
+                            callback: function(r) {
+                                frappe.set_route('List', 'Purchase Receipt', {order_receiving: frm.doc.name});
+                            }
+                        });
+                        }, __('Create'));
+                    }
+                }
+            });
+            frm.page.set_inner_btn_group_as_primary(__('Create'));
+        }
 	},
 	warehouse: function(frm, cdt, cdn){
 	    frm.get_field("items").grid.toggle_display("split_qty", frm.doc.warehouse ? 0 : 1);
@@ -134,7 +162,6 @@ function validate_item_rate(frm, cdt, cdn){
         }
     });
 }
-
 
 function apply_item_filters(frm){
     console.log("apply_item_filters")
@@ -587,6 +614,134 @@ function get_item_tax_template(frm, cdt, cdn) {
             }
         });
     }
+}
+
+
+function make_return_entry(frm){
+    frm.call({
+        method: "get_item_filter",
+        doc: frm.doc,
+        callback: function(r) {
+            var items = r.message;
+            let dialog = new frappe.ui.Dialog({
+                title: __('Return'),
+                fields: [
+                    {
+                        fieldname: 'items',
+                        fieldtype: 'Table',
+                        label: __('Items'),
+                        in_editable_grid: true,
+                        reqd: 1,
+                        fields: [{
+                            fieldtype: 'Link',
+                            fieldname: 'item_code',
+                            options: 'Item',
+                            in_list_view: 1,
+                            label: __('Item Code'),
+                            columns: 2,
+                            get_query: () => {
+                                return {
+                                    filters: {
+                                        "name": ['in', items]
+                                    }
+                                };
+                            },
+                            change: function() {
+                                var me = this;
+                                var item_code = me.get_value();
+                                if(item_code){
+                                    frappe.db.get_value('Item', item_code, 'item_name', function(value) {
+                                        me.grid_row.on_grid_fields_dict.item_name.set_value(value['item_name']);
+                                    });
+
+                                    frappe.call({
+                                        method: 'care.care.doctype.order_receiving.order_receiving.get_total_receive_qty',
+                                        args: {
+                                            doc_name: frm.doc.name,
+                                            item: item_code
+                                        },
+                                        callback: (r) => {
+                                            me.grid_row.on_grid_fields_dict.rec_qty.set_value(r.message.qty || 0);
+                                            me.grid_row.on_grid_fields_dict.return_qty.set_value(r.message.qty || 0);
+                                            me.grid_row.on_grid_fields_dict.rate.set_value(r.message.rate || 0);
+                                        }
+                                    });
+                                }
+                                else{
+                                    me.grid_row.on_grid_fields_dict.item_name.set_value('');
+                                    me.grid_row.on_grid_fields_dict.rec_qty.set_value(0);
+                                    me.grid_row.on_grid_fields_dict.return_qty.set_value(0);
+                                    me.grid_row.on_grid_fields_dict.rate.set_value(0);
+                                }
+                            }
+                        },
+                        {
+                            fieldtype: 'Read Only',
+                            fieldname: 'item_name',
+                            label: __('Item Name'),
+                            in_list_view: 1,
+                            columns: 2
+                        },
+                        {
+                            fieldtype: 'Read Only',
+                            fieldname: 'rec_qty',
+                            label: __('Receive Qty'),
+                            in_list_view: 1,
+                            columns: 2
+                        },
+                        {
+                            fieldtype: 'Float',
+                            fieldname: 'return_qty',
+                            label: __('Return Qty'),
+                            in_list_view: 1,
+                            reqd: 1,
+                            default: 0,
+                            columns: 2
+                        },
+                        {
+                            fieldtype: 'Read Only',
+                            fieldname: 'rate',
+                            label: __('Rate'),
+                            in_list_view: 1,
+                            columns: 2
+                        },]
+                    },
+                ],
+                primary_action_label: __('create'),
+                primary_action: function(values) {
+                    let child_data = values.items;
+                    frm.call({
+                        method: "care.care.doctype.order_receiving.order_receiving.make_return_entry",
+                        args: {
+                            doc_name: frm.doc.name,
+                            items: child_data
+                        },
+                        callback: function(r) {
+                            if(r.message){
+                                var doclist = frappe.model.sync(r.message);
+					            frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+                            }
+                        }
+                    })
+        //            let t_qty = 0
+        //            let lst = []
+        //            child_data.forEach((d) => {
+        //                t_qty = t_qty + d.qty
+        //                lst.push({"warehouse": d.warehouse, "order_qty": d.order_qty, "qty": d.qty})
+        //            });
+        //            if (values.qty != t_qty){
+        //                frappe.throw(__("Total split qty must be equal to ") + values.qty);
+        //            }
+        //            else{
+        //                dialog.hide();
+        //                frappe.model.set_value(cdt,cdn,"code",JSON.stringify(lst));
+        //                refresh_field("code", cdn, "items");
+        //            }
+                }
+            });
+            dialog.show();
+        }
+    });
 }
 // for backward compatibility: combine new and previous states
 $.extend(cur_frm.cscript, new care.care.ReceivingController({frm: cur_frm}));

@@ -16,6 +16,8 @@
   "purchase_invoice_creation_tool",
   "supplier",
   "supplier_name",
+  "is_return",
+  "return_ref",
   "column_break_6",
   "posting_date",
   "c_b_warehouse",
@@ -221,7 +223,7 @@
    "ignore_user_permissions": 1,
    "label": "Status",
    "no_copy": 1,
-   "options": "Draft\nSubmitted\nCancelled\nQueue",
+   "options": "Draft\nSubmitted\nCancelled\nQueue\nReturn",
    "read_only": 1
   },
   {
@@ -317,6 +319,20 @@
    "no_copy": 1,
    "options": "Purchase Invoice Creation Tool",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_return",
+   "fieldtype": "Check",
+   "label": "Is Return"
+  },
+  {
+   "depends_on": "is_return",
+   "fieldname": "return_ref",
+   "fieldtype": "Link",
+   "label": "Return Ref",
+   "options": "Order Receiving",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
@@ -327,9 +343,14 @@
    "group": "Purchase Receipt",
    "link_doctype": "Purchase Receipt",
    "link_fieldname": "order_receiving"
+  },
+  {
+   "group": "Return",
+   "link_doctype": "Order Receiving",
+   "link_fieldname": "retrun_ref"
   }
  ],
- "modified": "2022-05-26 11:48:25.625290",
+ "modified": "2022-05-28 11:28:13.859644",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Order Receiving",
