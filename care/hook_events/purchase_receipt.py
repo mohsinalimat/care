@@ -215,3 +215,16 @@ def calculate_item_level_tax_breakup(doc, method):
         else:
             for res in doc.items:
                 res.sales_tax = res.further_tax = res.advance_tax = res.total_includetaxes = 0
+
+def calculate_line_level_tax(doc, method):
+    for res in doc.items:
+        if res.item_tax_template:
+            item_tax_template = frappe.get_doc('Item Tax Template', res.item_tax_template)
+            for tax in item_tax_template.taxes:
+                if 'Sales Tax' in tax.tax_type:
+                    res.sales_tax = res.amount * (tax.tax_rate / 100)
+                if 'Further Tax' in tax.tax_type:
+                        res.further_tax = res.amount * (tax.tax_rate / 100)
+                if 'Advance Tax' in tax.tax_type:
+                    res.advance_tax = res.amount * (tax.tax_rate / 100)
+        res.total_includetaxes = flt(res.sales_tax + res.further_tax + res.advance_tax) + res.amount
