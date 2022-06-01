@@ -32,14 +32,14 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 			}
 		});
     },
-    onload: function(doc, cdt, cdn){
-        var me = this;
-        if(this.frm.fields_dict["items"].grid.get_field('item_code')) {
-			this.frm.set_query("item_tax_template", "items", function(doc, cdt, cdn) {
-				return me.set_query_for_item_tax_template(doc, cdt, cdn)
-			});
-		}
-    },
+//    onload: function(doc, cdt, cdn){
+//        var me = this;
+//        if(this.frm.fields_dict["items"].grid.get_field('item_code')) {
+//			this.frm.set_query("item_tax_template", "items", function(doc, cdt, cdn) {
+//				return me.set_query_for_item_tax_template(doc, cdt, cdn)
+//			});
+//		}
+//    },
     onload_post_render: function() {
 		if(this.frm.doc.__islocal && !(this.frm.doc.taxes || []).length
 			&& !(this.frm.doc.__onload ? this.frm.doc.__onload.load_after_mapping : false)) {
@@ -110,7 +110,7 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 		}
 	},
 	validate: function() {
-		this.calculate_taxes_and_totals(false);
+	    this.calculate_taxes_and_totals(false);
 	},
 	taxes_and_charges: function() {
 		var me = this;
@@ -141,31 +141,11 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 	calculate_taxes_and_totals: async function(update_paid_amount) {
 		this.discount_amount_applied = false;
 		this._calculate_taxes_and_totals();
-		this.calculate_discount_amount();
 
 		await this.calculate_shipping_charges();
 
 //		 Advance calculation applicable to Sales /Purchase Invoice
-		if(in_list(["Sales Invoice", "POS Invoice", "Purchase Invoice"], this.frm.doc.doctype)
-			&& this.frm.doc.docstatus < 2 && !this.frm.doc.is_return) {
-			this.calculate_total_advance(update_paid_amount);
-		}
-
-		if (in_list(["Sales Invoice", "POS Invoice"], this.frm.doc.doctype) && this.frm.doc.is_pos &&
-			this.frm.doc.is_return) {
-			if (this.frm.doc.doctype == "Sales Invoice") {
-				this.set_total_amount_to_default_mop();
-			}
-			this.calculate_paid_amount();
-		}
 		this.frm.refresh_fields();
-	},
-
-	calculate_discount_amount: function() {
-		if (frappe.meta.get_docfield(this.frm.doc.doctype, "discount_amount")) {
-			this.set_discount_amount();
-			this.apply_discount_amount();
-		}
 	},
 
 	_calculate_taxes_and_totals: function() {
@@ -232,18 +212,8 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 				item.net_rate = item.rate;
 				item.amount = flt((item.rate * item.qty) - item.discount, precision("amount", item));
 				item.net_amount = item.amount;
-				item.item_tax_amount = 0.0;
-				item.total_weight = flt(item.weight_per_unit * item.stock_qty);
-				me.set_in_company_currency(item, ["price_list_rate", "rate", "amount", "net_rate", "net_amount"]);
 			});
 		}
-	},
-
-	set_in_company_currency: function(doc, fields) {
-		var me = this;
-		$.each(fields, function(i, f) {
-			doc["base_"+f] = flt(flt(doc[f], precision(f, doc)) * me.frm.doc.conversion_rate, precision("base_" + f, doc));
-		});
 	},
 
 	initialize_taxes: function() {
@@ -263,31 +233,8 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 			}
 
 			$.each(tax_fields, function(i, fieldname) { tax[fieldname] = 0.0; });
-
-//			if (!this.discount_amount_applied && cur_frm) {
-//				cur_frm.cscript.validate_taxes_and_charges(tax.doctype, tax.name);
-//				me.validate_inclusive_tax(tax);
-//			}
 			frappe.model.round_floats_in(tax);
 		});
-	},
-
-	fetch_round_off_accounts: function() {
-		let me = this;
-		frappe.flags.round_off_applicable_accounts = [];
-
-		if (me.frm.doc.company) {
-			return frappe.call({
-				"method": "erpnext.controllers.taxes_and_totals.get_round_off_applicable_accounts",
-				"args": {
-					"company": me.frm.doc.company,
-					"account_list": frappe.flags.round_off_applicable_accounts
-				},
-				callback: function(r) {
-					frappe.flags.round_off_applicable_accounts.push(...r.message);
-				}
-			});
-		}
 	},
 
 	determine_exclusive_rate: function() {
@@ -324,8 +271,6 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 				var amount = flt(item.amount) - total_inclusive_tax_amount_per_qty;
 				item.net_amount = flt(amount / (1 + cumulated_tax_fraction));
 				item.net_rate = item.qty ? flt(item.net_amount / item.qty, precision("net_rate", item)) : 0;
-
-				me.set_in_company_currency(item, ["net_rate", "net_amount"]);
 			}
 		});
 	},
@@ -450,13 +395,7 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 
 				// set precision in the last item iteration
 				if (n == me.frm.doc["items"].length - 1) {
-					me.set_in_company_currency(tax,
-						["tax_amount", "tax_amount_after_discount_amount"]);
-					// in tax.total, accumulate grand total for each item
 					me.set_cumulative_total(i, tax);
-
-					me.set_in_company_currency(tax, ["total"]);
-
 					// adjust Discount Amount loss in last tax iteration
 					if ((i == me.frm.doc["taxes"].length - 1) && me.discount_amount_applied
 						&& me.frm.doc.apply_discount_on == "Grand Total" && me.frm.doc.discount_amount) {
@@ -608,14 +547,12 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 			this.frm.doc.base_grand_total = flt((this.frm.doc.taxes_and_charges_added || this.frm.doc.taxes_and_charges_deducted) ?
 				flt(this.frm.doc.grand_total * this.frm.doc.conversion_rate) : this.frm.doc.base_net_total);
 
-			this.set_in_company_currency(this.frm.doc,
-				["taxes_and_charges_added", "taxes_and_charges_deducted"]);
+
 		}
 
 		this.frm.doc.total_taxes_and_charges = flt(this.frm.doc.grand_total - this.frm.doc.net_total
 			- flt(this.frm.doc.rounding_adjustment), precision("total_taxes_and_charges"));
 
-		this.set_in_company_currency(this.frm.doc, ["total_taxes_and_charges", "rounding_adjustment"]);
 
 		// Round grand total as per precision
 		frappe.model.round_floats_in(this.frm.doc, ["grand_total", "base_grand_total"]);
@@ -643,8 +580,6 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 				this.frm.doc.currency, precision("rounded_total"));
 			this.frm.doc.rounding_adjustment += flt(this.frm.doc.rounded_total - this.frm.doc.grand_total,
 				precision("rounding_adjustment"));
-
-			this.set_in_company_currency(this.frm.doc, ["rounding_adjustment", "rounded_total"]);
 		}
 	},
 
@@ -679,12 +614,6 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 		}
 	},
 
-	set_discount_amount: function() {
-		if(this.frm.doc.additional_discount_percentage) {
-			this.frm.doc.discount_amount = flt(flt(this.frm.doc[frappe.scrub(this.frm.doc.apply_discount_on)])
-				* this.frm.doc.additional_discount_percentage / 100, precision("discount_amount"));
-		}
-	},
 
 	apply_discount_amount: function() {
 		var me = this;
@@ -717,7 +646,6 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 							precision("net_amount", item));
 					}
 					item.net_rate = item.qty ? flt(item.net_amount / item.qty, precision("net_rate", item)) : 0;
-					me.set_in_company_currency(item, ["net_rate", "net_amount"]);
 				});
 
 				this.discount_amount_applied = true;
@@ -752,102 +680,6 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 		}
 	},
 
-	calculate_total_advance: function(update_paid_amount) {
-		var total_allocated_amount = frappe.utils.sum($.map(this.frm.doc["advances"] || [], function(adv) {
-			return flt(adv.allocated_amount, precision("allocated_amount", adv));
-		}));
-		this.frm.doc.total_advance = flt(total_allocated_amount, precision("total_advance"));
-
-		if (this.frm.doc.write_off_outstanding_amount_automatically) {
-			this.frm.doc.write_off_amount = 0;
-		}
-
-		this.calculate_outstanding_amount(update_paid_amount);
-		this.calculate_write_off_amount();
-	},
-
-	is_internal_invoice: function() {
-		if (['Sales Invoice', 'Purchase Invoice'].includes(this.frm.doc.doctype)) {
-			if (this.frm.doc.company === this.frm.doc.represents_company) {
-				return true;
-			}
-		}
-		return false;
-	},
-
-	calculate_outstanding_amount: function(update_paid_amount) {
-		// NOTE:
-		// paid_amount and write_off_amount is only for POS/Loyalty Point Redemption Invoice
-		// total_advance is only for non POS Invoice
-		if(in_list(["Sales Invoice", "POS Invoice"], this.frm.doc.doctype) && this.frm.doc.is_return){
-			this.calculate_paid_amount();
-		}
-
-		if (this.frm.doc.is_return || (this.frm.doc.docstatus > 0) || this.is_internal_invoice()) return;
-
-		frappe.model.round_floats_in(this.frm.doc, ["grand_total", "total_advance", "write_off_amount"]);
-
-		if(in_list(["Sales Invoice", "POS Invoice", "Purchase Invoice"], this.frm.doc.doctype)) {
-			let grand_total = this.frm.doc.rounded_total || this.frm.doc.grand_total;
-			let base_grand_total = this.frm.doc.base_rounded_total || this.frm.doc.base_grand_total;
-
-			if(this.frm.doc.party_account_currency == this.frm.doc.currency) {
-				var total_amount_to_pay = flt((grand_total - this.frm.doc.total_advance
-					- this.frm.doc.write_off_amount), precision("grand_total"));
-			} else {
-				var total_amount_to_pay = flt(
-					(flt(base_grand_total, precision("base_grand_total"))
-						- this.frm.doc.total_advance - this.frm.doc.base_write_off_amount),
-					precision("base_grand_total")
-				);
-			}
-
-			frappe.model.round_floats_in(this.frm.doc, ["paid_amount"]);
-			this.set_in_company_currency(this.frm.doc, ["paid_amount"]);
-
-			if(this.frm.refresh_field){
-				this.frm.refresh_field("paid_amount");
-				this.frm.refresh_field("base_paid_amount");
-			}
-
-			if(in_list(["Sales Invoice", "POS Invoice"], this.frm.doc.doctype)) {
-				let total_amount_for_payment = (this.frm.doc.redeem_loyalty_points && this.frm.doc.loyalty_amount)
-					? flt(total_amount_to_pay - this.frm.doc.loyalty_amount, precision("base_grand_total"))
-					: total_amount_to_pay;
-				this.set_default_payment(total_amount_for_payment, update_paid_amount);
-				this.calculate_paid_amount();
-			}
-			this.calculate_change_amount();
-
-			var paid_amount = (this.frm.doc.party_account_currency == this.frm.doc.currency) ?
-				this.frm.doc.paid_amount : this.frm.doc.base_paid_amount;
-			this.frm.doc.outstanding_amount =  flt(total_amount_to_pay - flt(paid_amount) +
-				flt(this.frm.doc.change_amount * this.frm.doc.conversion_rate), precision("outstanding_amount"));
-		}
-	},
-
-	set_total_amount_to_default_mop: function() {
-		let grand_total = this.frm.doc.rounded_total || this.frm.doc.grand_total;
-		let base_grand_total = this.frm.doc.base_rounded_total || this.frm.doc.base_grand_total;
-
-		if(this.frm.doc.party_account_currency == this.frm.doc.currency) {
-			var total_amount_to_pay = flt((grand_total - this.frm.doc.total_advance
-				- this.frm.doc.write_off_amount), precision("grand_total"));
-		} else {
-			var total_amount_to_pay = flt(
-				(flt(base_grand_total, precision("base_grand_total"))
-					- this.frm.doc.total_advance - this.frm.doc.base_write_off_amount),
-				precision("base_grand_total")
-			);
-		}
-		this.frm.doc.payments.find(pay => {
-			if (pay.default) {
-				pay.amount = total_amount_to_pay;
-			}
-		});
-		this.frm.refresh_fields();
-	},
-
 	set_default_payment: function(total_amount_to_pay, update_paid_amount) {
 		var me = this;
 		var payment_status = true;
@@ -865,57 +697,4 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 			});
 		}
 	},
-
-	calculate_paid_amount: function() {
-		var me = this;
-		var paid_amount = 0.0;
-		var base_paid_amount = 0.0;
-		if(this.frm.doc.is_pos) {
-			$.each(this.frm.doc['payments'] || [], function(index, data){
-				data.base_amount = flt(data.amount * me.frm.doc.conversion_rate, precision("base_amount", data));
-				paid_amount += data.amount;
-				base_paid_amount += data.base_amount;
-			});
-		} else if(!this.frm.doc.is_return){
-			this.frm.doc.payments = [];
-		}
-		if (this.frm.doc.redeem_loyalty_points && this.frm.doc.loyalty_amount) {
-			base_paid_amount += this.frm.doc.loyalty_amount;
-			paid_amount += flt(this.frm.doc.loyalty_amount / me.frm.doc.conversion_rate, precision("paid_amount"));
-		}
-
-		this.frm.set_value('paid_amount', flt(paid_amount, precision("paid_amount")));
-		this.frm.set_value('base_paid_amount', flt(base_paid_amount, precision("base_paid_amount")));
-	},
-
-	calculate_change_amount: function() {
-		this.frm.doc.change_amount = 0.0;
-		this.frm.doc.base_change_amount = 0.0;
-		if(in_list(["Sales Invoice", "POS Invoice"], this.frm.doc.doctype)
-			&& this.frm.doc.paid_amount > this.frm.doc.grand_total && !this.frm.doc.is_return) {
-
-			var payment_types = $.map(this.frm.doc.payments, function(d) { return d.type; });
-			if (in_list(payment_types, 'Cash')) {
-				var grand_total = this.frm.doc.rounded_total || this.frm.doc.grand_total;
-				var base_grand_total = this.frm.doc.base_rounded_total || this.frm.doc.base_grand_total;
-
-				this.frm.doc.change_amount = flt(this.frm.doc.paid_amount - grand_total,
-					precision("change_amount"));
-
-				this.frm.doc.base_change_amount = flt(this.frm.doc.base_paid_amount -
-					base_grand_total, precision("base_change_amount"));
-			}
-		}
-	},
-
-	calculate_write_off_amount: function() {
-		if (this.frm.doc.write_off_outstanding_amount_automatically) {
-			this.frm.doc.write_off_amount = flt(this.frm.doc.outstanding_amount, precision("write_off_amount"));
-			this.frm.doc.base_write_off_amount = flt(this.frm.doc.write_off_amount * this.frm.doc.conversion_rate,
-				precision("base_write_off_amount"));
-
-			this.calculate_outstanding_amount(false);
-		}
-
-	}
 });

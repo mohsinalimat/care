@@ -1,4 +1,4 @@
 {
-  "care/js/data_import_tools1.min.js": "public/js/data_import/index.js",
-  "care/js/care.min.js": "public/js/tax_contoller.js"
+  "js/data_import_tools1.min.js": "public/js/data_import/index.js",
+  "js/care.min.js": "public/js/tax_contoller.js"
 }

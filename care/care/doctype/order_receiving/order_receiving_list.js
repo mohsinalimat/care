@@ -5,7 +5,8 @@ frappe.listview_settings['Order Receiving'] = {
 			"Draft": "red",
 			"Cancelled": "red",
 			"Submitted": "blue",
-			"Queue": "orange"
+			"Queue": "orange",
+			"Return": "gray"
 		};
 		return [__(doc.status), colors[doc.status], "status,=," + doc.status];
 	}

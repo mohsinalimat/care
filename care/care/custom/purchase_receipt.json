@@ -159,7 +159,7 @@
    "modified": "2022-03-25 14:08:41.412514",
    "modified_by": "Administrator",
    "name": "Purchase Receipt-order_receiving",
-   "no_copy": 0,
+   "no_copy": 1,
    "non_negative": 0,
    "options": "Order Receiving",
    "owner": "Administrator",

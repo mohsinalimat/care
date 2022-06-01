@@ -260,6 +260,50 @@ class PurchaseInvoiceCreationTool(Document):
 				column_dict = {"column_to_field_map": column_to_field_map}
 				return column_dict
 
+
+	@frappe.whitelist()
+	def create_order_receiving(self):
+		if self:
+			doc = frappe.new_doc("Order Receiving")
+			doc.status = 'Draft'
+			doc.posting_date = self.date
+			doc.company = self.company
+			doc.c_b_warehouse = self.c_b_warehouse
+			doc.purchase_request = self.purchase_request
+			doc.supplier = self.supplier
+			doc.ignore_un_order_item = self.ignore_un_order_item
+			doc.warehouse = self.warehouse
+			doc.purchase_invoice_creation_tool = self.name
+			i = Importer(self.reference_doctype, data_import=self)
+			data = i.import_file.get_payloads_for_import()
+			if len(data) > 0:
+				for d in data:
+					line = d.get('doc')
+					if line.get('qty') > 0:
+						item = None
+						item_code = None
+						if line.get('item_code'):
+							item = frappe.get_doc("Item", line.get('item_code'))
+							item_code = item.name
+						else:
+							item = frappe.get_doc("Item Supplier", {'supplier_part_no': line.get('supplier_item_code'),
+																	'supplier': self.supplier})
+							item_code = item.parent
+						item_doc = frappe.get_doc("Item", item_code)
+						doc.append("items", {
+							"item_code": item_code,
+							"item_name": item_doc.item_name,
+							"qty": line.get('qty'),
+							"rate": line.get('rate'),
+							"uom": 'Pack',
+							"stock_uom": item_doc.stock_uom,
+							"discount_percent": line.get("discount_percent") or 0 ,
+							"discount": line.get("discount") or 0
+						})
+			doc.set_missing_value()
+			return doc.as_dict()
+
+
 @frappe.whitelist()
 def download_template(
 	doctype, export_fields=None, export_records=None, export_filters=None, file_type="CSV"

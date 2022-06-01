@@ -3,9 +3,9 @@
 
 {% include 'care/public/js/tax_contoller.js' %};
 
-cur_frm.cscript.tax_table = "Purchase Taxes and Charges";
+//cur_frm.cscript.tax_table = "Purchase Taxes and Charges";
 
-{% include 'erpnext/accounts/doctype/purchase_taxes_and_charges_template/purchase_taxes_and_charges_template.js' %}
+//{% include 'erpnext/accounts/doctype/purchase_taxes_and_charges_template/purchase_taxes_and_charges_template.js' %}
 
 frappe.provide("care.care");
 
@@ -52,7 +52,7 @@ frappe.ui.form.on('Order Receiving', {
 			}
 		});
 	},
-	refresh: function(frm){
+	refresh: function(frm, cdt, cdn){
 	    if (frm.doc.__islocal) {
 			frm.set_value("posting_date", frappe.datetime.now_date())
 		}
@@ -61,22 +61,113 @@ frappe.ui.form.on('Order Receiving', {
         }
 		apply_item_filters(frm)
 		frm.get_field("items").grid.toggle_display("split_qty", frm.doc.warehouse ? 0 : 1);
+		frm.get_field("items").grid.toggle_display("received_qty", frm.doc.is_return ? 1 : 0);
+		frm.get_field("items").grid.toggle_enable("rate", frm.doc.update_buying_price ? 1 : 0);
 	    refresh_field("items");
+	    validate_item_rate(frm, cdt, cdn)
+
+        if (frm.doc.status == 'Submitted'){
+            frm.add_custom_button(__('Return'), function(){
+                 make_return_entry(frm);
+
+            }, __('Create'));
+        }
+        if(frm.doc.docstatus == 1){
+            frappe.call({
+                method: "check_purchase_receipt_created",
+                doc: frm.doc,
+                freeze: true,
+                callback: function(r) {
+                    if(!r.message){
+                        frm.add_custom_button(__('Purchase Receipt'), function(){
+                        frappe.call({
+                            method: "create_purchase_receipt",
+                            doc: frm.doc,
+                            freeze: true,
+                            callback: function(r) {
+                                frappe.set_route('List', 'Purchase Receipt', {order_receiving: frm.doc.name});
+                            }
+                        });
+                        }, __('Create'));
+                    }
+                }
+            });
+        }
+        frm.page.set_inner_btn_group_as_primary(__('Create'));
 	},
 	warehouse: function(frm, cdt, cdn){
 	    frm.get_field("items").grid.toggle_display("split_qty", frm.doc.warehouse ? 0 : 1);
 	    refresh_field("items");
 	},
+	update_buying_price: function(frm, cdt, cdn){
+		frm.get_field("items").grid.toggle_enable("rate", frm.doc.update_buying_price ? 1 : 0);
+	    refresh_field("items");
+	    if(!frm.doc.update_buying_price){
+	        $.each(frm.doc['items'] || [], function(i, item) {
+                frm.call({
+                    method: "care.hook_events.purchase_invoice.get_price_list_rate_for",
+                    args: {
+                        item_code: item.item_code,
+                        args: {
+                            item_code: item.item_code,
+                            supplier: frm.doc.supplier,
+                            currency: frm.doc.currency,
+                            price_list: frm.doc.buying_price_list,
+                            price_list_currency: frm.doc.currency,
+                            company: frm.doc.company,
+                            transaction_date: frm.doc.posting_date ,
+                            doctype: frm.doc.doctype,
+                            name: frm.doc.name,
+                            qty: item.qty || 1,
+                            child_docname: item.name,
+                            uom: item.uom,
+                            stock_uom: item.stock_uom,
+                            conversion_factor: item.conversion_factor
+                        }
+                    },
+                    callback: function(r) {
+                        item.rate = r.message || 0
+                        let amt = item.rate * item.qty
+                        let discount_amount = (amt / 100) * item.discount_percent
+                        let amount = amt - discount_amount
+                        let dis_aft_rate = amount/ item.qty
+                        item.amount = amount
+                        item.net_amount = amount
+                        item.base_net_amount = amount
+                        item.discount = discount_amount
+                        item.discount_after_rate = dis_aft_rate
+                    }
+                })
+            });
+	    }
+	},
 	validate: function(frm, cdt, cdn){
 	    update_total_qty(frm, cdt, cdn)
+	    validate_item_rate(frm, cdt, cdn)
 	},
     purchase_request: function (frm){
 	    apply_item_filters(frm)
+    },
+    onload: function (frm, cdt, cdn){
+	    validate_item_rate(frm, cdt, cdn)
+		frm.get_field("items").grid.toggle_display("received_qty", frm.doc.is_return ? 1 : 0);
     }
 });
 
+function validate_item_rate(frm, cdt, cdn){
+    cur_frm.fields_dict["items"].$wrapper.find('.grid-body .rows').find(".grid-row").each(function(i, item) {
+        let d = locals[cur_frm.fields_dict["items"].grid.doctype][$(item).attr('data-name')];
+        if( d['base_buying_price_list_rate'] - 1 <= d["rate"] && d["rate"] <= d['base_buying_price_list_rate'] + 1){
+            $(item).find('.grid-static-col').css({'background-color': '#ffffff'});
+        }
+        else{
+            $(item).find('.grid-static-col').css({'background-color': '#ffff80'});
+        }
+    });
+}
 
 function apply_item_filters(frm){
+    console.log("apply_item_filters")
     frappe.call({
         method: "get_item_code",
         doc: frm.doc,
@@ -98,7 +189,10 @@ function apply_child_btn_color(frm, cdt, cdn){
 }
 
 frappe.ui.form.on('Order Receiving Item', {
-    items_remove: function(frm, cdt, cdn){
+//    items_remove: function(frm, cdt, cdn){
+//        apply_item_filters(frm)
+//    },
+    items_add: function(frm, cdt, cdn){
         apply_item_filters(frm)
     },
     item_code: function(frm, cdt, cdn){
@@ -109,38 +203,28 @@ frappe.ui.form.on('Order Receiving Item', {
         }
         else{
             if (row.item_code){
-                frappe.run_serially([
-                    ()=>apply_item_filters(frm),
-                    ()=>update_price_rate(frm, cdt, cdn),
-                    ()=>get_item_tax_template(frm, cdt, cdn),
-                    ()=>update_selling_price_rate(frm, cdt, cdn),
-                    ()=>apply_pricing_rule(row, frm, cdt, cdn),
-                    ()=> {
-                        var new_row = frm.fields_dict.items.grid;
-                        new_row.add_new_row(null, null, true, null, true);
-                        new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
-                        new_row.set_focus_on_row();
+                update_price_rate(frm, cdt, cdn),
+                get_item_tax_template(frm, cdt, cdn)
+                update_selling_price_rate(frm, cdt, cdn),
+                apply_pricing_rule(row, frm, cdt, cdn),
+                frappe.call({
+                    method: "care.care.doctype.order_receiving.order_receiving.get_item_qty",
+                    args: {
+                        "purchase_request": frm.doc.purchase_request,
+                        "item": row.item_code,
+                        "supplier": frm.doc.supplier,
+                        "warehouse": frm.doc.warehouse
                     },
-                    ()=>{
-                        frappe.call({
-                            method: "care.care.doctype.order_receiving.order_receiving.get_item_qty",
-                            args: {
-                                "purchase_request": frm.doc.purchase_request,
-                                "item": row.item_code,
-                                "supplier": frm.doc.supplier,
-                                "warehouse": frm.doc.warehouse
-                            },
-                            callback: function(r) {
-                                frappe.model.set_value(cdt,cdn,"qty",r.message);
-                                refresh_field("qty", cdn, "items");
-                            }
-                        });
-                    },
-                ])
+                    callback: function(r) {
+                         console.log("get Qty")
+                        frappe.model.set_value(cdt,cdn,"qty",r.message);
+                        refresh_field("qty", cdn, "items");
+                    }
+                });
             }
-            else{
-                apply_item_filters(frm)
-            }
+//            else{
+//                apply_item_filters(frm)
+//            }
         }
 //        apply_child_btn_color(frm, cdt, cdn)
     },
@@ -167,11 +251,7 @@ frappe.ui.form.on('Order Receiving Item', {
         update_amount(frm, cdt, cdn)
 	},
     discount_percent: function(frm, cdt, cdn) {
-        var row = locals[cdt][cdn];
-        let amt = row.rate * row.qty
-        let discount_amount = (amt / 100) * row.discount_percent
-        frappe.model.set_value(cdt,cdn,"discount",discount_amount);
-        refresh_field("discount", cdn, "items");
+        update_amount(frm, cdt, cdn)
 	},
     selling_price_list_rate: function(frm, cdt, cdn) {
         calculate_margin(frm, cdt, cdn)
@@ -195,14 +275,19 @@ frappe.ui.form.on('Order Receiving Item', {
 function update_amount(frm, cdt, cdn){
     var row = locals[cdt][cdn];
     let amt = row.rate * row.qty
-    var discount_amount = row.discount
-    let amount = amt - row.discount
+    let discount_amount = (amt / 100) * row.discount_percent
+    let amount = amt - discount_amount
+    let dis_aft_rate = amount/ row.qty
     frappe.model.set_value(cdt,cdn,"amount",amount);
     frappe.model.set_value(cdt,cdn,"net_amount",amount);
     frappe.model.set_value(cdt,cdn,"base_net_amount",amount);
+    frappe.model.set_value(cdt,cdn,"discount",discount_amount);
+    frappe.model.set_value(cdt,cdn,"discount_after_rate",dis_aft_rate);
     refresh_field("amount", cdn, "items");
     refresh_field("net_amount", cdn, "items");
     refresh_field("base_net_amount", cdn, "items");
+    refresh_field("discount", cdn, "items");
+    refresh_field("discount_after_rate", cdn, "items");
 }
 function update_total_qty(frm, cdt, cdn){
     let total_qty = 0
@@ -226,6 +311,7 @@ function calculate_margin(frm, cdt, cdn){
 }
 
 function update_price_rate(frm, cdt, cdn){
+    console.log("update_price_rate")
     var item = locals[cdt][cdn];
     frappe.call({
         method: "erpnext.stock.get_item_details.get_conversion_factor",
@@ -236,7 +322,6 @@ function update_price_rate(frm, cdt, cdn){
         callback: function(r) {
             if(!r.exc) {
                 var conversion_factor = r.message.conversion_factor
-                frappe.model.set_value(cdt,cdn,"conversion_factor",r.message.conversion_factor);
                 frm.call({
                     method: "care.hook_events.purchase_invoice.get_price_list_rate_for",
                     args: {
@@ -260,6 +345,7 @@ function update_price_rate(frm, cdt, cdn){
                     },
                     callback: function(r) {
                         frappe.model.set_value( cdt, cdn, 'rate',r.message || 0)
+                        frappe.model.set_value(cdt,cdn,"conversion_factor",conversion_factor || 0);
                         frappe.model.set_value( cdt, cdn, 'base_buying_price_list_rate',r.message || 0)
                     }
                 })
@@ -269,6 +355,8 @@ function update_price_rate(frm, cdt, cdn){
 }
 
 function update_selling_price_rate(frm, cdt, cdn){
+
+    console.log("update_selling_price_rate")
     var item = locals[cdt][cdn];
     frappe.call({
         method: "erpnext.stock.get_item_details.get_conversion_factor",
@@ -313,6 +401,7 @@ function update_selling_price_rate(frm, cdt, cdn){
 
 
 function apply_pricing_rule(item, frm, cdt, cdn) {
+    console.log('apply_pricing_rule')
     var args = _get_args(item, frm, cdt, cdn);
     return frm.call({
         method: "erpnext.accounts.doctype.pricing_rule.pricing_rule.apply_pricing_rule",
@@ -491,94 +580,6 @@ function split_warehouse_wise_qty(row, frm, cdt, cdn, warhs){
     dialog.show();
 }
 
-function calculate_taxes_and_totals(){
-//    this.calculate_net_total();
-    this.calculate_taxes();
-//    this.calculate_totals();
-}
-
-function calculate_taxes(){
-    var me = this;
-    this.frm.doc.rounding_adjustment = 0;
-    var actual_tax_dict = {};
-
-    // maintain actual tax rate based on idx
-    $.each(this.frm.doc["taxes"] || [], function(i, tax) {
-        if (tax.charge_type == "Actual") {
-            actual_tax_dict[tax.idx] = flt(tax.tax_amount, precision("tax_amount", tax));
-        }
-    });
-
-    $.each(this.frm.doc["items"] || [], function(n, item) {
-        var item_tax_map = me._load_item_tax_rate(item.item_tax_rate);
-        $.each(me.frm.doc["taxes"] || [], function(i, tax) {
-            // tax_amount represents the amount of tax for the current step
-            var current_tax_amount = me.get_current_tax_amount(item, tax, item_tax_map);
-
-            // Adjust divisional loss to the last item
-            if (tax.charge_type == "Actual") {
-                actual_tax_dict[tax.idx] -= current_tax_amount;
-                if (n == me.frm.doc["items"].length - 1) {
-                    current_tax_amount += actual_tax_dict[tax.idx];
-                }
-            }
-
-            // accumulate tax amount into tax.tax_amount
-            if (tax.charge_type != "Actual" &&
-                !(me.discount_amount_applied && me.frm.doc.apply_discount_on=="Grand Total")) {
-                tax.tax_amount += current_tax_amount;
-            }
-
-            // store tax_amount for current item as it will be used for
-            // charge type = 'On Previous Row Amount'
-            tax.tax_amount_for_current_item = current_tax_amount;
-
-            // tax amount after discount amount
-            tax.tax_amount_after_discount_amount += current_tax_amount;
-
-            // for buying
-            if(tax.category) {
-                // if just for valuation, do not add the tax amount in total
-                // hence, setting it as 0 for further steps
-                current_tax_amount = (tax.category == "Valuation") ? 0.0 : current_tax_amount;
-
-                current_tax_amount *= (tax.add_deduct_tax == "Deduct") ? -1.0 : 1.0;
-            }
-
-            // note: grand_total_for_current_item contains the contribution of
-            // item's amount, previously applied tax and the current tax on that item
-            if(i==0) {
-                tax.grand_total_for_current_item = flt(item.net_amount + current_tax_amount);
-            } else {
-                tax.grand_total_for_current_item =
-                    flt(me.frm.doc["taxes"][i-1].grand_total_for_current_item + current_tax_amount);
-            }
-
-            // set precision in the last item iteration
-            if (n == me.frm.doc["items"].length - 1) {
-                me.round_off_totals(tax);
-                me.set_in_company_currency(tax,
-                    ["tax_amount", "tax_amount_after_discount_amount"]);
-
-                me.round_off_base_values(tax);
-
-                // in tax.total, accumulate grand total for each item
-                me.set_cumulative_total(i, tax);
-
-                me.set_in_company_currency(tax, ["total"]);
-
-                // adjust Discount Amount loss in last tax iteration
-                if ((i == me.frm.doc["taxes"].length - 1) && me.discount_amount_applied
-                    && me.frm.doc.apply_discount_on == "Grand Total" && me.frm.doc.discount_amount) {
-                    me.frm.doc.rounding_adjustment = flt(me.frm.doc.grand_total -
-                        flt(me.frm.doc.discount_amount) - tax.total, precision("rounding_adjustment"));
-                }
-            }
-        });
-    });
-}
-
-
 function get_item_tax_template(frm, cdt, cdn) {
     var item = frappe.get_doc(cdt, cdn);
     var update_stock = 0
@@ -616,6 +617,134 @@ function get_item_tax_template(frm, cdt, cdn) {
             }
         });
     }
+}
+
+
+function make_return_entry(frm){
+    frm.call({
+        method: "get_item_filter",
+        doc: frm.doc,
+        callback: function(r) {
+            var items = r.message;
+            let dialog = new frappe.ui.Dialog({
+                title: __('Return'),
+                fields: [
+                    {
+                        fieldname: 'items',
+                        fieldtype: 'Table',
+                        label: __('Items'),
+                        in_editable_grid: true,
+                        reqd: 1,
+                        fields: [{
+                            fieldtype: 'Link',
+                            fieldname: 'item_code',
+                            options: 'Item',
+                            in_list_view: 1,
+                            label: __('Item Code'),
+                            columns: 2,
+                            get_query: () => {
+                                return {
+                                    filters: {
+                                        "name": ['in', items]
+                                    }
+                                };
+                            },
+                            change: function() {
+                                var me = this;
+                                var item_code = me.get_value();
+                                if(item_code){
+                                    frappe.db.get_value('Item', item_code, 'item_name', function(value) {
+                                        me.grid_row.on_grid_fields_dict.item_name.set_value(value['item_name']);
+                                    });
+
+                                    frappe.call({
+                                        method: 'care.care.doctype.order_receiving.order_receiving.get_total_receive_qty',
+                                        args: {
+                                            doc_name: frm.doc.name,
+                                            item: item_code
+                                        },
+                                        callback: (r) => {
+                                            me.grid_row.on_grid_fields_dict.rec_qty.set_value(r.message.qty || 0);
+                                            me.grid_row.on_grid_fields_dict.return_qty.set_value(r.message.qty || 0);
+                                            me.grid_row.on_grid_fields_dict.rate.set_value(r.message.rate || 0);
+                                        }
+                                    });
+                                }
+                                else{
+                                    me.grid_row.on_grid_fields_dict.item_name.set_value('');
+                                    me.grid_row.on_grid_fields_dict.rec_qty.set_value(0);
+                                    me.grid_row.on_grid_fields_dict.return_qty.set_value(0);
+                                    me.grid_row.on_grid_fields_dict.rate.set_value(0);
+                                }
+                            }
+                        },
+                        {
+                            fieldtype: 'Read Only',
+                            fieldname: 'item_name',
+                            label: __('Item Name'),
+                            in_list_view: 1,
+                            columns: 2
+                        },
+                        {
+                            fieldtype: 'Read Only',
+                            fieldname: 'rec_qty',
+                            label: __('Receive Qty'),
+                            in_list_view: 1,
+                            columns: 2
+                        },
+                        {
+                            fieldtype: 'Float',
+                            fieldname: 'return_qty',
+                            label: __('Return Qty'),
+                            in_list_view: 1,
+                            reqd: 1,
+                            default: 0,
+                            columns: 2
+                        },
+                        {
+                            fieldtype: 'Read Only',
+                            fieldname: 'rate',
+                            label: __('Rate'),
+                            in_list_view: 1,
+                            columns: 2
+                        },]
+                    },
+                ],
+                primary_action_label: __('create'),
+                primary_action: function(values) {
+                    let child_data = values.items;
+                    frm.call({
+                        method: "care.care.doctype.order_receiving.order_receiving.make_return_entry",
+                        args: {
+                            doc_name: frm.doc.name,
+                            items: child_data
+                        },
+                        callback: function(r) {
+                            if(r.message){
+                                var doclist = frappe.model.sync(r.message);
+					            frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+                            }
+                        }
+                    })
+        //            let t_qty = 0
+        //            let lst = []
+        //            child_data.forEach((d) => {
+        //                t_qty = t_qty + d.qty
+        //                lst.push({"warehouse": d.warehouse, "order_qty": d.order_qty, "qty": d.qty})
+        //            });
+        //            if (values.qty != t_qty){
+        //                frappe.throw(__("Total split qty must be equal to ") + values.qty);
+        //            }
+        //            else{
+        //                dialog.hide();
+        //                frappe.model.set_value(cdt,cdn,"code",JSON.stringify(lst));
+        //                refresh_field("code", cdn, "items");
+        //            }
+                }
+            });
+            dialog.show();
+        }
+    });
 }
 // for backward compatibility: combine new and previous states
 $.extend(cur_frm.cscript, new care.care.ReceivingController({frm: cur_frm}));

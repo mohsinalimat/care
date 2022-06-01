@@ -14,8 +14,8 @@ app_license = "MIT"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/care/css/care.css"
-app_include_js = ["/assets/care/js/data_import_tools1.min.js",
-                  "/assets/care/js/care.min.js"
+app_include_js = ["/assets/js/data_import_tools1.min.js",
+                  "/assets/js/care.min.js"
                   ]
 
 # include js, css files in header of web template
@@ -37,7 +37,7 @@ doctype_js = {
     "Payment Entry": "public/js/payment_entry.js",
     "Purchase Invoice": "public/js/purchase_invoice.js",
     "Stock Entry": "public/js/stock_entry.js",
-    "Purchase Receipt": "public/js/purchase_receipt.js",
+    # "Purchase Receipt": "public/js/purchase_receipt.js",
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -119,18 +119,19 @@ doc_events = {
         "on_cancel": ["care.hook_events.purchase_invoice.cancel_update_p_r_c_tool_status",
                      # "care.hook_events.purchase_invoice.cancel_update_md_status",
                     "care.hook_events.purchase_invoice.rev_update_billing_percentage"],
-        "before_submit": ["care.hook_events.purchase_invoice.validate_cost_center",
-                          "care.hook_events.purchase_invoice.validate_price_and_rate"],
+        "before_submit": [
+                    # "care.hook_events.purchase_invoice.validate_cost_center",
+                    "care.hook_events.purchase_invoice.validate_price_and_rate"],
         "before_insert": "care.hook_events.purchase_invoice.un_check_franchise_inv_generated"
     },
     "Sales Invoice": {
         "validate": ["care.hook_events.sales_invoice.updated_item_amendment_summary"],
         "before_insert": "care.hook_events.sales_invoice.disable_rounded_total",
-        "before_submit": ["care.hook_events.sales_invoice.validate_cost_center"]
+        # "before_submit": ["care.hook_events.sales_invoice.validate_cost_center"]
     },
     "Payment Entry": {
         "validate": ["care.hook_events.payment_entry.set_out_grand_total"],
-        "before_submit": ["care.hook_events.purchase_invoice.validate_cost_center"],
+        # "before_submit": ["care.hook_events.purchase_invoice.validate_cost_center"],
         "on_submit": ["care.hook_events.payment_entry.create_custom_series"]
     },
     "Stock Entry": {
@@ -175,7 +176,9 @@ override_whitelisted_methods = {
 override_doctype_class = {
     'POS Closing Entry': 'care.hook_events.override_pos_closing.OverridePOSClosingEntry',
     'POS Invoice Merge Log': 'care.hook_events.override_pos_merge_log.OverridePOSInvoiceMergeLog',
-    'Sales Invoice': 'care.hook_events.override_sales_invoice.OverrideSalesInvoice'
+    'Sales Invoice': 'care.hook_events.override_sales_invoice.OverrideSalesInvoice',
+    'Purchase Receipt': 'care.hook_events.purchase_receipt.OverridePurchaseReceipt',
+    'Payment Entry': 'care.hook_events.payment_entry.OverridePaymentEntry',
 }
 
 # User Data Protection

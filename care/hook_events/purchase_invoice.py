@@ -6,6 +6,7 @@ from frappe.utils import add_days, add_months, cint, cstr, flt, getdate
 from frappe.model.mapper import get_mapped_doc
 from erpnext.stock.get_item_details import get_item_price, check_packing_list
 from erpnext.stock.doctype.purchase_receipt.purchase_receipt import get_returned_qty_map, get_invoiced_qty_map
+from erpnext.controllers.accounts_controller import get_taxes_and_charges
 
 def update_p_r_c_tool_status(doc, method):
     if doc.purchase_invoice_creation_tool:
@@ -234,6 +235,7 @@ def make_purchase_invoice(source_name, target_doc=None):
     doc = frappe.get_doc('Purchase Receipt', source_name)
     returned_qty_map = get_returned_qty_map(source_name)
     invoiced_qty_map = get_invoiced_qty_map(source_name)
+    count = 1
 
     def set_missing_values(source, target):
         if len(target.get("items")) == 0:
@@ -242,6 +244,10 @@ def make_purchase_invoice(source_name, target_doc=None):
 
         doc = frappe.get_doc(target)
         doc.payment_terms_template = get_payment_terms_template(source.supplier, "Supplier", source.company)
+        # if doc.taxes_and_charges and not doc.taxes:
+        #     taxes = get_taxes_and_charges('Purchase Taxes and Charges Template', doc.taxes_and_charges)
+        #     for tax in taxes:
+        #         doc.append('taxes', tax)
         doc.cost_center = cost_center
         doc.run_method("onload")
         doc.run_method("set_missing_values")
@@ -268,10 +274,11 @@ def make_purchase_invoice(source_name, target_doc=None):
             'expense_account': account,
             'cost_center': cost_center
         })
-
+        # target_doc.set("taxes", [])
         for res in source_doc.taxes:
             tax_dict = res.as_dict()
             tax_dict.pop('name')
+            tax_dict.pop('idx')
             tax_dict.pop('owner')
             tax_dict.pop('creation')
             tax_dict.pop('modified')
@@ -279,9 +286,26 @@ def make_purchase_invoice(source_name, target_doc=None):
             tax_dict.pop('parent')
             tax_dict.pop('parentfield')
             tax_dict.pop('parenttype')
+            tax_dict.pop('total')
+            tax_dict.pop('base_tax_amount')
+            tax_dict.pop('base_tax_amount_after_discount_amount')
+            tax_dict.pop('base_total')
+            tax_dict.pop('tax_amount_after_discount_amount')
             if tax_dict['charge_type'] == 'On Net Total':
                 tax_dict['charge_type'] = 'Actual'
-            target_doc.append("taxes",tax_dict)
+            not_present = 1
+            if 'taxes' in target_doc.as_dict().keys():
+                for t_tax in target_doc.taxes:
+                    if t_tax.charge_type == tax_dict.charge_type and t_tax.account_head == tax_dict.account_head:
+                        if t_tax.rate and tax_dict.rate and t_tax.rate == tax_dict.rate:
+                            not_present = 0
+                        elif not t_tax.rate and not tax_dict.rate:
+                            t_tax.tax_amount = res.tax_amount + (t_tax.tax_amount if t_tax.tax_amount else 0)
+                            not_present = 0
+                if not_present:
+                    target_doc.append("taxes", tax_dict)
+            else:
+                target_doc.append("taxes", tax_dict)
 
     def get_pending_qty(item_row):
         qty = item_row.qty
@@ -336,34 +360,20 @@ def make_purchase_invoice(source_name, target_doc=None):
 
 
 def update_billing_percentage(doc,method):
-    pr_recp =[]
     for res in doc.items:
-        pr_recp.append(res.purchase_receipt)
-    if pr_recp:
-        for r in pr_recp:
-            query = """select sum(amount) as bill_amt from `tabPurchase Invoice Item` 
-                    where parent ='{0}' and purchase_receipt = '{1}'""".format(doc.name, r)
-            bill_amt = float(frappe.db.sql(query)[0][0] or 0)
-            pr_doc = frappe.get_doc("Purchase Receipt", r)
-            percent_billed = round(100 * (bill_amt / (pr_doc.rounded_total or 1)), 6)
-            pr_doc.db_set("per_billed", percent_billed)
+        if res.purchase_receipt:
+            pr_doc = frappe.get_doc("Purchase Receipt", res.purchase_receipt)
+            pr_doc.db_set("per_billed", 100)
             pr_doc.load_from_db()
             pr_doc.set_status(update=True)
             pr_doc.notify_update()
 
 
 def rev_update_billing_percentage(doc,method):
-    pr_recp =[]
     for res in doc.items:
-        pr_recp.append(res.purchase_receipt)
-    if pr_recp:
-        for r in pr_recp:
-            query = """select sum(amount) as bill_amt from `tabPurchase Invoice Item` 
-                    where parent !='{0}' and purchase_receipt = '{1}'""".format(doc.name, r)
-            bill_amt = float(frappe.db.sql(query)[0][0] or 0)
-            pr_doc = frappe.get_doc("Purchase Receipt", r)
-            percent_billed = round(100 * (bill_amt / (pr_doc.rounded_total or 1)), 6)
-            pr_doc.db_set("per_billed", percent_billed)
+        if res.purchase_receipt:
+            pr_doc = frappe.get_doc("Purchase Receipt", res.purchase_receipt)
+            pr_doc.db_set("per_billed", 0)
             pr_doc.load_from_db()
             pr_doc.set_status(update=True)
             pr_doc.notify_update()
