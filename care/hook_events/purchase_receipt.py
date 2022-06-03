@@ -228,3 +228,27 @@ def calculate_line_level_tax(doc, method):
                 if 'Advance Tax' in tax.tax_type:
                     res.advance_tax = res.amount * (tax.tax_rate / 100)
         res.total_includetaxes = flt(res.sales_tax + res.further_tax + res.advance_tax) + res.amount
+
+
+def calculate_taxes(doc, method):
+    ord = frappe.get_doc('Order Receiving', doc.order_receiving)
+    if ord:
+        doc.set("taxes", [])
+        total = 0
+        i = 0
+        for d in ord.taxes:
+            if i == 0 and doc.total > 0:
+                i = 1
+                total = doc.total + (d.tax_amount/ord.total)*doc.total
+            else:
+                total += (d.tax_amount/ord.total)*doc.total
+
+            doc.append('taxes', {
+					'category': d.category,
+					'add_deduct_tax': d.add_deduct_tax,
+					'charge_type': d.charge_type,
+					'account_head': d.account_head,
+                    'description': d.description,
+                    'tax_amount': (d.tax_amount/ord.total)*doc.total,
+                    'total': total
+				})

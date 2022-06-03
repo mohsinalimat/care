@@ -105,6 +105,7 @@ doc_events = {
         "on_cancel": "care.hook_events.purchase_order.cancel_update_md_status",
     },
     "Purchase Receipt": {
+        "before_save": "care.hook_events.purchase_receipt.calculate_taxes",
         "validate": [ "care.hook_events.purchase_receipt.calculate_item_level_tax_breakup",
                         "care.hook_events.purchase_receipt.calculate_line_level_tax"],
         "on_submit": ["care.hook_events.purchase_receipt.update_p_r_c_tool_status",
