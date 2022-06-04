@@ -124,9 +124,9 @@ doc_events = {
         "on_cancel": ["care.hook_events.purchase_invoice.cancel_update_p_r_c_tool_status",
                      # "care.hook_events.purchase_invoice.cancel_update_md_status",
                     "care.hook_events.purchase_invoice.rev_update_billing_percentage"],
-        "before_submit": [
+        # "before_submit": [
                     # "care.hook_events.purchase_invoice.validate_cost_center",
-                    "care.hook_events.purchase_invoice.validate_price_and_rate"],
+                    # "care.hook_events.purchase_invoice.validate_price_and_rate"],
         "before_insert": "care.hook_events.purchase_invoice.un_check_franchise_inv_generated"
     },
     "Sales Invoice": {
@@ -184,6 +184,7 @@ override_doctype_class = {
     'Sales Invoice': 'care.hook_events.override_sales_invoice.OverrideSalesInvoice',
     'Purchase Receipt': 'care.hook_events.purchase_receipt.OverridePurchaseReceipt',
     'Payment Entry': 'care.hook_events.payment_entry.OverridePaymentEntry',
+    'Purchase Invoice': 'care.hook_events.purchase_invoice.OverridePurchaseInvoice',
 }
 
 # User Data Protection

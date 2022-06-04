@@ -7,6 +7,22 @@ from frappe.model.mapper import get_mapped_doc
 from erpnext.stock.get_item_details import get_item_price, check_packing_list
 from erpnext.stock.doctype.purchase_receipt.purchase_receipt import get_returned_qty_map, get_invoiced_qty_map
 from erpnext.controllers.accounts_controller import get_taxes_and_charges
+from erpnext.accounts.doctype.purchase_invoice.purchase_invoice import PurchaseInvoice
+
+
+class OverridePurchaseInvoice(PurchaseInvoice):
+    def on_submit(self):
+        super(OverridePurchaseInvoice, self).on_submit()
+        for res in self.taxes:
+                gl = frappe.get_value("GL Entry",
+                                    {"voucher_no": self.name, "voucher_type": 'Purchase Invoice',
+                                    'account': res.account_head}, "name")
+                if gl:
+                    gl_doc = frappe.get_doc("GL Entry",gl)
+                    gl_doc.party_type = 'Supplier'
+                    gl_doc.party = self.supplier
+                    gl_doc.db_update()
+
 
 def update_p_r_c_tool_status(doc, method):
     if doc.purchase_invoice_creation_tool:
@@ -132,14 +148,14 @@ def get_price_list_rate_for(item_code, args):
         else:
             return item_price_data[0][1]
 
-def validate_price_and_rate(doc, method):
-    if doc.items and not doc.update_buying_price:
-        for res in doc.items:
-            if res.item_code:
-                if res.price_list_rate - 1 <= res.rate <= res.price_list_rate + 1:
-                    pass
-                else:
-                    frappe.throw(_("Item <b>{0}:{1}</b> Price List Rate and Rate did not match in row {2}.".format(res.item_code,res.item_name,res.idx)))
+# def validate_price_and_rate(doc, method):
+#     if doc.items and not doc.update_buying_price:
+#         for res in doc.items:
+#             if res.item_code:
+#                 if res.price_list_rate - 1 <= res.rate <= res.price_list_rate + 1:
+#                     pass
+#                 else:
+#                     frappe.throw(_("Item <b>{0}:{1}</b> Price List Rate and Rate did not match in row {2}.".format(res.item_code,res.item_name,res.idx)))
 
 
 @frappe.whitelist()
