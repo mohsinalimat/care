@@ -142,6 +142,9 @@ frappe.ui.form.on('Order Receiving', {
 	    }
 	},
 	validate: function(frm, cdt, cdn){
+        $.each(frm.doc.items,  function(i,  d) {
+            d.amount_before_discount = d.rate * d.qty;
+        });
 	    update_total_qty(frm, cdt, cdn)
 	    validate_item_rate(frm, cdt, cdn)
 	},

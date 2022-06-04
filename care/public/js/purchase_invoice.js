@@ -6,7 +6,7 @@ frappe.ui.form.on('Purchase Invoice', {
         if(!frm.doc.base_selling_price_list){
             frm.set_value("base_selling_price_list", frappe.defaults.get_default('selling_price_list'))
         }
-        validate_item_rate(frm, cdt, cdn)
+        // validate_item_rate(frm, cdt, cdn)
         if(!frm.doc__islocal && frm.doc.docstatus == 0)
         {
             frm.set_df_property('update_price_rate', 'hidden', 0);
@@ -30,12 +30,12 @@ frappe.ui.form.on('Purchase Invoice', {
             },__('Create'));
         }
 	},
-	onload: function(frm, cdt, cdn){
-	     validate_item_rate(frm, cdt, cdn)
-	},
-	validate: function(frm, cdt, cdn){
-	     validate_item_rate(frm, cdt, cdn)
-	},
+	// onload: function(frm, cdt, cdn){
+	//      validate_item_rate(frm, cdt, cdn)
+	// },
+	// validate: function(frm, cdt, cdn){
+	//      validate_item_rate(frm, cdt, cdn)
+	// },
 	update_price_rate: function(frm, cdt, cdn){
 	    frappe.run_serially([
             () => frm.doc.items.forEach(function(item) {
@@ -102,17 +102,17 @@ frappe.ui.form.on('Purchase Invoice', {
 	}
 });
 
-function validate_item_rate(frm, cdt, cdn){
-    cur_frm.fields_dict["items"].$wrapper.find('.grid-body .rows').find(".grid-row").each(function(i, item) {
-        let d = locals[cur_frm.fields_dict["items"].grid.doctype][$(item).attr('data-name')];
-        if( d['price_list_rate'] - 1 <= d["rate"] && d["rate"] <= d['price_list_rate'] + 1){
-            $(item).find('.grid-static-col').css({'background-color': '#ffffff'});
-        }
-        else{
-            $(item).find('.grid-static-col').css({'background-color': '#ffff80'});
-        }
-    });
-}
+// function validate_item_rate(frm, cdt, cdn){
+//     cur_frm.fields_dict["items"].$wrapper.find('.grid-body .rows').find(".grid-row").each(function(i, item) {
+//         let d = locals[cur_frm.fields_dict["items"].grid.doctype][$(item).attr('data-name')];
+//         if( d['price_list_rate'] - 1 <= d["rate"] && d["rate"] <= d['price_list_rate'] + 1){
+//             $(item).find('.grid-static-col').css({'background-color': '#ffffff'});
+//         }
+//         else{
+//             $(item).find('.grid-static-col').css({'background-color': '#ffff80'});
+//         }
+//     });
+// }
 
 
 frappe.ui.form.on('Purchase Invoice Item', {
