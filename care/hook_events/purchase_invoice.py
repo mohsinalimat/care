@@ -14,6 +14,8 @@ class OverridePurchaseInvoice(PurchaseInvoice):
     def on_submit(self):
         super(OverridePurchaseInvoice, self).on_submit()
         for res in self.taxes:
+            acc_doc = frappe.get_doc("Account",res.account_head)
+            if acc_doc.account_type in ("Receivable", "Payable"):
                 gl = frappe.get_value("GL Entry",
                                     {"voucher_no": self.name, "voucher_type": 'Purchase Invoice',
                                     'account': res.account_head}, "name")
