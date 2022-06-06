@@ -192,12 +192,9 @@ function apply_child_btn_color(frm, cdt, cdn){
 }
 
 frappe.ui.form.on('Order Receiving Item', {
-//    items_remove: function(frm, cdt, cdn){
+//    items_add: function(frm, cdt, cdn){
 //        apply_item_filters(frm)
 //    },
-    items_add: function(frm, cdt, cdn){
-        apply_item_filters(frm)
-    },
     item_code: function(frm, cdt, cdn){
         var row = locals[cdt][cdn];
         if(!frm.doc.purchase_request || !frm.doc.supplier){
@@ -206,30 +203,22 @@ frappe.ui.form.on('Order Receiving Item', {
         }
         else{
             if (row.item_code){
-                get_items_details(frm, cdt, cdn)
-                apply_pricing_rule(row, frm, cdt, cdn),
-                frappe.call({
-                    method: "care.care.doctype.order_receiving.order_receiving.get_item_qty",
-                    args: {
-                        "purchase_request": frm.doc.purchase_request,
-                        "item": row.item_code,
-                        "supplier": frm.doc.supplier,
-                        "warehouse": frm.doc.warehouse
-                    },
-                    callback: function(r) {
-                         console.log("get Qty")
-                        frappe.model.set_value(cdt,cdn,"qty",r.message);
-                        refresh_field("qty", cdn, "items");
+                frappe.run_serially([
+                    ()=>apply_item_filters(frm),
+                    ()=>get_items_details(frm, cdt, cdn),
+                    ()=>apply_pricing_rule(row, frm, cdt, cdn),
+                    ()=> {
+                        setTimeout(() => {
+                            var new_row = frm.fields_dict.items.grid;
+                            new_row.add_new_row(null, null, true, null, true);
+                            new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
+                            new_row.set_focus_on_row();
+                        }, 300);
                     }
-                });
+                ])
             }
-//            else{
-//                apply_item_filters(frm)
-//            }
         }
-//        apply_child_btn_color(frm, cdt, cdn)
     },
-
     qty: function(frm, cdt, cdn) {
         var row = locals[cdt][cdn];
         update_amount(frm, cdt, cdn)
@@ -326,8 +315,9 @@ function get_items_details(frm, cdt, cdn){
             item: item
         },
         callback: function(r) {
-            console.log("-----------------",r.message)
             frappe.model.set_value(cdt,cdn,"conversion_factor",r.message.conversion_factor || 0);
+
+            frappe.model.set_value(cdt,cdn,"qty",r.message.qty || 0);
             frappe.model.set_value( cdt, cdn, 'rate',r.message.buying_price_rate || 0)
             frappe.model.set_value( cdt, cdn, 'base_buying_price_list_rate',r.message.buying_price_rate || 0)
 
@@ -625,20 +615,20 @@ function make_return_entry(frm){
                             }
                         }
                     })
-        //            let t_qty = 0
-        //            let lst = []
-        //            child_data.forEach((d) => {
-        //                t_qty = t_qty + d.qty
-        //                lst.push({"warehouse": d.warehouse, "order_qty": d.order_qty, "qty": d.qty})
-        //            });
-        //            if (values.qty != t_qty){
-        //                frappe.throw(__("Total split qty must be equal to ") + values.qty);
-        //            }
-        //            else{
-        //                dialog.hide();
-        //                frappe.model.set_value(cdt,cdn,"code",JSON.stringify(lst));
-        //                refresh_field("code", cdn, "items");
-        //            }
+                    let t_qty = 0
+                    let lst = []
+                    child_data.forEach((d) => {
+                        t_qty = t_qty + d.qty
+                        lst.push({"warehouse": d.warehouse, "order_qty": d.order_qty, "qty": d.qty})
+                    });
+                    if (values.qty != t_qty){
+                        frappe.throw(__("Total split qty must be equal to ") + values.qty);
+                    }
+                    else{
+                        dialog.hide();
+                        frappe.model.set_value(cdt,cdn,"code",JSON.stringify(lst));
+                        refresh_field("code", cdn, "items");
+                    }
                 }
             });
             dialog.show();

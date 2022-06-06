@@ -628,10 +628,12 @@ def get_items_details(item_code, doc, item):
         selling_rate = get_price_list_rate_for(item_code, json.dumps(args)) or 0
 
         item_tax_template = get_item_tax_template(item_code, json.dumps(args))
-        item_tax_rate = get_item_tax_map(company, item_tax_template)
+
+        qty = get_item_qty(doc.get('purchase_request'), item_code, doc.get('supplier'), doc.get('warehouse'))
 
         return {'buying_price_rate': buying_rate,
                 'selling_price_rate':selling_rate,
                 'conversion_factor': conversion_factor,
-                'item_tax_template': item_tax_template
+                'item_tax_template': item_tax_template,
+                'qty': qty
                 }
