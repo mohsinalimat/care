@@ -185,6 +185,7 @@ override_doctype_class = {
     'Purchase Receipt': 'care.hook_events.purchase_receipt.OverridePurchaseReceipt',
     'Payment Entry': 'care.hook_events.payment_entry.OverridePaymentEntry',
     'Purchase Invoice': 'care.hook_events.purchase_invoice.OverridePurchaseInvoice',
+    'GL Entry': 'care.hook_events.override_gl_entry.OverrideGLEntry'
 }
 
 # User Data Protection
