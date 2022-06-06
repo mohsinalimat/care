@@ -212,7 +212,7 @@ frappe.ui.form.on('Order Receiving Item', {
                             new_row.add_new_row(null, null, true, null, true);
                             new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
                             new_row.set_focus_on_row();
-                        }, 500);
+                        }, 1200);
                     }
                 ])
             }
