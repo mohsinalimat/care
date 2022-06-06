@@ -260,7 +260,6 @@ class OrderReceiving(Document):
             itm_lst.append(res.item_code)
         return itm_lst
 
-
 def make_purchase_invoice(doc):
     material_demand = frappe.get_list("Material Demand",
                                       {'supplier': doc.supplier, 'purchase_request': doc.purchase_request}, ['name'])
@@ -451,14 +450,6 @@ def make_purchase_invoice(doc):
                                 taxes = get_taxes_and_charges('Purchase Taxes and Charges Template',
                                                               doc.taxes_and_charges)
                                 for tax in taxes:
-                                    # tax.charge_type = 'Actual'
-                                    # if 'Sales Tax' in tax.account_head:
-                                    #     tax.tax_amount = doc.net_total * 
-                                    # if 'Further Tax' in tax.account_head:
-                                    #     res.further_tax = res.amount * (tax.tax_rate / 100)
-                                    # if 'Advance Tax' in tax.account_head:
-                                    #     res.advance_tax = res.amount * (tax.tax_rate / 100)
-                                         
                                     pi.append('taxes', tax)
                                 pi.set_missing_values()
                                 for res in pi.items:
@@ -603,3 +594,8 @@ def calculate_line_level_tax(doc, method):
                 if 'Advance Tax' in tax.tax_type:
                     res.advance_tax = res.amount * (tax.tax_rate / 100)
         res.total_include_taxes = flt(res.sales_tax + res.further_tax + res.advance_tax) + res.amount
+
+
+@frappe.whitelist()
+def get_items_details(item_code, doc):
+    pass
