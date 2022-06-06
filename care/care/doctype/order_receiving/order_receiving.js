@@ -204,8 +204,8 @@ frappe.ui.form.on('Order Receiving Item', {
         else{
             if (row.item_code){
                 frappe.run_serially([
-                    ()=>get_items_details(frm, cdt, cdn),
                     ()=>apply_item_filters(frm),
+                    ()=>get_items_details(frm, cdt, cdn),
                     ()=> {
                         setTimeout(() => {
                             var new_row = frm.fields_dict.items.grid;
