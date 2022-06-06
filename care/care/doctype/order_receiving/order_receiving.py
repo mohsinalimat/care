@@ -12,7 +12,7 @@ from erpnext.stock.get_item_details import _get_item_tax_template, get_conversio
 from erpnext.controllers.accounts_controller import get_taxes_and_charges
 from care.hook_events.purchase_invoice import get_price_list_rate_for
 from erpnext.controllers.accounts_controller import get_default_taxes_and_charges
-
+from erpnext.accounts.doctype.pricing_rule.pricing_rule import apply_pricing_rule
 
 class OrderReceiving(Document):
 
@@ -134,7 +134,7 @@ class OrderReceiving(Document):
                         item_price = frappe.get_doc("Item Price", selling_price_list)
                         item_price.price_list_rate = res.selling_price_list_rate / res.conversion_factor
                         item_price.save(ignore_permissions=True)
-                if self.update_discount and (res.discount or res.discount_percent):
+                if self.update_discount and res.discount_percent:
                     query = """select p.name from `tabPricing Rule` as p 
                         inner join `tabPricing Rule Item Code` as pi on pi.parent = p.name 
                         where p.apply_on = 'Item Code' 
@@ -631,9 +631,53 @@ def get_items_details(item_code, doc, item):
 
         qty = get_item_qty(doc.get('purchase_request'), item_code, doc.get('supplier'), doc.get('warehouse'))
 
+        rule = apply_price_rule(doc, item, conversion_factor)
+        discount_percentage = discount_amount = 0
+        if rule:
+            if rule[0].margin_type == 'Percentage' and rule[0].discount_percentage > 0:
+                discount_percentage = rule[0].discount_percentage
+            if rule[0].margin_type == 'Amount' and rule[0].discount_amount > 0:
+                discount_amount = rule[0].discount_amount
+
         return {'buying_price_rate': buying_rate,
-                'selling_price_rate':selling_rate,
+                'selling_price_rate': selling_rate,
                 'conversion_factor': conversion_factor,
                 'item_tax_template': item_tax_template,
-                'qty': qty
-                }
+                'qty': qty,
+                'discount_percentage': discount_percentage or 0,
+                'discount_amount': discount_amount or 0
+            }
+
+def apply_price_rule(doc, item, conversion_factor):
+    args = {
+        "items": [
+            {
+                "parenttype": item.get('parenttype'),
+                "parent": item.get('parent'),
+                'item_code': item.get('item_code'),
+                'doctype': item.get('doctype'),
+                'name': item.get('name'),
+                'qty': item.get('qty') or 1,
+                'child_docname': item.get('name'),
+                'uom': item.get('uom'),
+                'stock_uom': item.get('stock_uom'),
+                'conversion_factor': conversion_factor
+            }
+        ],
+        "supplier": doc.get('supplier'),
+        "currency": doc.get('currency'),
+        "conversion_rate":  doc.get('conversion_rate'),
+        "price_list": doc.get('buying_price_list'),
+        "price_list_currency": doc.get('currency'),
+        "plc_conversion_rate": 0,
+        "company": doc.get('company'),
+        "transaction_date": doc.get('posting_date'),
+        "doctype": doc.get('doctype'),
+        "name": doc.get('name'),
+        "is_return": 0,
+        "update_stock": 0,
+        "pos_profile": ""
+    }
+
+    price_rule = apply_pricing_rule(args = json.dumps(args), doc=doc)
+    return price_rule

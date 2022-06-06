@@ -270,7 +270,7 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 			if(!me.discount_amount_applied && item.qty && (total_inclusive_tax_amount_per_qty || cumulated_tax_fraction)) {
 				var amount = flt(item.amount) - total_inclusive_tax_amount_per_qty;
 				item.net_amount = flt(amount / (1 + cumulated_tax_fraction));
-				item.net_rate = item.qty ? flt(item.net_amount / item.qty, precision("net_rate", item)) : 0;
+				item.net_rate = item.qty ? flt(item.net_amount / item.qty, precision("amount", item)) : 0;
 			}
 		});
 	},
@@ -330,7 +330,7 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 			return;
 		}
 
-		frappe.model.round_floats_in(this.frm.doc, ["total", "base_total", "net_total", "base_net_total"]);
+//		frappe.model.round_floats_in(this.frm.doc, ["total", "base_total", "net_total", "base_net_total"]);
 		if (frappe.meta.get_docfield(this.frm.doc.doctype, "shipping_rule", this.frm.doc.name)) {
 			return this.shipping_rule();
 		}
@@ -400,7 +400,7 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 					if ((i == me.frm.doc["taxes"].length - 1) && me.discount_amount_applied
 						&& me.frm.doc.apply_discount_on == "Grand Total" && me.frm.doc.discount_amount) {
 						me.frm.doc.rounding_adjustment = flt(me.frm.doc.grand_total -
-							flt(me.frm.doc.discount_amount) - tax.total, precision("rounding_adjustment"));
+							flt(me.frm.doc.discount_amount) - tax.total, precision("amount"));
 					}
 				}
 			});
@@ -540,8 +540,8 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 					}
 				});
 
-				frappe.model.round_floats_in(this.frm.doc,
-					["taxes_and_charges_added", "taxes_and_charges_deducted"]);
+//				frappe.model.round_floats_in(this.frm.doc,
+//					["taxes_and_charges_added", "taxes_and_charges_deducted"]);
 			}
 
 			this.frm.doc.base_grand_total = flt((this.frm.doc.taxes_and_charges_added || this.frm.doc.taxes_and_charges_deducted) ?
@@ -551,11 +551,11 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 		}
 
 		this.frm.doc.total_taxes_and_charges = flt(this.frm.doc.grand_total - this.frm.doc.net_total
-			- flt(this.frm.doc.rounding_adjustment), precision("total_taxes_and_charges"));
+			- flt(this.frm.doc.rounding_adjustment), precision("total"));
 
 
 		// Round grand total as per precision
-		frappe.model.round_floats_in(this.frm.doc, ["grand_total", "base_grand_total"]);
+//		frappe.model.round_floats_in(this.frm.doc, ["grand_total", "base_grand_total"]);
 
 		// rounded totals
 		this.set_rounded_total();
