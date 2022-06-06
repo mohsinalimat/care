@@ -176,7 +176,7 @@ care.care.ReceivingController = frappe.ui.form.Controller.extend({
 					if(!r.exc) {
 						item.item_tax_rate = r.message;
 						me.add_taxes_from_item_tax_template(item.item_tax_rate);
-						me.calculate_taxes_and_totals();
+//						me.calculate_taxes_and_totals();
 					}
 				}
 			});

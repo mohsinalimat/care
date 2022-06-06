@@ -597,5 +597,41 @@ def calculate_line_level_tax(doc, method):
 
 
 @frappe.whitelist()
-def get_items_details(item_code, doc):
-    pass
+def get_items_details(item_code, doc, item):
+    if item_code:
+        doc = json.loads(doc)
+        item = json.loads(item)
+        company = doc.get('company')
+        buying_price_list = doc.get('buying_price_list')
+        currency = doc.get('currency')
+        base_selling_price_list = doc.get('base_selling_price_list')
+        conversion_factor = get_conversion_factor(item_code, item.get('uom')).get('conversion_factor') or 1
+        args = {
+            'item_code': item.get('item_code'),
+            'supplier': doc.get('supplier'),
+            'currency': company,
+            'price_list':buying_price_list,
+            'price_list_currency': currency,
+            'company': company,
+            'transaction_date': doc.get('posting_date'),
+            'doctype': doc.get('doctype'),
+            'name': doc.get('name'),
+            'qty': item.get('qty') or 1,
+            'child_docname': item.get('name'),
+            'uom': item.get('uom'),
+            'stock_uom': item.get('stock_uom'),
+            'conversion_factor': conversion_factor
+        }
+        buying_rate = get_price_list_rate_for(item_code, json.dumps(args)) or 0
+
+        args['price_list'] = base_selling_price_list
+        selling_rate = get_price_list_rate_for(item_code, json.dumps(args)) or 0
+
+        item_tax_template = get_item_tax_template(item_code, json.dumps(args))
+        item_tax_rate = get_item_tax_map(company, item_tax_template)
+
+        return {'buying_price_rate': buying_rate,
+                'selling_price_rate':selling_rate,
+                'conversion_factor': conversion_factor,
+                'item_tax_template': item_tax_template
+                }

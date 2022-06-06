@@ -206,9 +206,7 @@ frappe.ui.form.on('Order Receiving Item', {
         }
         else{
             if (row.item_code){
-                update_price_rate(frm, cdt, cdn),
-                get_item_tax_template(frm, cdt, cdn)
-                update_selling_price_rate(frm, cdt, cdn),
+                get_items_details(frm, cdt, cdn)
                 apply_pricing_rule(row, frm, cdt, cdn),
                 frappe.call({
                     method: "care.care.doctype.order_receiving.order_receiving.get_item_qty",
@@ -316,95 +314,30 @@ function calculate_margin(frm, cdt, cdn){
      frappe.model.set_value( cdt, cdn, 'margin_percent',margin)
 }
 
-function update_price_rate(frm, cdt, cdn){
-    console.log("update_price_rate")
+
+function get_items_details(frm, cdt, cdn){
+    console.log("get_items_details")
     var item = locals[cdt][cdn];
-    frappe.call({
-        method: "erpnext.stock.get_item_details.get_conversion_factor",
+    frm.call({
+        method: "care.care.doctype.order_receiving.order_receiving.get_items_details",
         args: {
             item_code: item.item_code,
-            uom: item.uom
+            doc: frm.doc,
+            item: item
         },
         callback: function(r) {
-            if(!r.exc) {
-                var conversion_factor = r.message.conversion_factor
-                frm.call({
-                    method: "care.hook_events.purchase_invoice.get_price_list_rate_for",
-                    args: {
-                        item_code: item.item_code,
-                        args: {
-                            item_code: item.item_code,
-                            supplier: frm.doc.supplier,
-                            currency: frm.doc.currency,
-                            price_list: frm.doc.buying_price_list,
-                            price_list_currency: frm.doc.currency,
-                            company: frm.doc.company,
-                            transaction_date: frm.doc.posting_date ,
-                            doctype: frm.doc.doctype,
-                            name: frm.doc.name,
-                            qty: item.qty || 1,
-                            child_docname: item.name,
-                            uom: item.uom,
-                            stock_uom: item.stock_uom,
-                            conversion_factor: conversion_factor
-                        }
-                    },
-                    callback: function(r) {
-                        frappe.model.set_value( cdt, cdn, 'rate',r.message || 0)
-                        frappe.model.set_value(cdt,cdn,"conversion_factor",conversion_factor || 0);
-                        frappe.model.set_value( cdt, cdn, 'base_buying_price_list_rate',r.message || 0)
-                    }
-                })
-            }
+            console.log("-----------------",r.message)
+            frappe.model.set_value(cdt,cdn,"conversion_factor",r.message.conversion_factor || 0);
+            frappe.model.set_value( cdt, cdn, 'rate',r.message.buying_price_rate || 0)
+            frappe.model.set_value( cdt, cdn, 'base_buying_price_list_rate',r.message.buying_price_rate || 0)
+
+             frappe.model.set_value( cdt, cdn, 'selling_price_list_rate',r.message.selling_price_rate || 0)
+            frappe.model.set_value( cdt, cdn, 'base_selling_price_list_rate',r.message.selling_price_rate || 0)
+
+            frappe.model.set_value(cdt,cdn,"item_tax_template",r.message.item_tax_template);
         }
-    });
+    })
 }
-
-function update_selling_price_rate(frm, cdt, cdn){
-
-    console.log("update_selling_price_rate")
-    var item = locals[cdt][cdn];
-    frappe.call({
-        method: "erpnext.stock.get_item_details.get_conversion_factor",
-        args: {
-            item_code: item.item_code,
-            uom: item.uom
-        },
-        callback: function(r) {
-            if(!r.exc) {
-                var conversion_factor = r.message.conversion_factor
-                frappe.model.set_value(cdt,cdn,"conversion_factor",r.message.conversion_factor);
-                frm.call({
-                    method: "care.hook_events.purchase_invoice.get_price_list_rate_for",
-                    args: {
-                        item_code: item.item_code,
-                        args: {
-                            item_code: item.item_code,
-                            supplier: frm.doc.supplier,
-                            currency: frm.doc.currency,
-                            price_list: frm.doc.base_selling_price_list,
-                            price_list_currency: frm.doc.currency,
-                            company: frm.doc.company,
-                            transaction_date: frm.doc.posting_date ,
-                            doctype: frm.doc.doctype,
-                            name: frm.doc.name,
-                            qty: item.qty || 1,
-                            child_docname: item.name,
-                            uom: item.uom,
-                            stock_uom: item.stock_uom,
-                            conversion_factor: conversion_factor
-                        }
-                    },
-                    callback: function(r) {
-                        frappe.model.set_value( cdt, cdn, 'selling_price_list_rate',r.message || 0)
-                        frappe.model.set_value( cdt, cdn, 'base_selling_price_list_rate',r.message || 0)
-                    }
-                })
-            }
-        }
-    });
-}
-
 
 function apply_pricing_rule(item, frm, cdt, cdn) {
     console.log('apply_pricing_rule')
@@ -585,46 +518,6 @@ function split_warehouse_wise_qty(row, frm, cdt, cdn, warhs){
     });
     dialog.show();
 }
-
-function get_item_tax_template(frm, cdt, cdn) {
-    var item = frappe.get_doc(cdt, cdn);
-    var update_stock = 0
-
-    item.weight_per_unit = 0;
-    item.weight_uom = '';
-    // clear barcode if setting item (else barcode will take priority)
-    if(item.item_code || item.barcode || item.serial_no) {
-        frm.call({
-            method: "care.care.doctype.order_receiving.order_receiving.get_item_tax_template",
-            child: item,
-            args: {
-                item: item.item_code,
-                args: {
-                    item_code: item.item_code,
-                    supplier: frm.doc.supplier,
-                    currency: frm.doc.currency,
-                    company: frm.doc.company,
-                    transaction_date: frm.doc.posting_date,
-                    doctype: frm.doc.doctype,
-                    name: frm.doc.name,
-                    qty: item.qty || 1,
-                    net_rate: item.rate,
-                    stock_qty: item.stock_qty,
-                    conversion_factor: item.conversion_factor,
-                    stock_uom: item.stock_uom,
-                    child_docname: item.name
-                }
-            },
-
-            callback: function(r) {
-                if(!r.exc) {
-                     frappe.model.set_value(cdt,cdn,"item_tax_template",r.message);
-                }
-            }
-        });
-    }
-}
-
 
 function make_return_entry(frm){
     frm.call({
