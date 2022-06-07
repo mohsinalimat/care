@@ -170,7 +170,7 @@ function validate_item_rate(frm, cdt, cdn){
 }
 
 function apply_item_filters(frm){
-    console.log("apply_item_filters")
+//    console.log("apply_item_filters")
     frappe.call({
         method: "get_item_code",
         doc: frm.doc,
@@ -321,7 +321,7 @@ function calculate_margin(frm, cdt, cdn){
 
 
 function get_items_details(frm, cdt, cdn){
-    console.log("get_items_details")
+//    console.log("get_items_details")
     var item = locals[cdt][cdn];
     frm.call({
         method: "care.care.doctype.order_receiving.order_receiving.get_items_details",
