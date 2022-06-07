@@ -182,6 +182,7 @@ function apply_item_filters(frm){
             }
         }
     });
+
 }
 
 function apply_child_btn_color(frm, cdt, cdn){
@@ -204,15 +205,31 @@ frappe.ui.form.on('Order Receiving Item', {
         else{
             if (row.item_code){
                 frappe.run_serially([
-                    ()=>apply_item_filters(frm),
                     ()=>get_items_details(frm, cdt, cdn),
                     ()=> {
-                        setTimeout(() => {
-                            var new_row = frm.fields_dict.items.grid;
-                            new_row.add_new_row(null, null, true, null, true);
-                            new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
-                            new_row.set_focus_on_row();
-                        }, 1200);
+                        frappe.call({
+                            method: "get_item_code",
+                            doc: frm.doc,
+                            callback: function(r) {
+                                frappe.run_serially([
+                                    ()=>{
+                                        frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
+                                            return {
+                                                filters: {'name':['in',r.message]}
+                                            }
+                                        }
+                                    },
+                                    ()=>{
+                                        setTimeout(() => {
+                                            var new_row = frm.fields_dict.items.grid;
+                                            new_row.add_new_row(null, null, true, null, true);
+                                            new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
+                                            new_row.set_focus_on_row();
+                                        }, 500);
+                                    }
+                                ])
+                            }
+                        });
                     }
                 ])
             }
