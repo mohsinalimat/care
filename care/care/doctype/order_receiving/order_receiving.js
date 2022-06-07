@@ -92,6 +92,9 @@ frappe.ui.form.on('Order Receiving', {
                     }
                 }
             });
+            frm.add_custom_button(__('Order Receive Qty Report'), function(){
+                 frappe.set_route('query-report', 'Order Receive Qty', {order_receiving: frm.doc.name});
+            }, __('View'));
         }
         frm.page.set_inner_btn_group_as_primary(__('Create'));
 	},
@@ -253,7 +256,7 @@ frappe.ui.form.on('Order Receiving Item', {
         let amt = row.rate * row.qty
         let discount_per = (row.discount / amt) * 100
         row.discount_percent = discount_per
-//        refresh_field("discount_percent", cdn, "items");
+        refresh_field("discount_percent", cdn, "items");
         update_amount(frm, cdt, cdn)
 	},
     discount_percent: function(frm, cdt, cdn) {
@@ -261,7 +264,7 @@ frappe.ui.form.on('Order Receiving Item', {
         let amt = row.rate * row.qty
         let discount_amount = (amt / 100) * row.discount_percent
         row.discount = discount_amount
-//        refresh_field("discount", cdn, "items");
+        refresh_field("discount", cdn, "items");
         update_amount(frm, cdt, cdn)
 	},
     selling_price_list_rate: function(frm, cdt, cdn) {
@@ -289,11 +292,13 @@ function update_amount(frm, cdt, cdn){
     let discount_amount = (amt / 100) * row.discount_percent
     let amount = amt - discount_amount
     let dis_aft_rate = amount/ row.qty
+    row.discount = discount_amount
     frappe.model.set_value(cdt,cdn,"amount",amount);
     frappe.model.set_value(cdt,cdn,"net_amount",amount);
     frappe.model.set_value(cdt,cdn,"base_net_amount",amount);
     frappe.model.set_value(cdt,cdn,"discount_after_rate",dis_aft_rate);
     refresh_field("amount", cdn, "items");
+    refresh_field("discount", cdn, "items");
     refresh_field("net_amount", cdn, "items");
     refresh_field("base_net_amount", cdn, "items");
     refresh_field("discount_after_rate", cdn, "items");
