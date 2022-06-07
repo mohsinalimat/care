@@ -1,0 +1,54 @@
+{
+ "add_total_row": 1,
+ "columns": [],
+ "creation": "2022-06-06 14:40:25.586032",
+ "disable_prepared_report": 0,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [
+  {
+   "fieldname": "fposting_date",
+   "fieldtype": "Date",
+   "label": "From Posting Date",
+   "mandatory": 1,
+   "wildcard_filter": 0
+  },
+  {
+   "fieldname": "tposting_date",
+   "fieldtype": "Date",
+   "label": "To Posting Date",
+   "mandatory": 1,
+   "wildcard_filter": 0
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "label": "Supplier",
+   "mandatory": 1,
+   "options": "Supplier",
+   "wildcard_filter": 0
+  },
+  {
+   "fieldname": "brand",
+   "fieldtype": "Link",
+   "label": "Brand",
+   "mandatory": 1,
+   "options": "Brand",
+   "wildcard_filter": 0
+  }
+ ],
+ "idx": 0,
+ "is_standard": "Yes",
+ "modified": "2022-06-07 07:48:30.682471",
+ "modified_by": "Administrator",
+ "module": "Care",
+ "name": "Sales Report for Supplier",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "query": "select\n\tsii.item_name as \"Name::150\",\n\tid.default_supplier as \"Supplier:Link/Supplier:150\",\n\ti.brand as \"Brand:Data:150\",\n\tsum(sii.qty) as \"Total Qty Sale:Int:100\" ,\t\t\n\tsii.base_net_rate as \"Selling Price:Int:100\",\n\tsii.warehouse as \"Warehouse::150\",\n\tsum(sii.amount) as \"Value:Int:100\"\n      \nfrom `tabSales Invoice Item` as sii\ninner join `tabItem` as i on sii.item_code = i.name\nleft join `tabItem Default` as id on id.parent = i.name\nwhere \n\tdate(sii.creation) >=  %(fposting_date)s\n\tand date(sii.creation) <= %(tposting_date)s\t\t\n\tand id.default_supplier = %(supplier)s\n\tand i.brand = %(brand)s\t\n    group by sii.warehouse,sii.item_code",
+ "ref_doctype": "Sales Invoice Item",
+ "report_name": "Sales Report for Supplier",
+ "report_type": "Query Report",
+ "roles": []
+}
