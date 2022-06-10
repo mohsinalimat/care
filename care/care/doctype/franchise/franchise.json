@@ -1,0 +1,68 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2022-06-08 11:28:25.165848",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "is_enabled",
+  "column_break_2",
+  "sync_data",
+  "section_break_2",
+  "franchise_list"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "fieldname": "is_enabled",
+   "fieldtype": "Check",
+   "label": "Is Enabled"
+  },
+  {
+   "depends_on": "is_enabled",
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "is_enabled",
+   "fieldname": "franchise_list",
+   "fieldtype": "Table",
+   "label": "Franchise List",
+   "mandatory_depends_on": "is_enabled",
+   "options": "Franchise Item"
+  },
+  {
+   "depends_on": "is_enabled",
+   "fieldname": "sync_data",
+   "fieldtype": "Button",
+   "label": "Sync Data  On Franchise"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2022-06-09 12:33:52.759605",
+ "modified_by": "Administrator",
+ "module": "Care",
+ "name": "Franchise",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

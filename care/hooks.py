@@ -129,11 +129,11 @@ doc_events = {
                     # "care.hook_events.purchase_invoice.validate_price_and_rate"],
         "before_insert": "care.hook_events.purchase_invoice.un_check_franchise_inv_generated"
     },
-    "Sales Invoice": {
-        "validate": ["care.hook_events.sales_invoice.updated_item_amendment_summary"],
-        "before_insert": "care.hook_events.sales_invoice.disable_rounded_total",
-        # "before_submit": ["care.hook_events.sales_invoice.validate_cost_center"]
-    },
+    # "Sales Invoice": {
+    #     "validate": ["care.hook_events.sales_invoice.updated_item_amendment_summary"],
+    #     "before_insert": "care.hook_events.sales_invoice.disable_rounded_total",
+    #     # "before_submit": ["care.hook_events.sales_invoice.validate_cost_center"]
+    # },
     "Payment Entry": {
         "validate": ["care.hook_events.payment_entry.set_out_grand_total"],
         # "before_submit": ["care.hook_events.purchase_invoice.validate_cost_center"],
@@ -181,7 +181,7 @@ override_whitelisted_methods = {
 override_doctype_class = {
     'POS Closing Entry': 'care.hook_events.override_pos_closing.OverridePOSClosingEntry',
     'POS Invoice Merge Log': 'care.hook_events.override_pos_merge_log.OverridePOSInvoiceMergeLog',
-    'Sales Invoice': 'care.hook_events.override_sales_invoice.OverrideSalesInvoice',
+    # 'Sales Invoice': 'care.hook_events.override_sales_invoice.OverrideSalesInvoice',
     'Purchase Receipt': 'care.hook_events.purchase_receipt.OverridePurchaseReceipt',
     'Payment Entry': 'care.hook_events.payment_entry.OverridePaymentEntry',
     'Purchase Invoice': 'care.hook_events.purchase_invoice.OverridePurchaseInvoice',

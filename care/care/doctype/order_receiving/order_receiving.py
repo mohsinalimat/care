@@ -155,14 +155,14 @@ class OrderReceiving(Document):
                         # 	p_rule.rate_or_discount = 'Discount Amount'
                         # 	p_rule.discount_amount = res.discount
 
-                        # if res.discount_percent:
-                        text = f"""Updated Discount Percentage {p_rule.discount_percentage} 
-                                    to {res.discount_percent} From Order Receiving"""
-                        p_rule.rate_or_discount = 'Discount Percentage'
-                        p_rule.discount_percentage = res.discount_percent
-                        p_rule.save(ignore_permissions=True)
-                        p_rule.add_comment(comment_type='Info', text=text, link_doctype=p_rule.doctype,
-                                           link_name=p_rule.name)
+                        if float(res.discount_percent) != float(p_rule.discount_percentage):
+                            text = f"""Updated Discount Percentage {p_rule.discount_percentage} 
+                                        to {res.discount_percent} From Order Receiving"""
+                            p_rule.rate_or_discount = 'Discount Percentage'
+                            p_rule.discount_percentage = res.discount_percent
+                            p_rule.save(ignore_permissions=True)
+                            p_rule.add_comment(comment_type='Info', text=text, link_doctype=p_rule.doctype,
+                                               link_name=p_rule.name)
                     else:
                         priority = 1
                         p_rule = frappe.new_doc("Pricing Rule")

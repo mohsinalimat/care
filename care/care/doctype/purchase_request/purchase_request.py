@@ -105,33 +105,37 @@ class PurchaseRequest(Document):
 				conversion_factor = conversion['conversion_factor']
 			res['conversion_factor'] = conversion_factor
 		if f_w_lst:
-			for w in f_w_lst:
-				try:
-					w_doc = frappe.get_doc("Warehouse", w)
-					if w_doc.url and w_doc.api_key and w_doc.api_secret:
-						url = str(w_doc.url)+"/api/method/care.utils.api.get_franchise_order"
-						api_key = w_doc.api_key
-						api_secret = w_doc.api_secret
-						headers = {
-							'Authorization': 'token ' + str(api_key)+':' + str(api_secret)
-						}
-						datas = {
-							"supplier": json.dumps(s_lst),
-							"order_uom": 'Pack',
-							"warehouse": w
-						}
-						response = requests.get(url=url, headers=headers, params=datas)
-						if response.status_code == 200:
-							response = frappe.parse_json(response.content.decode())
-							data = response.message
-							item_details.extend(data)
-						else:
-							frappe.log_error(title="Franchise API Error", message=response.json())
+			franchise = frappe.get_single("Franchise")
+			if franchise.is_enabled:
+				for w in f_w_lst:
+					f_w_data = frappe.get_value("Franchise Item", {'warehouse': w, 'enable': 1})
+					if f_w_data:
+						try:
+							f_w_doc = frappe.get_doc("Franchise Item", f_w_data)
+							if f_w_doc.url and f_w_doc.api_key and f_w_doc.api_secret:
+								url = str(f_w_doc.url)+"/api/method/care.utils.api.get_franchise_order"
+								api_key = f_w_doc.api_key
+								api_secret = f_w_doc.api_secret
+								headers = {
+									'Authorization': 'token ' + str(api_key)+':' + str(api_secret)
+								}
+								datas = {
+									"supplier": json.dumps(s_lst),
+									"order_uom": 'Pack',
+									"warehouse": w
+								}
+								response = requests.get(url=url, headers=headers, params=datas)
+								if response.status_code == 200:
+									response = frappe.parse_json(response.content.decode())
+									data = response.message
+									item_details.extend(data)
+								else:
+									frappe.log_error(title="Franchise API Error", message=response.json())
+									frappe.msgprint("Error Log Generated", indicator='red', alert=True)
+						except Exception as e:
+							frappe.log_error(title="Franchise API Error", message=e)
 							frappe.msgprint("Error Log Generated", indicator='red', alert=True)
-				except Exception as e:
-					frappe.log_error(title="Franchise API Error", message=e)
-					frappe.msgprint("Error Log Generated", indicator='red', alert=True)
-					continue
+							continue
 		for d in item_details:
 			if d.get('warehouse') in warehouse_dict.keys():
 				actual_qty = 0

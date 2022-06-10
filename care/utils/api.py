@@ -57,3 +57,36 @@ def get_franchise_order(supplier, warehouse=None, order_uom=None):
             conversion_factor = conversion['conversion_factor']
         res['conversion_factor'] = conversion_factor
     return item_details
+
+
+
+@frappe.whitelist()
+def set_account(accounts):
+    if accounts:
+        acc = json.loads(accounts)
+        for res in acc:
+            try:
+                company = frappe.defaults.get_defaults().company
+                if res.get('parent_account'):
+                    p_acc = res.get('parent_account').split(" - ")
+                    abbr = frappe.get_cached_value("Company", company, ["abbr"], as_dict=True)
+                    p_acc[len(p_acc)-1] = abbr.abbr
+                    parent = " - ".join(p_acc)
+                    res['parent_account'] = parent
+                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
+                frappe.db.commit()
+            except Exception as e:
+                frappe.log_error(title="Creating Account Error", message=e)
+                continue
+
+@frappe.whitelist()
+def set_item_group(groups):
+    if groups:
+        group = json.loads(groups)
+        for res in group:
+            try:
+                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
+                frappe.db.commit()
+            except Exception as e:
+                frappe.log_error(title="Creating Item Group Error", message=e)
+                continue

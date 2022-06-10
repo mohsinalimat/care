@@ -92,6 +92,9 @@ frappe.ui.form.on('Order Receiving', {
                     }
                 }
             });
+            frm.add_custom_button(__('Order Receive Qty Report'), function(){
+                 frappe.set_route('query-report', 'Order Receive Qty', {order_receiving: frm.doc.name});
+            }, __('View'));
         }
         frm.page.set_inner_btn_group_as_primary(__('Create'));
 	},
@@ -170,7 +173,7 @@ function validate_item_rate(frm, cdt, cdn){
 }
 
 function apply_item_filters(frm){
-    console.log("apply_item_filters")
+//    console.log("apply_item_filters")
     frappe.call({
         method: "get_item_code",
         doc: frm.doc,
@@ -182,6 +185,7 @@ function apply_item_filters(frm){
             }
         }
     });
+
 }
 
 function apply_child_btn_color(frm, cdt, cdn){
@@ -204,15 +208,31 @@ frappe.ui.form.on('Order Receiving Item', {
         else{
             if (row.item_code){
                 frappe.run_serially([
-                    ()=>apply_item_filters(frm),
                     ()=>get_items_details(frm, cdt, cdn),
                     ()=> {
-                        setTimeout(() => {
-                            var new_row = frm.fields_dict.items.grid;
-                            new_row.add_new_row(null, null, true, null, true);
-                            new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
-                            new_row.set_focus_on_row();
-                        }, 1200);
+                        frappe.call({
+                            method: "get_item_code",
+                            doc: frm.doc,
+                            callback: function(r) {
+                                frappe.run_serially([
+                                    ()=>{
+                                        frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
+                                            return {
+                                                filters: {'name':['in',r.message]}
+                                            }
+                                        }
+                                    },
+                                    ()=>{
+                                        setTimeout(() => {
+                                            var new_row = frm.fields_dict.items.grid;
+                                            new_row.add_new_row(null, null, true, null, true);
+                                            new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
+                                            new_row.set_focus_on_row();
+                                        }, 500);
+                                    }
+                                ])
+                            }
+                        });
                     }
                 ])
             }
@@ -236,7 +256,7 @@ frappe.ui.form.on('Order Receiving Item', {
         let amt = row.rate * row.qty
         let discount_per = (row.discount / amt) * 100
         row.discount_percent = discount_per
-//        refresh_field("discount_percent", cdn, "items");
+        refresh_field("discount_percent", cdn, "items");
         update_amount(frm, cdt, cdn)
 	},
     discount_percent: function(frm, cdt, cdn) {
@@ -244,7 +264,7 @@ frappe.ui.form.on('Order Receiving Item', {
         let amt = row.rate * row.qty
         let discount_amount = (amt / 100) * row.discount_percent
         row.discount = discount_amount
-//        refresh_field("discount", cdn, "items");
+        refresh_field("discount", cdn, "items");
         update_amount(frm, cdt, cdn)
 	},
     selling_price_list_rate: function(frm, cdt, cdn) {
@@ -272,11 +292,13 @@ function update_amount(frm, cdt, cdn){
     let discount_amount = (amt / 100) * row.discount_percent
     let amount = amt - discount_amount
     let dis_aft_rate = amount/ row.qty
+    row.discount = discount_amount
     frappe.model.set_value(cdt,cdn,"amount",amount);
     frappe.model.set_value(cdt,cdn,"net_amount",amount);
     frappe.model.set_value(cdt,cdn,"base_net_amount",amount);
     frappe.model.set_value(cdt,cdn,"discount_after_rate",dis_aft_rate);
     refresh_field("amount", cdn, "items");
+    refresh_field("discount", cdn, "items");
     refresh_field("net_amount", cdn, "items");
     refresh_field("base_net_amount", cdn, "items");
     refresh_field("discount_after_rate", cdn, "items");
@@ -304,7 +326,7 @@ function calculate_margin(frm, cdt, cdn){
 
 
 function get_items_details(frm, cdt, cdn){
-    console.log("get_items_details")
+//    console.log("get_items_details")
     var item = locals[cdt][cdn];
     frm.call({
         method: "care.care.doctype.order_receiving.order_receiving.get_items_details",
