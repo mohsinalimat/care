@@ -145,8 +145,103 @@ def set_supplier(suppliers):
         supplier = json.loads(suppliers)
         for res in supplier:
             try:
-                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
-                frappe.db.commit()
+                exist_supp = frappe.db.get_value("Supplier", {"supplier_name": res.get('supplier_name')}, "name")
+                if not frappe.db.exists("Supplier", res.get('name')) and not exist_supp:
+                    frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
+                    frappe.db.commit()
             except Exception as e:
                 frappe.log_error(title="Creating Supplier Error", message=e)
                 continue
+
+
+@frappe.whitelist()
+def set_item(items):
+    if items:
+        item = json.loads(items)
+        company = frappe.defaults.get_defaults().company
+        for res in item:
+            if res.get('item_defaults'):
+                for di in res.get('item_defaults'):
+                    if di.get('default_discount_account'):
+                        p_acc = di.get('default_discount_account').split(" - ")
+                        abbr = frappe.get_cached_value("Company", company, ["abbr"], as_dict=True)
+                        p_acc[len(p_acc) - 1] = abbr.abbr
+                        account = " - ".join(p_acc)
+                        di['default_discount_account'] = account
+
+                    if di.get('expense_account'):
+                        p_acc = di.get('expense_account').split(" - ")
+                        abbr = frappe.get_cached_value("Company", company, ["abbr"], as_dict=True)
+                        p_acc[len(p_acc) - 1] = abbr.abbr
+                        account = " - ".join(p_acc)
+                        di['expense_account'] = account
+
+                    if di.get('default_provisional_account'):
+                        p_acc = di.get('default_provisional_account').split(" - ")
+                        abbr = frappe.get_cached_value("Company", company, ["abbr"], as_dict=True)
+                        p_acc[len(p_acc) - 1] = abbr.abbr
+                        account = " - ".join(p_acc)
+                        di['default_provisional_account'] = account
+
+                    if di.get('income_account'):
+                        p_acc = di.get('income_account').split(" - ")
+                        abbr = frappe.get_cached_value("Company", company, ["abbr"], as_dict=True)
+                        p_acc[len(p_acc) - 1] = abbr.abbr
+                        account = " - ".join(p_acc)
+                        di['income_account'] = account
+
+                    if di.get('default_supplier'):
+                        supplier = None
+                        if di.get('supplier_name'):
+                            supplier = frappe.db.get_value("Supplier", {"supplier_name": di.get('supplier_name')}, "name")
+
+                        if frappe.db.exists("Supplier", di.get('default_supplier')):
+                            supplier = di.get('default_supplier')
+                        di['default_supplier'] = supplier
+            try:
+                if frappe.db.exists("Item", res.get('item_code')):
+                    item_doc = frappe.get_doc("Item", res.get('item_code'))
+                    item_doc.update(res)
+                    item_doc.flags.ignore_permissions = True
+                    item_doc.flags.ignore_mandatory = True
+                    item_doc.flags.ignore_if_duplicate = True
+                    item_doc.save()
+                else:
+                    frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True, ignore_if_duplicate=True)
+                    frappe.db.commit()
+            except Exception as e:
+                frappe.log_error(title="Creating Item or Updating Error", message=e)
+                continue
+
+@frappe.whitelist()
+def set_item_price(item_prices):
+    if item_prices:
+        item_price = json.loads(item_prices)
+        for res in item_price:
+            try:
+                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
+                frappe.db.commit()
+            except Exception as e:
+                frappe.log_error(title="Creating Item Price Error", message=e)
+                continue
+
+@frappe.whitelist()
+def set_price_rule(rules):
+    if rules:
+        rules = json.loads(rules)
+        for res in rules:
+            supplier = None
+            if res.get('supplier_name'):
+                supplier = frappe.db.get_value("Supplier", {"supplier_name": res.get('supplier_name')}, "name")
+
+            if frappe.db.exists("Supplier", res.get('supplier')):
+                supplier = res.get('supplier')
+            print("-------------",res['supplier'], "--",res.get('supplier_name'), "##------------",supplier )
+            res['supplier'] = supplier
+            try:
+                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
+                frappe.db.commit()
+            except Exception as e:
+                frappe.log_error(title="Creating Pricing rule Error", message=e)
+                continue
+
