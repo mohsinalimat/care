@@ -90,3 +90,39 @@ def set_item_group(groups):
             except Exception as e:
                 frappe.log_error(title="Creating Item Group Error", message=e)
                 continue
+
+@frappe.whitelist()
+def set_item_brand(brands):
+    if brands:
+        brand = json.loads(brands)
+        for res in brand:
+            try:
+                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
+                frappe.db.commit()
+            except Exception as e:
+                frappe.log_error(title="Creating Brand Error", message=e)
+                continue
+
+@frappe.whitelist()
+def set_item_uom(uoms):
+    if uoms:
+        uom = json.loads(uoms)
+        for res in uom:
+            try:
+                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
+                frappe.db.commit()
+            except Exception as e:
+                frappe.log_error(title="Creating UOM Error", message=e)
+                continue
+
+@frappe.whitelist()
+def set_manufacturer(manufacturers):
+    if manufacturers:
+        manufacturer = json.loads(manufacturers)
+        for res in manufacturer:
+            try:
+                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
+                frappe.db.commit()
+            except Exception as e:
+                frappe.log_error(title="Creating UOM Error", message=e)
+                continue
