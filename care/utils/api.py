@@ -124,5 +124,29 @@ def set_manufacturer(manufacturers):
                 frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
                 frappe.db.commit()
             except Exception as e:
-                frappe.log_error(title="Creating UOM Error", message=e)
+                frappe.log_error(title="Creating Manufacturer Error", message=e)
+                continue
+
+@frappe.whitelist()
+def set_supplier_group(supp_groups):
+    if supp_groups:
+        supp_group = json.loads(supp_groups)
+        for res in supp_group:
+            try:
+                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
+                frappe.db.commit()
+            except Exception as e:
+                frappe.log_error(title="Creating Supplier Group Error", message=e)
+                continue
+
+@frappe.whitelist()
+def set_supplier(suppliers):
+    if suppliers:
+        supplier = json.loads(suppliers)
+        for res in supplier:
+            try:
+                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
+                frappe.db.commit()
+            except Exception as e:
+                frappe.log_error(title="Creating Supplier Error", message=e)
                 continue
