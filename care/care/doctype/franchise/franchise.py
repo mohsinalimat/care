@@ -10,6 +10,7 @@ import requests
 class Franchise(Document):
 	@frappe.whitelist()
 	def sync_data_on_franchise(self):
+		print("-----------------------------------")
 		self.set_account()
 		self.set_item_group()
 		self.set_item_brand()
@@ -380,5 +381,8 @@ def _get_item_dict(itm_doc, company):
 
 
 def sync_data_scheduler():
+	frappe.enqueue(upload_data, queue='long')
+
+def upload_data():
 	franchise = frappe.get_single("Franchise")
-	frappe.enqueue(sync_data_on_franchise, doc=franchise, queue='long')
+	franchise.sync_data_on_franchise()

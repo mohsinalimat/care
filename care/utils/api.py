@@ -236,7 +236,6 @@ def set_price_rule(rules):
 
             if frappe.db.exists("Supplier", res.get('supplier')):
                 supplier = res.get('supplier')
-            print("-------------",res['supplier'], "--",res.get('supplier_name'), "##------------",supplier )
             res['supplier'] = supplier
             try:
                 frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
