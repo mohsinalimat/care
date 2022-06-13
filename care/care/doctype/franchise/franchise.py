@@ -372,7 +372,6 @@ def _get_item_dict(itm_doc, company):
 			"default_supplier": di.default_supplier,
 			"supplier_name": supplier_name,
 			"expense_account": di.expense_account,
-			"default_provisional_account": di.default_provisional_account,
 			"income_account": di.income_account,
 		})
 	if item_default:

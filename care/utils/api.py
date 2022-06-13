@@ -176,12 +176,12 @@ def set_item(items):
                         account = " - ".join(p_acc)
                         di['expense_account'] = account
 
-                    if di.get('default_provisional_account'):
-                        p_acc = di.get('default_provisional_account').split(" - ")
-                        abbr = frappe.get_cached_value("Company", company, ["abbr"], as_dict=True)
-                        p_acc[len(p_acc) - 1] = abbr.abbr
-                        account = " - ".join(p_acc)
-                        di['default_provisional_account'] = account
+                    # if di.get('default_provisional_account'):
+                    #     p_acc = di.get('default_provisional_account').split(" - ")
+                    #     abbr = frappe.get_cached_value("Company", company, ["abbr"], as_dict=True)
+                    #     p_acc[len(p_acc) - 1] = abbr.abbr
+                    #     account = " - ".join(p_acc)
+                    #     di['default_provisional_account'] = account
 
                     if di.get('income_account'):
                         p_acc = di.get('income_account').split(" - ")
