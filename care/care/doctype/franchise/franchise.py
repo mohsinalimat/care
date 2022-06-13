@@ -214,7 +214,6 @@ class Franchise(Document):
 				if items:
 					item_lst = []
 					for itm in items:
-						print("-------------",itm.name)
 						itm_doc = frappe.get_doc("Item", itm.name)
 						item_dict = _get_item_dict(itm_doc, res.company_name)
 						item_lst.append(item_dict)
