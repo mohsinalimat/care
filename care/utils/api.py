@@ -68,11 +68,12 @@ def set_account(accounts):
             try:
                 company = frappe.defaults.get_defaults().company
                 if res.get('parent_account'):
-                    p_acc = res.get('parent_account').split(" - ")
-                    abbr = frappe.get_cached_value("Company", company, ["abbr"], as_dict=True)
-                    p_acc[len(p_acc)-1] = abbr.abbr
-                    parent = " - ".join(p_acc)
-                    res['parent_account'] = parent
+                    if not frappe.db.exists("Account", res.get('parent_account')):
+                        p_acc = res.get('parent_account').split(" - ")
+                        abbr = frappe.get_cached_value("Company", company, ["abbr"], as_dict=True)
+                        p_acc[len(p_acc)-1] = abbr.abbr
+                        parent = " - ".join(p_acc)
+                        res['parent_account'] = parent
                 frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
                 frappe.db.commit()
             except Exception as e:
@@ -162,33 +163,39 @@ def set_item(items):
         for res in item:
             if res.get('item_defaults'):
                 for di in res.get('item_defaults'):
+                    di['company'] = company
                     if di.get('default_discount_account'):
-                        p_acc = di.get('default_discount_account').split(" - ")
-                        abbr = frappe.get_cached_value("Company", company, ["abbr"], as_dict=True)
-                        p_acc[len(p_acc) - 1] = abbr.abbr
-                        account = " - ".join(p_acc)
-                        di['default_discount_account'] = account
+                        if not frappe.db.exists("Account", di.get('default_discount_account')):
+                            p_acc = di.get('default_discount_account').split(" - ")
+                            abbr = frappe.get_cached_value("Company", company, ["abbr"], as_dict=True)
+                            p_acc[len(p_acc) - 1] = abbr.abbr
+                            account = " - ".join(p_acc)
+                            if frappe.db.exists("Account", account):
+                                di['default_discount_account'] = account
+                            else:
+                                di['default_discount_account'] = None
 
                     if di.get('expense_account'):
-                        p_acc = di.get('expense_account').split(" - ")
-                        abbr = frappe.get_cached_value("Company", company, ["abbr"], as_dict=True)
-                        p_acc[len(p_acc) - 1] = abbr.abbr
-                        account = " - ".join(p_acc)
-                        di['expense_account'] = account
-
-                    # if di.get('default_provisional_account'):
-                    #     p_acc = di.get('default_provisional_account').split(" - ")
-                    #     abbr = frappe.get_cached_value("Company", company, ["abbr"], as_dict=True)
-                    #     p_acc[len(p_acc) - 1] = abbr.abbr
-                    #     account = " - ".join(p_acc)
-                    #     di['default_provisional_account'] = account
+                        if not frappe.db.exists("Account", di.get('expense_account')):
+                            p_acc = di.get('expense_account').split(" - ")
+                            abbr = frappe.get_cached_value("Company", company, ["abbr"], as_dict=True)
+                            p_acc[len(p_acc) - 1] = abbr.abbr
+                            account = " - ".join(p_acc)
+                            if frappe.db.exists("Account", account):
+                                di['expense_account'] = account
+                            else:
+                                di['expense_account'] = None
 
                     if di.get('income_account'):
-                        p_acc = di.get('income_account').split(" - ")
-                        abbr = frappe.get_cached_value("Company", company, ["abbr"], as_dict=True)
-                        p_acc[len(p_acc) - 1] = abbr.abbr
-                        account = " - ".join(p_acc)
-                        di['income_account'] = account
+                        if not frappe.db.exists("Account", di.get('income_account')):
+                            p_acc = di.get('income_account').split(" - ")
+                            abbr = frappe.get_cached_value("Company", company, ["abbr"], as_dict=True)
+                            p_acc[len(p_acc) - 1] = abbr.abbr
+                            account = " - ".join(p_acc)
+                            if frappe.db.exists("Account", account):
+                                di['income_account'] = account
+                            else:
+                                di['income_account'] = None
 
                     if di.get('default_supplier'):
                         supplier = None

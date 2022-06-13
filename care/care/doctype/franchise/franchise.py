@@ -10,7 +10,6 @@ import requests
 class Franchise(Document):
 	@frappe.whitelist()
 	def sync_data_on_franchise(self):
-		print("-----------------------------------")
 		self.set_account()
 		self.set_item_group()
 		self.set_item_brand()
@@ -211,10 +210,11 @@ class Franchise(Document):
 		for res in self.franchise_list:
 			if res.enable:
 				items = frappe.db.sql("""select name, item_name from `tabItem` where modified >= '{0}' 
-							order by creation""".format(res.last_update), as_dict=True)
+							order by modified""".format(res.last_update), as_dict=True)
 				if items:
 					item_lst = []
 					for itm in items:
+						print("-------------",itm.name)
 						itm_doc = frappe.get_doc("Item", itm.name)
 						item_dict = _get_item_dict(itm_doc, res.company_name)
 						item_lst.append(item_dict)
