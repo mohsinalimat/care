@@ -158,7 +158,6 @@ def set_supplier(suppliers):
 @frappe.whitelist()
 def set_item(items):
     if items:
-        print("-------------dwdw---------")
         item = json.loads(items)
         company = frappe.defaults.get_defaults().company
         for res in item:
@@ -207,7 +206,6 @@ def set_item(items):
                             supplier = di.get('default_supplier')
                         di['default_supplier'] = supplier
             try:
-                print("-----------------",res.get('item_code'))
                 if frappe.db.exists("Item", res.get('item_code')):
                     item_doc = frappe.get_doc("Item", res.get('item_code'))
                     item_doc.update(res)

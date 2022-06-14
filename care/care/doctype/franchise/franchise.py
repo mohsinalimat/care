@@ -6,6 +6,7 @@ from frappe.utils import now_datetime
 from frappe.model.document import Document
 import json
 import requests
+import math
 
 class Franchise(Document):
 	@frappe.whitelist()
@@ -47,7 +48,7 @@ class Franchise(Document):
 							datas = {
 								"accounts": json.dumps(accounts_detail),
 							}
-							response = requests.post(url=url, headers=headers, params=datas)
+							response = requests.post(url=url, headers=headers, data=datas)
 							if response.status_code != 200:
 								frappe.log_error(title="Account upload API Error", message=response.json())
 								frappe.msgprint("Account API Error Log Generated", indicator='red', alert=True)
@@ -73,7 +74,7 @@ class Franchise(Document):
 						datas = {
 							"groups": json.dumps(groups),
 						}
-						response = requests.post(url=url, headers=headers, params=datas)
+						response = requests.post(url=url, headers=headers, data=datas)
 						if response.status_code != 200:
 							frappe.log_error(title="Item Group upload API Error", message=response.json())
 							frappe.msgprint("Item Group API Error Log Generated", indicator='red', alert=True)
@@ -97,7 +98,7 @@ class Franchise(Document):
 						datas = {
 							"brands": json.dumps(brands),
 						}
-						response = requests.post(url=url, headers=headers, params=datas)
+						response = requests.post(url=url, headers=headers, data=datas)
 						if response.status_code != 200:
 							frappe.log_error(title="Brand upload API Error", message=response.json())
 							frappe.msgprint("Brand API Error Log Generated", indicator='red', alert=True)
@@ -122,7 +123,7 @@ class Franchise(Document):
 						datas = {
 							"uoms": json.dumps(uoms),
 						}
-						response = requests.post(url=url, headers=headers, params=datas)
+						response = requests.post(url=url, headers=headers, data=datas)
 						if response.status_code != 200:
 							frappe.log_error(title="UOM upload API Error", message=response.json())
 							frappe.msgprint("UOM API Error Log Generated", indicator='red', alert=True)
@@ -146,7 +147,7 @@ class Franchise(Document):
 						datas = {
 							"manufacturers": json.dumps(manufacturer),
 						}
-						response = requests.post(url=url, headers=headers, params=datas)
+						response = requests.post(url=url, headers=headers, data=datas)
 						if response.status_code != 200:
 							frappe.log_error(title="Manufacturer upload API Error", message=response.json())
 							frappe.msgprint("Manufacturer API Error Log Generated", indicator='red', alert=True)
@@ -172,7 +173,7 @@ class Franchise(Document):
 						datas = {
 							"supp_groups": json.dumps(supp_group),
 						}
-						response = requests.post(url=url, headers=headers, params=datas)
+						response = requests.post(url=url, headers=headers, data=datas)
 						if response.status_code != 200:
 							frappe.log_error(title="Supplier Group upload API Error", message=response.json())
 							frappe.msgprint("Supplier Group API Error Log Generated", indicator='red', alert=True)
@@ -198,7 +199,7 @@ class Franchise(Document):
 						datas = {
 							"suppliers": json.dumps(suppliers),
 						}
-						response = requests.post(url=url, headers=headers, params=datas)
+						response = requests.post(url=url, headers=headers, data=datas)
 						if response.status_code != 200:
 							frappe.log_error(title="Supplier upload API Error", message=response.json())
 							frappe.msgprint("Supplier API Error Log Generated", indicator='red', alert=True)
@@ -209,31 +210,38 @@ class Franchise(Document):
 	def set_item(self):
 		for res in self.franchise_list:
 			if res.enable:
-				items = frappe.db.sql("""select name, item_name from `tabItem` where modified >= '{0}' 
-							order by modified""".format(res.last_update), as_dict=True)
-				if items:
-					item_lst = []
-					for itm in items:
-						itm_doc = frappe.get_doc("Item", itm.name)
-						item_dict = _get_item_dict(itm_doc, res.company_name)
-						item_lst.append(item_dict)
-					try:
-						url = str(res.url) + "/api/method/care.utils.api.set_item"
-						api_key = res.api_key
-						api_secret = res.api_secret
-						headers = {
-							'Authorization': 'token ' + str(api_key) + ':' + str(api_secret)
-						}
-						datas = {
-							"items": json.dumps(item_lst),
-						}
-						response = requests.post(url=url, headers=headers, params=datas)
-						if response.status_code != 200:
-							frappe.log_error(title="Item API Error", message=response.json())
+				total = frappe.db.sql("""select count(*) from `tabItem` where modified >= '{0}'""".format(res.last_update))[0][0] or 0
+				sets = math.floor(total / 200) + 1
+				start = end = 0
+				for p in range(0, sets):
+					end = start + 200
+					items = frappe.db.sql("""select name, item_name from `tabItem` where modified >= '{0}' 
+								order by modified limit {1},{2}""".format(res.last_update, start, end), as_dict=True)
+					if items:
+						item_lst = []
+						for itm in items:
+							itm_doc = frappe.get_doc("Item", itm.name)
+							item_dict = _get_item_dict(itm_doc, res.company_name)
+							item_lst.append(item_dict)
+						try:
+							url = str(res.url) + "/api/method/care.utils.api.set_item"
+							api_key = res.api_key
+							api_secret = res.api_secret
+							headers = {
+								'Authorization': 'token ' + str(api_key) + ':' + str(api_secret)
+							}
+							datas = {
+								"items": json.dumps(item_lst),
+							}
+							response = requests.post(url=url, headers=headers, data=datas)
+							if response.status_code != 200:
+								frappe.log_error(title="Item API Error", message=response.json())
+								frappe.msgprint("Item API Error Log Generated", indicator='red', alert=True)
+						except Exception as e:
+							frappe.log_error(title="Item upload API Error", message=e)
 							frappe.msgprint("Item API Error Log Generated", indicator='red', alert=True)
-					except Exception as e:
-						frappe.log_error(title="Item upload API Error", message=e)
-						frappe.msgprint("Item API Error Log Generated", indicator='red', alert=True)
+					start = end
+
 
 	def set_item_price(self):
 		for res in self.franchise_list:
@@ -253,7 +261,7 @@ class Franchise(Document):
 						datas = {
 							"item_prices": json.dumps(item_prices)
 						}
-						response = requests.post(url=url, headers=headers, params=datas)
+						response = requests.post(url=url, headers=headers, data=datas)
 						if response.status_code != 200:
 							frappe.log_error(title="Item Price upload API Error", message=response.json())
 							frappe.msgprint("Item Price API Error Log Generated", indicator='red', alert=True)
@@ -300,7 +308,7 @@ class Franchise(Document):
 						datas = {
 							"rules": json.dumps(rule_lst),
 						}
-						response = requests.post(url=url, headers=headers, params=datas)
+						response = requests.post(url=url, headers=headers, data=datas)
 						if response.status_code != 200:
 							frappe.log_error(title="Pricing rule API Error", message=response.json())
 							frappe.msgprint("Pricing rule API Error Log Generated", indicator='red', alert=True)
