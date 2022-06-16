@@ -80,6 +80,7 @@ class Importer:
 			return
 
 		# setup import log
+		self.data_import.import_log = []
 		if self.data_import.import_log:
 			import_log = frappe.parse_json(self.data_import.import_log)
 		else:

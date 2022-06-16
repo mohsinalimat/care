@@ -11,7 +11,7 @@ import math
 class Franchise(Document):
 	@frappe.whitelist()
 	def sync_data_on_franchise(self):
-		self.set_account()
+		# self.set_account()
 		self.set_item_group()
 		self.set_item_brand()
 		self.set_item_uom()
@@ -26,35 +26,35 @@ class Franchise(Document):
 				res.last_update = now_datetime()
 		self.save(ignore_permissions=True)
 
-	def set_account(self):
-		if self.franchise_list:
-			for res in self.franchise_list:
-				if res.enable:
-					accounts_detail = frappe.db.sql("""select 'Account' as doctype, account_name, 
-												account_currency, account_number, account_type, parent_account ,
-												root_type, report_type, is_group, freeze_account, 
-												balance_must_be, disabled,
-												0 as by_pass_autoname from `tabAccount` 
-												where modified >= '{0}' 
-												order by lft,rgt""".format(res.last_update), as_dict=True)
-					if accounts_detail:
-						try:
-							url = str(res.url) + "/api/method/care.utils.api.set_account"
-							api_key = res.api_key
-							api_secret = res.api_secret
-							headers = {
-								'Authorization': 'token ' + str(api_key) + ':' + str(api_secret)
-							}
-							datas = {
-								"accounts": json.dumps(accounts_detail),
-							}
-							response = requests.post(url=url, headers=headers, data=datas)
-							if response.status_code != 200:
-								frappe.log_error(title="Account upload API Error", message=response.json())
-								frappe.msgprint("Account API Error Log Generated", indicator='red', alert=True)
-						except Exception as e:
-							frappe.log_error(title="Account upload API Error", message=e)
-							frappe.msgprint("Account API Error Log Generated", indicator='red', alert=True)
+	# def set_account(self):
+	# 	if self.franchise_list:
+	# 		for res in self.franchise_list:
+	# 			if res.enable:
+	# 				accounts_detail = frappe.db.sql("""select 'Account' as doctype, account_name,
+	# 											account_currency, account_number, account_type, parent_account ,
+	# 											root_type, report_type, is_group, freeze_account,
+	# 											balance_must_be, disabled,
+	# 											0 as by_pass_autoname from `tabAccount`
+	# 											where modified >= '{0}'
+	# 											order by lft,rgt""".format(res.last_update), as_dict=True)
+	# 				if accounts_detail:
+	# 					try:
+	# 						url = str(res.url) + "/api/method/care.utils.api.set_account"
+	# 						api_key = res.api_key
+	# 						api_secret = res.api_secret
+	# 						headers = {
+	# 							'Authorization': 'token ' + str(api_key) + ':' + str(api_secret)
+	# 						}
+	# 						datas = {
+	# 							"accounts": json.dumps(accounts_detail),
+	# 						}
+	# 						response = requests.post(url=url, headers=headers, data=datas)
+	# 						if response.status_code != 200:
+	# 							frappe.log_error(title="Account upload API Error", message=response.json())
+	# 							frappe.msgprint("Account API Error Log Generated", indicator='red', alert=True)
+	# 					except Exception as e:
+	# 						frappe.log_error(title="Account upload API Error", message=e)
+	# 						frappe.msgprint("Account API Error Log Generated", indicator='red', alert=True)
 
 	def set_item_group(self):
 		for res in self.franchise_list:
@@ -246,76 +246,88 @@ class Franchise(Document):
 	def set_item_price(self):
 		for res in self.franchise_list:
 			if res.enable and res.update_price:
-				item_prices = frappe.db.sql("""select 'Item Price' as doctype, item_code, item_name, item_description, 
-								buying, selling, price_list, 
-								CONVERT(valid_from, CHAR) as valid_from, currency,packing_unit, uom, 
-								price_list_rate from `tabItem Price` where modified >= '{0}'""".format(res.last_update), as_dict=True)
-				if item_prices:
-					try:
-						url = str(res.url) + "/api/method/care.utils.api.set_item_price"
-						api_key = res.api_key
-						api_secret = res.api_secret
-						headers = {
-							'Authorization': 'token ' + str(api_key) + ':' + str(api_secret)
-						}
-						datas = {
-							"item_prices": json.dumps(item_prices)
-						}
-						response = requests.post(url=url, headers=headers, data=datas)
-						if response.status_code != 200:
-							frappe.log_error(title="Item Price upload API Error", message=response.json())
+				total = frappe.db.sql("""select count(*) from `tabItem Price` where modified >= '{0}'""".format(res.last_update))[0][0] or 0
+				sets = math.floor(total / 200) + 1
+				start = end = 0
+				for p in range(0, sets):
+					end = start + 200
+					item_prices = frappe.db.sql("""select 'Item Price' as doctype, item_code, item_name, item_description, 
+									buying, selling, price_list, 
+									CONVERT(valid_from, CHAR) as valid_from, currency,packing_unit, uom, 
+									price_list_rate from `tabItem Price` where modified >= '{0}' 
+									limit {1},{2}""".format(res.last_update, start, end), as_dict=True)
+					if item_prices:
+						try:
+							url = str(res.url) + "/api/method/care.utils.api.set_item_price"
+							api_key = res.api_key
+							api_secret = res.api_secret
+							headers = {
+								'Authorization': 'token ' + str(api_key) + ':' + str(api_secret)
+							}
+							datas = {
+								"item_prices": json.dumps(item_prices)
+							}
+							response = requests.post(url=url, headers=headers, data=datas)
+							if response.status_code != 200:
+								frappe.log_error(title="Item Price upload API Error", message=response.json())
+								frappe.msgprint("Item Price API Error Log Generated", indicator='red', alert=True)
+						except Exception as e:
+							frappe.log_error(title="Item Price upload API Error", message=e)
 							frappe.msgprint("Item Price API Error Log Generated", indicator='red', alert=True)
-					except Exception as e:
-						frappe.log_error(title="Item Price upload API Error", message=e)
-						frappe.msgprint("Item Price API Error Log Generated", indicator='red', alert=True)
+					start = end
 
 	def set_pricing_rule(self):
 		for res in self.franchise_list:
 			if res.enable and res.update_price:
-				rules = frappe.db.sql("""select name from `tabPricing Rule` where modified >= '{0}' 
-							order by creation""".format(res.last_update), as_dict=True)
-				if rules:
-					rule_lst = []
-					for itm in rules:
-						itm_doc = frappe.get_doc("Pricing Rule", itm.name).as_dict()
-						for key in ['name', 'creation', 'modified','company', 'modified_by', 'owner','warehouse', 'docstatus', 'parent', 'parentfield', 'parenttype', 'idx', 'naming_series']:
-							itm_doc.pop(key)
-						items = []
-						for itm in itm_doc.get('items'):
-							items.append({
-								"item_code": itm.item_code,
-								"uom": itm.uom
-							})
-						itm_doc['items'] = items
-						if itm_doc.get('valid_from'):
-							itm_doc['valid_from'] = str(itm_doc.get('valid_from'))
-						if itm_doc.get('valid_upto'):
-							itm_doc['valid_upto'] = str(itm_doc.get('valid_upto'))
+				total = frappe.db.sql("""select count(*) from `tabPricing Rule` where modified >= '{0}'""".format(res.last_update))[0][0] or 0
+				sets = math.floor(total / 200) + 1
+				start = end = 0
+				for p in range(0, sets):
+					end = start + 200
+					rules = frappe.db.sql("""select name from `tabPricing Rule` where modified >= '{0}' 
+								order by creation limit {1},{2}""".format(res.last_update, start, end), as_dict=True)
+					if rules:
+						rule_lst = []
+						for itm in rules:
+							itm_doc = frappe.get_doc("Pricing Rule", itm.name).as_dict()
+							for key in ['creation', 'modified','company', 'modified_by', 'owner','warehouse', 'docstatus', 'parent', 'parentfield', 'parenttype', 'idx', 'naming_series']:
+								itm_doc.pop(key)
+							items = []
+							for itm in itm_doc.get('items'):
+								items.append({
+									"item_code": itm.item_code,
+									"uom": itm.uom
+								})
+							itm_doc['items'] = items
+							if itm_doc.get('valid_from'):
+								itm_doc['valid_from'] = str(itm_doc.get('valid_from'))
+							if itm_doc.get('valid_upto'):
+								itm_doc['valid_upto'] = str(itm_doc.get('valid_upto'))
 
-						supplier_name = None
-						if itm_doc.get('supplier'):
-							supplier_name = frappe.get_value("Supplier", {'name': itm_doc.get('supplier')}, 'supplier_name')
+							supplier_name = None
+							if itm_doc.get('supplier'):
+								supplier_name = frappe.get_value("Supplier", {'name': itm_doc.get('supplier')}, 'supplier_name')
 
-						itm_doc['supplier_name'] = supplier_name
-						rule_lst.append(itm_doc)
-					try:
-						url = str(res.url) + "/api/method/care.utils.api.set_price_rule"
-						api_key = res.api_key
-						api_secret = res.api_secret
-						headers = {
-							'Authorization': 'token ' + str(api_key) + ':' + str(api_secret)
-						}
-						datas = {
-							"rules": json.dumps(rule_lst),
-						}
-						response = requests.post(url=url, headers=headers, data=datas)
-						if response.status_code != 200:
-							frappe.log_error(title="Pricing rule API Error", message=response.json())
+							itm_doc['supplier_name'] = supplier_name
+							rule_lst.append(itm_doc)
+						try:
+							url = str(res.url) + "/api/method/care.utils.api.set_price_rule"
+							api_key = res.api_key
+							api_secret = res.api_secret
+							headers = {
+								'Authorization': 'token ' + str(api_key) + ':' + str(api_secret)
+							}
+							datas = {
+								"rules": json.dumps(rule_lst),
+							}
+							response = requests.post(url=url, headers=headers, data=datas)
+							if response.status_code != 200:
+								frappe.log_error(title="Pricing rule API Error", message=response.json())
+								frappe.msgprint("Pricing rule API Error Log Generated", indicator='red', alert=True)
+						except Exception as e:
+							frappe.log_error(title="Pricing rule upload API Error", message=e)
 							frappe.msgprint("Pricing rule API Error Log Generated", indicator='red', alert=True)
-					except Exception as e:
-						frappe.log_error(title="Pricing rule upload API Error", message=e)
-						frappe.msgprint("Pricing rule API Error Log Generated", indicator='red', alert=True)
-
+					start = end
 
 def _get_item_dict(itm_doc, company):
 	item_dict = {
@@ -372,7 +384,7 @@ def _get_item_dict(itm_doc, company):
 	for di in itm_doc.item_defaults:
 		supplier_name = None
 		if di.default_supplier:
-			supplier_name = frappe.get_value("Supplier",{'name': di.default_supplier}, 'supplier_name')
+			supplier_name = frappe.get_value("Supplier", {'name': di.default_supplier}, 'supplier_name')
 		item_default.append({
 			"company": company,
 			"default_discount_account": di.default_discount_account,

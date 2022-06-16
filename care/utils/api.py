@@ -1,4 +1,5 @@
 import frappe
+from frappe.utils import nowdate, getdate
 from erpnext.stock.get_item_details import get_conversion_factor
 import json
 
@@ -58,8 +59,6 @@ def get_franchise_order(supplier, warehouse=None, order_uom=None):
         res['conversion_factor'] = conversion_factor
     return item_details
 
-
-
 @frappe.whitelist()
 def set_account(accounts):
     if accounts:
@@ -74,7 +73,7 @@ def set_account(accounts):
                         p_acc[len(p_acc)-1] = abbr.abbr
                         parent = " - ".join(p_acc)
                         res['parent_account'] = parent
-                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
+                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True)
                 frappe.db.commit()
             except Exception as e:
                 frappe.log_error(title="Creating Account Error", message=e)
@@ -86,7 +85,7 @@ def set_item_group(groups):
         group = json.loads(groups)
         for res in group:
             try:
-                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
+                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True)
                 frappe.db.commit()
             except Exception as e:
                 frappe.log_error(title="Creating Item Group Error", message=e)
@@ -98,7 +97,7 @@ def set_item_brand(brands):
         brand = json.loads(brands)
         for res in brand:
             try:
-                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
+                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True)
                 frappe.db.commit()
             except Exception as e:
                 frappe.log_error(title="Creating Brand Error", message=e)
@@ -110,7 +109,7 @@ def set_item_uom(uoms):
         uom = json.loads(uoms)
         for res in uom:
             try:
-                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
+                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True)
                 frappe.db.commit()
             except Exception as e:
                 frappe.log_error(title="Creating UOM Error", message=e)
@@ -122,7 +121,7 @@ def set_manufacturer(manufacturers):
         manufacturer = json.loads(manufacturers)
         for res in manufacturer:
             try:
-                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
+                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True)
                 frappe.db.commit()
             except Exception as e:
                 frappe.log_error(title="Creating Manufacturer Error", message=e)
@@ -134,7 +133,7 @@ def set_supplier_group(supp_groups):
         supp_group = json.loads(supp_groups)
         for res in supp_group:
             try:
-                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
+                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True)
                 frappe.db.commit()
             except Exception as e:
                 frappe.log_error(title="Creating Supplier Group Error", message=e)
@@ -148,7 +147,7 @@ def set_supplier(suppliers):
             try:
                 exist_supp = frappe.db.get_value("Supplier", {"supplier_name": res.get('supplier_name')}, "name")
                 if not frappe.db.exists("Supplier", res.get('name')) and not exist_supp:
-                    frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
+                    frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True)
                     frappe.db.commit()
             except Exception as e:
                 frappe.log_error(title="Creating Supplier Error", message=e)
@@ -214,7 +213,7 @@ def set_item(items):
                     item_doc.flags.ignore_if_duplicate = True
                     item_doc.save()
                 else:
-                    frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True, ignore_if_duplicate=True)
+                    frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True)
                     frappe.db.commit()
             except Exception as e:
                 frappe.log_error(title="Creating Item or Updating Error", message=e)
@@ -226,8 +225,16 @@ def set_item_price(item_prices):
         item_price = json.loads(item_prices)
         for res in item_price:
             try:
-                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
-                frappe.db.commit()
+                existing_price = frappe.db.get_value("Item Price", {"item_code": res.get('item_code'),
+                                                    "buying": res.get('buying'),
+                                                    "selling": res.get('selling'),
+                                                    "price_list": res.get('price_list'),
+                                                    "price_list_rate": res.get('price_list_rate'),
+                                                    "valid_from": getdate(res.get('valid_from')),
+                                                    }, "name")
+                if not existing_price:
+                    frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True)
+                    frappe.db.commit()
             except Exception as e:
                 frappe.log_error(title="Creating Item Price Error", message=e)
                 continue
@@ -245,8 +252,16 @@ def set_price_rule(rules):
                 supplier = res.get('supplier')
             res['supplier'] = supplier
             try:
-                frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True,ignore_if_duplicate=True)
-                frappe.db.commit()
+                if frappe.db.exists("Pricing Rule", res.get('name')):
+                    pricing_rule = frappe.get_doc("Pricing Rule", res.get('name'))
+                    pricing_rule.update(res)
+                    pricing_rule.flags.ignore_permissions = True
+                    pricing_rule.flags.ignore_mandatory = True
+                    pricing_rule.flags.ignore_if_duplicate = True
+                    pricing_rule.save()
+                else:
+                    frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True)
+                    frappe.db.commit()
             except Exception as e:
                 frappe.log_error(title="Creating Pricing rule Error", message=e)
                 continue
