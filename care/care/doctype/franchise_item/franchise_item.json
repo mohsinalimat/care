@@ -9,12 +9,21 @@
   "franchise_code",
   "warehouse",
   "enable",
+  "update_price",
   "reorder_prec",
   "column_break_5",
   "company_name",
   "url",
   "api_key",
-  "api_secret"
+  "api_secret",
+  "section_break_13",
+  "customer",
+  "customer_name",
+  "column_break_15",
+  "supplier",
+  "supplier_name",
+  "section_break_19",
+  "last_update"
  ],
  "fields": [
   {
@@ -88,12 +97,65 @@
    "in_list_view": 1,
    "label": "Company Name",
    "reqd": 1
+  },
+  {
+   "default": "Now",
+   "fieldname": "last_update",
+   "fieldtype": "Datetime",
+   "label": "Last Update Time",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "update_price",
+   "fieldtype": "Check",
+   "label": "Update Pricing Data"
+  },
+  {
+   "description": "In main Warehouse",
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "customer.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Read Only",
+   "label": "Customer Name"
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "supplier.supplier_name",
+   "fieldname": "supplier_name",
+   "fieldtype": "Read Only",
+   "label": "Supplier Name"
+  },
+  {
+   "fieldname": "section_break_13",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_19",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "In Franchise Warehouse",
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "label": "Supplier",
+   "options": "Supplier",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-06-08 11:44:44.565668",
+ "modified": "2022-06-16 16:17:23.373466",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Franchise Item",

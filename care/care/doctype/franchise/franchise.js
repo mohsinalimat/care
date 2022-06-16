@@ -20,7 +20,7 @@ frappe.ui.form.on('Franchise', {
             method: "sync_data_on_franchise",
             doc: frm.doc,
             freeze: true,
-            freeze_message: __("Uploading data on Franchise...")
+            freeze_message: __("Uploading data on Franchise..."),
             callback: function(r) {
                 frappe.msgprint(__('Data uploaded successfully'));
             }

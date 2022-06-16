@@ -23,6 +23,7 @@
   "c_b_warehouse",
   "warehouse",
   "ignore_un_order_item",
+  "is_sale_base",
   "currency_and_price_list_section",
   "currency",
   "conversion_rate",
@@ -339,6 +340,12 @@
    "fieldname": "retrun_ref",
    "fieldtype": "Data",
    "label": "retrun_ref"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_sale_base",
+   "fieldtype": "Check",
+   "label": "Is Sale Base"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -356,7 +363,7 @@
    "link_fieldname": "return_ref"
   }
  ],
- "modified": "2022-05-28 11:46:16.332836",
+ "modified": "2022-06-16 17:17:22.395947",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Order Receiving",

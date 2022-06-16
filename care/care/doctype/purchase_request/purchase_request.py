@@ -22,6 +22,12 @@ class PurchaseRequest(Document):
 	@frappe.whitelist()
 	def get_warehouse(self):
 		wr = frappe.get_list("Warehouse", filters={'is_group': 0, 'auto_select_in_purchase_request': 1}, fields='*', order_by='name')
+		for wr_doc in wr:
+			if wr_doc.is_franchise:
+				f_w_data = frappe.get_value("Franchise Item", {'warehouse': wr_doc.name})
+				if f_w_data:
+					f_w_doc = frappe.get_doc("Franchise Item", f_w_data)
+					wr_doc['order_per'] = f_w_doc.reorder_prec
 		return wr
 
 	@frappe.whitelist()
@@ -49,12 +55,13 @@ class PurchaseRequest(Document):
 
 		warehouse_dict = {}
 		for res in self.warehouses:
-			wr_doc = frappe.get_doc("Warehouse", res.warehouse)
 			warehouse_dict[res.warehouse] = res.order_per
+			wr_doc = frappe.get_doc("Warehouse", res.warehouse)
 			if wr_doc.is_franchise:
 				f_w_lst.append(res.warehouse)
 			else:
 				w_lst.append(res.warehouse)
+
 			if wr_doc.is_group:
 				child_wr = frappe.get_list("Warehouse", filters={'parent_warehouse': wr_doc.name}, fields='*')
 				for r in child_wr:
