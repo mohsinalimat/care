@@ -61,6 +61,9 @@ def get_data(filters):
 		from `tabPurchase Receipt` as pr
 		INNER JOIN `tabPurchase Receipt Item` as pri on pr.name = pri.parent"""
 
+	if filters.get('posting_date'):
+		query += " and pr.posting_date = '{0}'".format(filters.get('posting_date'))
+
 	if filters.get('name'):
 		query += " and pr.name = '{0}'".format(filters.get('name'))
 	
