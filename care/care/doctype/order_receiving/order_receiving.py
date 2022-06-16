@@ -278,6 +278,7 @@ def make_purchase_invoice(doc):
             pi.taxes_and_charges = doc.taxes_and_charges
             pi.order_receiving = doc.name
             pi.update_stock = 1 if not is_franchise else 0
+            pi.is_franchise_receipt = is_franchise
             pi.set_warehouse = doc.warehouse
             pi.cost_center = cost_center
             pi.ignore_pricing_rule = 1
@@ -437,6 +438,7 @@ def make_purchase_invoice(doc):
                             pi.order_receiving = doc.name
                             pi.purchase_request = doc.purchase_request
                             pi.update_stock = 1 if not is_franchise else 0
+                            pi.is_franchise_receipt = is_franchise
                             pi.set_warehouse = key
                             pi.cost_center = cost_center
                             pi.ignore_pricing_rule = 1

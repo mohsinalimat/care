@@ -266,3 +266,11 @@ def set_price_rule(rules):
                 frappe.log_error(title="Creating Pricing rule Error", message=e)
                 continue
 
+@frappe.whitelist()
+def create_purchase_invoice(invoice):
+    if invoice:
+        invoice = json.loads(invoice)
+        doc = frappe.get_doc(invoice)
+        doc.set_missing_values()
+        doc.insert(ignore_permissions=True, ignore_mandatory=True)
+        frappe.db.commit()

@@ -37,6 +37,7 @@ doctype_js = {
     "Payment Entry": "public/js/payment_entry.js",
     "Purchase Invoice": "public/js/purchase_invoice.js",
     "Stock Entry": "public/js/stock_entry.js",
+    "Sales Invoice": "public/js/sales_invoice.js",
     # "Purchase Receipt": "public/js/purchase_receipt.js",
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -118,7 +119,7 @@ doc_events = {
     "Purchase Invoice": {
         "on_submit": ["care.hook_events.purchase_invoice.update_p_r_c_tool_status",
                       # "care.hook_events.purchase_invoice.update_md_status",
-                      "care.hook_events.purchase_invoice.create_franchise_purchase_invoice",
+                      # "care.hook_events.purchase_invoice.create_franchise_purchase_invoice",
                       "care.hook_events.purchase_invoice.updated_price_list",
                       "care.hook_events.purchase_invoice.update_billing_percentage"],
         "on_cancel": ["care.hook_events.purchase_invoice.cancel_update_p_r_c_tool_status",
@@ -129,11 +130,12 @@ doc_events = {
                     # "care.hook_events.purchase_invoice.validate_price_and_rate"],
         "before_insert": "care.hook_events.purchase_invoice.un_check_franchise_inv_generated"
     },
-    # "Sales Invoice": {
-    #     "validate": ["care.hook_events.sales_invoice.updated_item_amendment_summary"],
-    #     "before_insert": "care.hook_events.sales_invoice.disable_rounded_total",
-    #     # "before_submit": ["care.hook_events.sales_invoice.validate_cost_center"]
-    # },
+    "Sales Invoice": {
+        # "validate": ["care.hook_events.sales_invoice.updated_item_amendment_summary"],
+        # "before_insert": "care.hook_events.sales_invoice.disable_rounded_total",
+        # "before_submit": ["care.hook_events.sales_invoice.validate_cost_center"]
+        "on_submit": "care.hook_events.sales_invoice.create_franchise_invoice"
+    },
     "Payment Entry": {
         "validate": ["care.hook_events.payment_entry.set_out_grand_total"],
         # "before_submit": ["care.hook_events.purchase_invoice.validate_cost_center"],
