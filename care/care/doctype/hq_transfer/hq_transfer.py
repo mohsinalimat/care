@@ -16,8 +16,9 @@ class HQTransfer(Document):
 		i_lst = []
 		select_item_list = []
 		if self.purchase_request:
-			for res in self.items:
-				select_item_list.append(res.item_code)
+			if self.get('items'):
+				for res in self.get('items'):
+					select_item_list.append(res.item_code)
 
 			result = frappe.db.sql("""select distinct pi.item_code from `tabPurchase Request Item` as pi
 				inner join `tabPurchase Request` as p on p.name = pi.parent 
@@ -106,19 +107,99 @@ class HQTransfer(Document):
 				d['qty'] = data.get('demand')
 				d['amount'] = data.get('demand') * data.get('rate')
 			lst.append(d)
-		return lst
+		if lst:
+			return lst
+		else:
+			frappe.throw(_("No Item stock found in <b>{0}</b>".format(self.hq_warehouse)))
+
+	def on_submit(self):
+		make_stock_entry(self)
+
+def make_stock_entry(doc):
+	if doc.items:
+		item_details = {}
+		for d in doc.items:
+			if d.code:
+				data = json.loads(d.code)
+				for res in data:
+					if res.get('qty') > 0:
+						s = {
+							"item_code": d.get('item_code'),
+							"from_warehouse": doc.hq_warehouse,
+							"to_warehouse": res.get('warehouse'),
+							"qty": res.get('qty'),
+							"rate": d.get('rate'),
+							"uom": d.get('uom'),
+							"stock_Uom": d.get('stock_uom'),
+							"margin_type": "Percentage" if d.get("discount_percent") else None,
+							"discount_percentage": d.get("discount_percent"),
+						}
+						key = (res.get('warehouse'))
+						item_details.setdefault(key, {"details": []})
+						fifo_queue = item_details[key]["details"]
+						fifo_queue.append(s)
+			else:
+				pr_item = frappe.get_list("Purchase Request Item",
+										{'item_code': d.get('item_code'),
+										'parent': ['=', doc.purchase_request]}, ['name'])
+
+				received_qty = d.get('qty')
+				if pr_item:
+					for p_tm in pr_item:
+						if received_qty > 0:
+							pr_doc = frappe.get_doc("Purchase Request Item", p_tm.name)
+							if pr_doc:
+								qty = pr_doc.pack_order_qty if pr_doc.pack_order_qty <= received_qty else received_qty
+								s = {
+									"item_code": d.get('item_code'),
+									"from_warehouse": doc.hq_warehouse,
+									"to_warehouse": pr_doc.warehouse,
+									"qty": qty,
+									"rate": d.get('rate'),
+									"uom": d.get('uom'),
+									"stock_Uom": d.get('stock_uom'),
+									"margin_type": "Percentage" if d.get("discount_percent") else None,
+									"discount_percentage": d.get("discount_percent"),
+								}
+								received_qty -= pr_doc.pack_order_qty
+								key = (pr_doc.warehouse)
+								item_details.setdefault(key, {"details": []})
+								fifo_queue = item_details[key]["details"]
+								fifo_queue.append(s)
+		if item_details:
+			if item_details:
+				for key in item_details.keys():
+					try:
+						pi = frappe.new_doc("Stock Entry")
+						pi.purpose = 'Material Transfer'
+						pi.stock_entry_type = 'Material Transfer'
+						pi.posting_date = doc.posting_date
+						pi.company = doc.company
+						pi.hq_transfer = doc.name
+						pi.from_warehouse = doc.hq_warehouse
+						pi.to_warehouse = key
+						pi.ignore_pricing_rule = 1
+						for d in item_details[key]['details']:
+							pi.append("items", d)
+						if pi.get('items'):
+							pi.set_missing_values()
+							pi.insert(ignore_permissions=True)
+							pi.submit()
+					except Exception as e:
+						print("---------error: ", e)
+						continue
+
+	frappe.msgprint(_("Stock Entry Created"), alert=1)
 
 @frappe.whitelist()
 def get_warehouse(purchase_request, item):
 	if purchase_request and item:
-		result = frappe.db.sql("""select p.warehouse, 
-			IFNULL(sum(p.pack_order_qty), 0) as order_qty,
-			IFNULL(sum(p.pack_order_qty), 0) as qty 
-			from `tabPurchase Request` as pr
-			inner join `tabPurchase Multi Warehouse` as mw on mw.parent = pr.name
-			inner join `tabPurchase Request Item` as p on p.parent = pr.name 
-			where pr.name = '{0}' and p.item_code = '{1}'
-			group by p.warehouse""".format(purchase_request, item), as_dict=True)
+		result = frappe.db.sql("""select warehouse, 
+			IFNULL(sum(pack_order_qty), 0) as order_qty,
+			IFNULL(sum(pack_order_qty), 0) as qty 
+			from `tabPurchase Request Item`
+			where parent ='{0}' and item_code ='{1}'
+			group by warehouse""".format(purchase_request, item), as_dict=True)
 		return result
 	return []
 
@@ -150,7 +231,7 @@ def get_items_details(item_code, doc, item):
 		}
 		buying_rate = get_price_list_rate_for(item_code, json.dumps(args)) or 0
 
-		demand = float(frappe.db.sql("""select IFNULL(sum(pack_order_qty), 0)
+		demand = float(frappe.db.sql("""select sum(pack_order_qty)
 									from `tabPurchase Request Item`
 									where parent ='{0}' and item_code ='{1}'
 									""".format(doc.get('purchase_request'), item_code))[0][0] or 0)

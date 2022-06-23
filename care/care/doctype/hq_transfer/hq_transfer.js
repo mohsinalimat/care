@@ -17,6 +17,13 @@ frappe.ui.form.on('HQ Transfer', {
 				}
 			};
 		})
+		frm.set_query("purchase_request", () => {
+			return {
+				"filters": {
+					"docstatus": 1
+				}
+			};
+		})
 	},
     purchase_request: function (frm){
 	    apply_item_filters(frm)

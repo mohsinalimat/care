@@ -75,6 +75,8 @@
    "label": "Item"
   },
   {
+   "depends_on": "eval:doc.docstatus == 0",
+   "description": "Only get available stock item in HQ warehouse",
    "fieldname": "get_items",
    "fieldtype": "Button",
    "label": "Get Items"
@@ -83,6 +85,7 @@
    "fieldname": "items",
    "fieldtype": "Table",
    "label": "items",
+   "no_copy": 1,
    "options": "HQ Transfer Item",
    "reqd": 1
   },
@@ -118,8 +121,14 @@
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
- "links": [],
- "modified": "2022-06-23 13:48:17.379782",
+ "links": [
+  {
+   "group": "Stock Entry",
+   "link_doctype": "Stock Entry",
+   "link_fieldname": "hq_transfer"
+  }
+ ],
+ "modified": "2022-06-23 15:31:16.896362",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "HQ Transfer",
