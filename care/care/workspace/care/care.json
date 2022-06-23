@@ -38,14 +38,27 @@
    "link_to": "Purchase Invoice",
    "link_type": "DocType",
    "onboard": 1,
+   "only_for": "",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "HQ Transfer",
+   "link_to": "HQ Transfer",
+   "link_type": "DocType",
+   "onboard": 1,
+   "only_for": "",
    "type": "Link"
   },
   {
    "hidden": 0,
    "is_query_report": 0,
    "label": "Tool",
+   "link_to": "HQ Transfer",
    "link_type": "DocType",
    "onboard": 0,
+   "only_for": "",
    "type": "Card Break"
   },
   {
@@ -70,6 +83,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Report",
+   "link_to": "Purchase Request",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -87,6 +101,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Setting",
+   "link_to": "Purchase Request",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -128,7 +143,7 @@
    "type": "Link"
   }
  ],
- "modified": "2022-06-08 12:42:50.822158",
+ "modified": "2022-06-22 12:55:52.541165",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Care",
