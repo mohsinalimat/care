@@ -3,21 +3,13 @@
 
 from __future__ import unicode_literals
 import frappe
-import frappe, erpnext
-from erpnext import get_company_currency, get_default_company
-from erpnext.accounts.report.utils import get_currency, convert_to_presentation_currency
-from frappe.utils import getdate, cstr, flt, fmt_money
-from frappe import _, _dict
-from erpnext.accounts.utils import get_account_currency
-from erpnext.accounts.report.financial_statements import get_cost_centers_with_children
-from six import iteritems
-from erpnext.accounts.doctype.accounting_dimension.accounting_dimension import get_accounting_dimensions, get_dimension_with_children
-from collections import OrderedDict
+
 
 def execute(filters=None):
 	columns = get_columns()
 	data = get_data(filters)
 	return columns, data
+
 
 def get_columns():
 	columns = [
@@ -42,20 +34,21 @@ def get_columns():
 			"width": 170
 		},
 		{
-			"fieldname": "warehouse",
+			"fieldname": "set_warehouse",
 			"fieldtype": "Link",
 			"label": "Accepted Warehouse",
 			"options": "Warehouse",
 			"width": 170
 		},
 		{
-			"fieldname": "accepted_quantity",
+			"fieldname": "qty",
 			"fieldtype": "Float",
 			"label": "Accepted Quantity",
 			"width": 120
 		}
 	]
 	return columns
+
 
 def get_data(filters):
 	
@@ -68,24 +61,28 @@ def get_data(filters):
 		from `tabPurchase Receipt` as pr
 		INNER JOIN `tabPurchase Receipt Item` as pri on pr.name = pri.parent"""
 
+	if filters.get('posting_date'):
+		query += " and pr.posting_date = '{0}'".format(filters.get('posting_date'))
+
 	if filters.get('name'):
 		query += " and pr.name = '{0}'".format(filters.get('name'))
 	
 	if filters.get('status'):
 		query += " and pr.status = '{0}'".format(filters.get('status'))
 	
+	if filters.get('order_receiving'):
+		query += " and pr.order_receiving = '{0}'" \
+			.format(filters.get('order_receiving'))
+
+	if filters.get('supplier'):
+		supplier = tuple(filters.get('supplier'))
+		query += " and pr.supplier in {0}".format(supplier)
+
 	query += " order by pri.brand"
 
-	result = frappe.db.sql(query,as_dict=True)
+	result = frappe.db.sql(query, as_dict=True)
 	data = []
 	
 	for row in result:
-		row = {
-			"name": row.name,
-			"brand": row.brand,
-			"item_name": row.item_name,
-			"warehouse": row.set_warehouse,
-			"accepted_quantity": row.qty
-		}
 		data.append(row)
 	return data
