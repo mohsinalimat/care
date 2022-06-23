@@ -104,8 +104,8 @@ frappe.ui.form.on('Purchase Request', {
         });
 	},
 	suppliers: function(frm){
-        frm.clear_table("items");
-        refresh_field("items");
+//        frm.clear_table("items");
+//        refresh_field("items");
 	    frappe.call({
             method: "get_suppliers_name",
             doc: frm.doc,
@@ -113,6 +113,21 @@ frappe.ui.form.on('Purchase Request', {
                 frm.set_value("supplier_name", r.message);
             }
         });
+	},
+	supplier: function(frm, cdt, cdn){
+	    if(frm.doc.supplier){
+            frm.clear_table("suppliers");
+            refresh_field("suppliers");
+            var supplier = frm.add_child("suppliers")
+            supplier.supplier = frm.doc.supplier
+            refresh_field("suppliers");
+            frm.trigger('suppliers')
+            for (var i = 0; i < frm.doc.items.length; i++) {
+                var item = frm.doc.items[i]
+                item.supplier = frm.doc.supplier;
+            }
+            refresh_field("items");
+	    }
 	},
 	warehouses: function(frm){
         frm.clear_table("items");

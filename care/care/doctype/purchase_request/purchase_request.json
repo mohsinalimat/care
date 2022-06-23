@@ -10,12 +10,14 @@
   "company",
   "suppliers",
   "supplier_name",
-  "status",
+  "o_r_oth_supplier",
+  "supplier",
+  "other_supplier_name",
   "order_uom",
-  "base_on",
   "column_break_2",
   "date",
   "required_by",
+  "base_on",
   "warehouses",
   "section_break_9",
   "submit_pr",
@@ -28,15 +30,18 @@
   "heading_19",
   "column_break_19",
   "total_amount",
+  "section_break_22",
+  "status",
   "amended_from"
  ],
  "fields": [
   {
+   "depends_on": "eval:doc.o_r_oth_supplier == 0",
    "fieldname": "suppliers",
    "fieldtype": "Table MultiSelect",
    "label": "Suppliers",
-   "options": "Purchase Multi Supplier",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.o_r_oth_supplier == 0",
+   "options": "Purchase Multi Supplier"
   },
   {
    "fieldname": "amended_from",
@@ -138,6 +143,7 @@
    "label": "Submit  Material Demand"
   },
   {
+   "depends_on": "eval:doc.o_r_oth_supplier == 0",
    "fieldname": "supplier_name",
    "fieldtype": "Small Text",
    "label": "Supplier Name",
@@ -176,13 +182,39 @@
    "label": "Order Qty Base On",
    "options": "Reorder Quantity\nOptimal Level",
    "reqd": 1
+  },
+  {
+   "fieldname": "section_break_22",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "o_r_oth_supplier",
+   "fieldtype": "Check",
+   "label": "Order Receive Another Supplier"
+  },
+  {
+   "depends_on": "o_r_oth_supplier",
+   "fetch_from": "supplier.supplier_name",
+   "fieldname": "other_supplier_name",
+   "fieldtype": "Data",
+   "label": "Supplier Name",
+   "read_only": 1
+  },
+  {
+   "depends_on": "o_r_oth_supplier",
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "label": "Supplier",
+   "mandatory_depends_on": "o_r_oth_supplier",
+   "options": "Supplier"
   }
  ],
  "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-06-23 15:42:49.355246",
+ "modified": "2022-06-23 16:31:24.807101",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Request",
