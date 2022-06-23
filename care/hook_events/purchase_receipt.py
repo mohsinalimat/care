@@ -129,39 +129,6 @@ class OverridePurchaseReceipt(PurchaseReceipt):
             if self.doctype == "Purchase Invoice":
                 self.set_expense_account(for_validate)
 
-    def on_submit(self):
-        super(OverridePurchaseReceipt, self).on_submit()
-        if self.is_franchise_receipt:
-            f_w_data = frappe.get_value("Franchise Item", {'warehouse': self.set_warehouse, 'enable': 1}, "name")
-            if f_w_data:
-                f_w_doc = frappe.get_doc("Franchise Item", f_w_data)
-                if not f_w_doc.customer:
-                    frappe.throw("Please set Franchise {0} Customer in Franchise DocType".format(self.set_warehouse))
-
-                sale = frappe.new_doc("Sales Invoice")
-                sale.customer = f_w_doc.customer
-                sale.purchase_receipt = self.name
-                sale.posting_date = self.posting_date
-                sale.company = self.company
-                sale.due_date = self.posting_date
-                sale.set_warehouse = self.set_warehouse
-                sale.update_stock = 1
-                sale.is_franchise_inv = 1
-                for d in self.items:
-                    sale.append("items", {
-                        "item_code": d.item_code,
-                        "qty": d.qty,
-                        "rate": d.rate,
-                        "uom": d.uom,
-                        "stock_uom": d.stock_uom,
-                        "warehouse": d.warehouse,
-                        "margin_type": d.margin_type,
-                        "discount_percentage": d.discount_percentage,
-                        "discount_amount": d.discount_amount
-                    })
-                sale.set_missing_values()
-                sale.insert(ignore_permissions=True)
-
 def update_p_r_c_tool_status(doc, method):
     if doc.purchase_invoice_creation_tool:
         prc_doc = frappe.get_doc("Purchase Invoice Creation Tool", doc.purchase_invoice_creation_tool)
