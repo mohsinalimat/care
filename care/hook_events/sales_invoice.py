@@ -83,6 +83,3 @@ def create_franchise_invoice(inv, method):
             else:
                 frappe.log_error(title="Franchise Invoice Creation Error", message=response.json())
                 frappe.msgprint("Error Log Generated", indicator='red', alert=True)
-
-
-
