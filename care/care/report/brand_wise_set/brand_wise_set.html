@@ -1,0 +1,37 @@
+<h2 class="text-center">{%= __("Brand Wise Set Report") %}</h2>
+<H4 class="text-left">
+	{% if (filters.posting_date { %}
+		Posting Date: {%= filters.posting_date %}
+	{% } else if (filters.item_name) { %}
+		Item Name: {%= filters.item_name %}
+	{% } else if (filters.status) { %}
+	Status:{%= filters.status %}
+	{% } else if (filters.order_receiving) { %}
+	Order Receiving: {%= filters.order_receiving %}
+	{% } else if (filters.supplier) { %}
+		Supplier: {%= filters.supplier %}
+	{% } %}
+</H4>
+<hr>
+<table class="table table-bordered">
+	<thead>
+		<tr>
+			<th style="width: 170px">{%= __("ID") %}</th>
+			<th style="width: 150px">{%= __("Brand") %}</th>
+			<th style="width: 170px">{%= __("Item Name") %}</th>
+			<th style="width: 170px">{%= __("Accepted Warehouse") %}</th>
+			<th style="width: 120px">{%= __("Accepted Quantity") %}</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for(var i=0, l=data.length; i<l; i++) { %}
+			<tr>
+				<td><b>{%= data[i].name %}</b></td>
+				<td><b>{%= data[i].brand %}</b></td>
+				<td><b>{%= data[i].itam_name %}</b></td>
+				<td><b>{%= set_warehouse %}</b></td>
+				<td><b>{%= qty %}</b></td>
+			</tr>
+		{% } %}
+	</tbody>
+</table>
