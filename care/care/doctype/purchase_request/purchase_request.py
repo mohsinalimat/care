@@ -99,7 +99,7 @@ class PurchaseRequest(Document):
 				and ird.warehouse_reorder_level > 0 
 				and ird.warehouse_reorder_qty > 0 
 				and ird.optimum_level > 0
-				and (b.actual_qty <= ird.warehouse_reorder_level or b.actual_qty is null)
+				and (b.actual_qty < ird.warehouse_reorder_level or b.actual_qty is null)
 				and idf.default_supplier in {0}""".format(tuple(s_lst))
 		if w_lst:
 			query += """ and ird.warehouse in {0}""".format(tuple(w_lst))

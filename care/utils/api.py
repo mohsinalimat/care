@@ -45,7 +45,7 @@ def get_franchise_order(supplier, warehouse=None, order_uom=None):
             and ird.warehouse_reorder_level > 0
             and ird.warehouse_reorder_qty > 0
             and ird.optimum_level > 0
-            and (b.actual_qty <= ird.warehouse_reorder_level or b.actual_qty is null)
+            and (b.actual_qty < ird.warehouse_reorder_level or b.actual_qty is null)
             and idf.default_supplier in {0}""".format(tuple(supplier))
     if warehouse:
         query += """ and ird.warehouse in {0}""".format(tuple(w_lst))

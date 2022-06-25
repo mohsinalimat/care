@@ -2,11 +2,12 @@
 # For license information, please see license.txt
 
 import frappe
-from frappe.utils import now_datetime
+from frappe.utils import now_datetime, nowdate
 from frappe.model.document import Document
 import json
 import requests
 import math
+from erpnext.stock.get_item_details import get_conversion_factor
 
 class Franchise(Document):
 	@frappe.whitelist()
@@ -404,3 +405,45 @@ def sync_data_scheduler():
 def upload_data():
 	franchise = frappe.get_single("Franchise")
 	franchise.sync_data_on_franchise()
+
+@frappe.whitelist()
+def create_sales_invoice(warehouse, customer):
+	if warehouse and customer:
+		total = frappe.db.sql("""select count(*)
+							from `tabBin`
+							where warehouse = '{0}' and actual_qty > 0""".format(warehouse))[0][0] or 1
+
+		sets = math.floor(total / 400) + 1
+		start = end = 0
+		for p in range(0, sets):
+			end = start + 400
+			avl_qty_items = frappe.db.sql("""select item_code, stock_uom, sum(actual_qty) as qty
+											from `tabBin`
+											where warehouse = '{0}' and actual_qty > 0 
+											group by item_code, stock_uom 
+											limit {1},{2}""".format(warehouse, start, end), as_dict=True)
+			if avl_qty_items:
+				sale = frappe.new_doc("Sales Invoice")
+				sale.customer = customer
+				sale.posting_date = nowdate()
+				sale.due_date = nowdate()
+				sale.set_warehouse = warehouse
+				sale.update_stock = 1
+				sale.is_franchise_inv = 1
+				for d in avl_qty_items:
+					conversion_factor = get_conversion_factor(d.get('item_code'), 'Pack').get('conversion_factor') or 1
+					avl_qty_pack = math.ceil(d.qty / conversion_factor)
+					item_doc = frappe.get_doc("Item", d.item_code)
+					sale.append("items", {
+						"item_code": d.item_code,
+						"qty": avl_qty_pack,
+						"rate": item_doc.last_purchase_rate,
+						"uom": 'Pack',
+						"stock_uom": d.stock_uom,
+						"warehouse": warehouse
+					})
+				sale.set_missing_values()
+				sale.insert(ignore_permissions=True)
+				frappe.msgprint("Sales invoice {0} Created".format(sale.name),indicator='green', alert=1)
+			start = end
+

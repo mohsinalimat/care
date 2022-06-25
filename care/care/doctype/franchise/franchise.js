@@ -27,3 +27,23 @@ frappe.ui.form.on('Franchise', {
         });
     }
 });
+
+frappe.ui.form.on('Franchise Item', {
+    generate_invoice: function(frm, cdt, cdn) {
+        var row = locals[cdt][cdn];
+        if (!row.enable){
+            frappe.throw("enable services first!")
+        }
+        frappe.call({
+            method: "care.care.doctype.franchise.franchise.create_sales_invoice",
+            args: {
+                warehouse:row.warehouse,
+                customer:row.customer
+            },
+            freeze: true,
+            freeze_message: __("Invoice Creating..."),
+            callback: function(r) {
+            }
+        });
+	}
+});

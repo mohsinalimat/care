@@ -108,7 +108,7 @@ class OrderReceiving(Document):
 
             result = frappe.db.sql("""select distinct pi.item_code from `tabPurchase Request Item` as pi
                     inner join `tabPurchase Request` as p on p.name = pi.parent 
-                    where p.name = '{0}'""".format(self.purchase_request), as_dict=True)
+                    where p.name = '{0}' and pi.supplier= '{1}'""".format(self.purchase_request, self.supplier), as_dict=True)
 
             for res in result:
                 if res.get('item_code') not in select_item_list:
