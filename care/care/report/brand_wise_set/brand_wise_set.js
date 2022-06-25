@@ -6,17 +6,16 @@ frappe.query_reports["Brand Wise Set"] = {
 	"filters": [
 		{
 			"fieldname": "posting_date",
-			"fieldtype": "Link",
+			"fieldtype": "Date",
 			"label": "Posting Date",
 			"mandatory": 0,
 			"options": "Purchase Receipt"
 		},
 		{
-			"fieldname": "name",
-			"fieldtype": "Link",
-			"label": "Name",
+			"fieldname": "item_name",
+			"fieldtype": "Data",
+			"label": "Item Name",
 			"mandatory": 0,
-			"options": "Purchase Receipt"
 		},
 		{
 			"fieldname":"status",

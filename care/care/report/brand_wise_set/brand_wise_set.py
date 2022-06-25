@@ -64,8 +64,8 @@ def get_data(filters):
 	if filters.get('posting_date'):
 		query += " and pr.posting_date = '{0}'".format(filters.get('posting_date'))
 
-	if filters.get('name'):
-		query += " and pr.name = '{0}'".format(filters.get('name'))
+	if filters.get('item_name'):
+		query += " and pri.item_name like '%{0}%'".format(filters.get('item_name'))
 	
 	if filters.get('status'):
 		query += " and pr.status = '{0}'".format(filters.get('status'))
@@ -76,9 +76,12 @@ def get_data(filters):
 
 	if filters.get('supplier'):
 		supplier = tuple(filters.get('supplier'))
-		query += " and pr.supplier in {0}".format(supplier)
+		if len(supplier) == 1:
+			query += " and pr.supplier = '{0}'".format(supplier[0])
+		else:
+			query += " and pr.supplier in {0} ".format(supplier)
 
-	query += " order by pri.brand"
+	query += " order by pr.set_warehouse, pri.brand, pri.item_name"
 
 	result = frappe.db.sql(query, as_dict=True)
 	data = []
