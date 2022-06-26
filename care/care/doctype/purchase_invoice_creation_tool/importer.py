@@ -215,7 +215,7 @@ class Importer:
 			"label": _("via Data Import"),
 		}
 
-		new_doc.insert()
+		new_doc.insert(ignore_permissions=True)
 		if meta.is_submittable and self.data_import.submit_after_import:
 			new_doc.submit()
 		return new_doc

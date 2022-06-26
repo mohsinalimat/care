@@ -163,7 +163,7 @@ def import_doc(d, doctype, overwrite, row_idx, submit=False, ignore_links=False)
 	else:
 		doc = frappe.get_doc(d)
 		doc.flags.ignore_links = ignore_links
-		doc.insert()
+		doc.insert(ignore_permissions=True)
 
 		if submit:
 			doc.submit()
