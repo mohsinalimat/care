@@ -17,12 +17,12 @@ frappe.query_reports["Brand Wise Set"] = {
 			"label": "Item Name",
 			"mandatory": 0,
 		},
-		{
-			"fieldname":"status",
-			"label": __("Status"),
-			"fieldtype": "Select",
-			"options": ["", __("Draft"), __("To Bill"), __("Completed"), __("Return Issued"), __("Cancelled"), __("Closed")]
-		},
+		// {
+		// 	"fieldname":"status",
+		// 	"label": __("Status"),
+		// 	"fieldtype": "Select",
+		// 	"options": ["", __("Draft"), __("To Bill"), __("Completed"), __("Return Issued"), __("Cancelled"), __("Closed")]
+		// },
 		{
 			"fieldname": "order_receiving",
 			"fieldtype": "Link",

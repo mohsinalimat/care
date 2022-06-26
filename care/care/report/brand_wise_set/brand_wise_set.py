@@ -59,7 +59,8 @@ def get_data(filters):
 		pr.set_warehouse,
 		pri.qty
 		from `tabPurchase Receipt` as pr
-		INNER JOIN `tabPurchase Receipt Item` as pri on pr.name = pri.parent"""
+		INNER JOIN `tabPurchase Receipt Item` as pri on pr.name = pri.parent
+		where pr.docstatus = 1"""
 
 	if filters.get('posting_date'):
 		query += " and pr.posting_date = '{0}'".format(filters.get('posting_date'))
@@ -67,8 +68,8 @@ def get_data(filters):
 	if filters.get('item_name'):
 		query += " and pri.item_name like '%{0}%'".format(filters.get('item_name'))
 	
-	if filters.get('status'):
-		query += " and pr.status = '{0}'".format(filters.get('status'))
+	# if filters.get('status'):
+	# 	query += " and pr.status = '{0}'".format(filters.get('status'))
 	
 	if filters.get('order_receiving'):
 		query += " and pr.order_receiving = '{0}'" \
