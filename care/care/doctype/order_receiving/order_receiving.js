@@ -290,7 +290,6 @@ frappe.ui.form.on('Order Receiving Item', {
 })
 
 function update_amount(frm, cdt, cdn){
-    console.log("-------------------------------")
     var row = locals[cdt][cdn];
     let amt = row.rate * row.qty
     let discount_amount = (amt / 100) * row.discount_percent
