@@ -45,7 +45,6 @@ frappe.ui.form.on('Order Receiving', {
                 filters: {'purchase_request': frm.doc.purchase_request}
             }
         });
-	    frm.trigger("apply_item_filter")
 	    frm.set_query("taxes_and_charges", function() {
 			return {
 				filters: {'company': frm.doc.company }
@@ -154,7 +153,11 @@ frappe.ui.form.on('Order Receiving', {
     purchase_request: function (frm){
 	    apply_item_filters(frm)
     },
+    supplier: function (frm){
+	    apply_item_filters(frm)
+    },
     onload: function (frm, cdt, cdn){
+	    apply_item_filters(frm)
 	    validate_item_rate(frm, cdt, cdn)
 		frm.get_field("items").grid.toggle_display("received_qty", frm.doc.is_return ? 1 : 0);
     }
