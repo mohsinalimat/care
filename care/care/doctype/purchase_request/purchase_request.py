@@ -246,7 +246,7 @@ class PurchaseRequest(Document):
 							"expense_account": expense_account,
 							"cost_center": cost_center
 						})
-					md.insert()
+					md.insert(ignore_permissions=True)
 					if self.submit_md:
 						md.submit()
 			frappe.msgprint(_("Material Demand Created"), alert=True)
