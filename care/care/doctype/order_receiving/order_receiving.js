@@ -157,7 +157,7 @@ frappe.ui.form.on('Order Receiving', {
 	    apply_item_filters(frm)
     },
     onload: function (frm, cdt, cdn){
-	    apply_item_filters(frm)
+//	    apply_item_filters(frm)
 	    validate_item_rate(frm, cdt, cdn)
 		frm.get_field("items").grid.toggle_display("received_qty", frm.doc.is_return ? 1 : 0);
     }
@@ -225,14 +225,14 @@ frappe.ui.form.on('Order Receiving Item', {
                                             }
                                         }
                                     },
-                                    ()=>{
-                                        setTimeout(() => {
-                                            var new_row = frm.fields_dict.items.grid;
-                                            new_row.add_new_row(null, null, true, null, true);
-                                            new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
-                                            new_row.set_focus_on_row();
-                                        }, 500);
-                                    }
+//                                    ()=>{
+//                                        setTimeout(() => {
+//                                            var new_row = frm.fields_dict.items.grid;
+//                                            new_row.add_new_row(null, null, true, null, true);
+//                                            new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
+//                                            new_row.set_focus_on_row();
+//                                        }, 500);
+//                                    }
                                 ])
                             }
                         });

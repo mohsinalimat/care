@@ -101,18 +101,19 @@ class OrderReceiving(Document):
     @frappe.whitelist()
     def get_item_code(self):
         i_lst = []
-        select_item_list = []
-        if self.purchase_request:
+        if self.purchase_request and self.supplier:
+            select_item_list = ["sdsds","dasdasdadsadad"]
             for res in self.items:
-                select_item_list.append(res.item_code)
+                if res.item_code:
+                    select_item_list.append(res.item_code)
 
             result = frappe.db.sql("""select distinct pi.item_code from `tabPurchase Request Item` as pi
                     inner join `tabPurchase Request` as p on p.name = pi.parent 
-                    where p.name = '{0}' and pi.supplier= '{1}'""".format(self.purchase_request, self.supplier), as_dict=True)
+                    where p.name = '{0}' and pi.supplier= '{1}' 
+                    and pi.item_code not in {2}""".format(self.purchase_request, self.supplier, tuple(select_item_list)), as_dict=True)
 
             for res in result:
-                if res.get('item_code') not in select_item_list:
-                    i_lst.append(res.get('item_code'))
+                i_lst.append(res.get('item_code'))
         return i_lst
 
     def updated_price_list_and_dicsount(self):
