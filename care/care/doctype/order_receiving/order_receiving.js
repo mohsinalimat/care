@@ -290,16 +290,21 @@ frappe.ui.form.on('Order Receiving Item', {
 })
 
 function update_amount(frm, cdt, cdn){
+    console.log("-------------------------------")
     var row = locals[cdt][cdn];
     let amt = row.rate * row.qty
     let discount_amount = (amt / 100) * row.discount_percent
     let amount = amt - discount_amount
     let dis_aft_rate = amount/ row.qty
     row.discount = discount_amount
-    frappe.model.set_value(cdt,cdn,"amount",amount);
-    frappe.model.set_value(cdt,cdn,"net_amount",amount);
-    frappe.model.set_value(cdt,cdn,"base_net_amount",amount);
-    frappe.model.set_value(cdt,cdn,"discount_after_rate",dis_aft_rate);
+    row.amount = amount
+    row.net_amount = amount
+    row.base_net_amount = amount
+    row.discount_after_rate = dis_aft_rate
+//    frappe.model.set_value(cdt,cdn,"amount",amount);
+//    frappe.model.set_value(cdt,cdn,"net_amount",amount);
+//    frappe.model.set_value(cdt,cdn,"base_net_amount",amount);
+//    frappe.model.set_value(cdt,cdn,"discount_after_rate",dis_aft_rate);
     refresh_field("amount", cdn, "items");
     refresh_field("discount", cdn, "items");
     refresh_field("net_amount", cdn, "items");
@@ -339,23 +344,48 @@ function get_items_details(frm, cdt, cdn){
             item: item
         },
         callback: function(r) {
-            frappe.model.set_value(cdt,cdn,"conversion_factor",r.message.conversion_factor || 0);
+            item.conversion_factor = r.message.conversion_factor
+            item.qty = r.message.qty || 0
+            item.rate = r.message.buying_price_rate || 0
+            item.net_rate = r.message.buying_price_rate || 0
+            item.base_net_rate = r.message.buying_price_rate || 0
+            item.base_buying_price_list_rate = r.message.buying_price_rate || 0
+            item.selling_price_list_rate = r.message.selling_price_rate || 0
+            item.base_selling_price_list_rate = r.message.selling_price_rate || 0
+            item.discount_percent = r.message.discount_percentage || 0
+            item.discount = r.message.discount_amount || 0
 
-            frappe.model.set_value(cdt,cdn,"qty",r.message.qty || 0);
-            frappe.model.set_value( cdt, cdn, 'rate',r.message.buying_price_rate || 0)
-            frappe.model.set_value( cdt, cdn, 'base_buying_price_list_rate',r.message.buying_price_rate || 0)
+            refresh_field("conversion_factor", cdn, "items");
+            refresh_field("qty", cdn, "items");
+            refresh_field("rate", cdn, "items");
+            refresh_field("base_net_rate", cdn, "items");
+            refresh_field("base_buying_price_list_rate", cdn, "items");
+            refresh_field("selling_price_list_rate", cdn, "items");
+            refresh_field("base_selling_price_list_rate", cdn, "items");
+            refresh_field("discount_percent", cdn, "items");
+            refresh_field("discount", cdn, "items");
 
-             frappe.model.set_value( cdt, cdn, 'selling_price_list_rate',r.message.selling_price_rate || 0)
-            frappe.model.set_value( cdt, cdn, 'base_selling_price_list_rate',r.message.selling_price_rate || 0)
+            update_amount(frm, cdt, cdn)
+            update_total_qty(frm, cdt, cdn)
+            calculate_margin(frm, cdt, cdn)
+
+//            frappe.model.set_value(cdt,cdn,"conversion_factor",r.message.conversion_factor);
+//
+//            frappe.model.set_value(cdt,cdn,"qty",r.message.qty || 0);
+//            frappe.model.set_value( cdt, cdn, 'rate',r.message.buying_price_rate || 0)
+//            frappe.model.set_value( cdt, cdn, 'base_buying_price_list_rate',r.message.buying_price_rate || 0)
+//
+//             frappe.model.set_value( cdt, cdn, 'selling_price_list_rate',r.message.selling_price_rate || 0)
+//            frappe.model.set_value( cdt, cdn, 'base_selling_price_list_rate',r.message.selling_price_rate || 0)
 
             frappe.model.set_value(cdt,cdn,"item_tax_template",r.message.item_tax_template);
 
-            if(r.message.discount_percentage > 0){
-                frappe.model.set_value( cdt, cdn, 'discount_percent', r.message.discount_percentage)
-            }
-            if(r.message.discount_amount > 0){
-                frappe.model.set_value( cdt, cdn, 'discount', r.message.discount_amount)
-            }
+//            if(r.message.discount_percentage > 0){
+//                frappe.model.set_value( cdt, cdn, 'discount_percent', r.message.discount_percentage)
+//            }
+//            if(r.message.discount_amount > 0){
+//                frappe.model.set_value( cdt, cdn, 'discount', r.message.discount_amount)
+//            }
         }
     })
 }
