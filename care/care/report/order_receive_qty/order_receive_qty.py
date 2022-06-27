@@ -73,13 +73,13 @@ def get_columns():
 
 def get_datas(filters):
 	query = """select OI.item_code, OI.item_name, OI.uom,
-			OI.qty as order_qty, PRI.qty as receive_qty, 
+			IFNULL(OI.qty,0) as order_qty, IFNULL(PRI.qty,0) as receive_qty, 
 			PRI.warehouse, PR.name as purchase_receipt, 
 			PR.status, 0 as indent 
 			from `tabOrder Receiving` as O
 			inner join `tabOrder Receiving Item` as OI on O.name = OI.parent
-			inner join `tabPurchase Receipt` as PR on PR.order_receiving = O.name
-			inner join `tabPurchase Receipt Item` as PRI on PRI.parent = PR.name and PRI.item_code = OI.item_code 
+			left join `tabPurchase Receipt` as PR on PR.order_receiving = O.name
+			left join `tabPurchase Receipt Item` as PRI on PRI.parent = PR.name and PRI.item_code = OI.item_code 
 			where 
 			O.company = '{0}' and O.name = '{1}'""".format(filters.get('company'), filters.get('order_receiving'))
 

@@ -60,6 +60,11 @@ frappe.ui.form.on('Order Receiving', {
             frm.set_value("base_selling_price_list", frappe.defaults.get_default('selling_price_list'))
         }
 		apply_item_filters(frm)
+		parent_item_filters(frm)
+
+        frm.fields_dict.add_items.$input.addClass("btn-primary");
+        frm.fields_dict.validate_data.$input.addClass("btn-primary");
+
 		frm.get_field("items").grid.toggle_display("split_qty", frm.doc.warehouse ? 0 : 1);
 		frm.get_field("items").grid.toggle_display("received_qty", frm.doc.is_return ? 1 : 0);
 		frm.get_field("items").grid.toggle_enable("rate", frm.doc.update_buying_price ? 1 : 0);
@@ -145,17 +150,19 @@ frappe.ui.form.on('Order Receiving', {
 	    }
 	},
 	validate: function(frm, cdt, cdn){
+	    frm.trigger('validate_datas');
         $.each(frm.doc.items,  function(i,  d) {
             d.amount_before_discount = d.rate * d.qty;
         });
-	    update_total_qty(frm, cdt, cdn)
 	    validate_item_rate(frm, cdt, cdn)
 	},
     purchase_request: function (frm){
 	    apply_item_filters(frm)
+	    parent_item_filters(frm)
     },
     supplier: function (frm){
 	    apply_item_filters(frm)
+	    parent_item_filters(frm)
     },
     onload: function (frm, cdt, cdn){
 	    validate_item_rate(frm, cdt, cdn)
@@ -184,6 +191,58 @@ frappe.ui.form.on('Order Receiving', {
                 }
             });
 		});
+    },
+    validate_data: function(frm, cdt, cdn){
+        frappe.run_serially([
+            ()=>frm.trigger('validate_datas'),
+            ()=>frm.save()
+        ])
+    },
+    validate_datas: function(frm, cdt, cdn){
+        frappe.run_serially([
+            ()=>{
+                $.each(frm.doc['items'] || [], function(i, item) {
+                    if (item.rate <= 0){
+                        frm.call({
+                            method: "care.care.doctype.order_receiving.order_receiving.get_items_details",
+                            args: {
+                                item_code: item.item_code,
+                                doc: frm.doc,
+                                item: item
+                            },
+                            callback: function(r) {
+                                item.conversion_factor = r.message.conversion_factor
+                                item.qty = r.message.qty || 0
+                                item.rate = r.message.buying_price_rate || 0
+                                item.net_rate = r.message.buying_price_rate || 0
+                                item.base_net_rate = r.message.buying_price_rate || 0
+                                item.base_buying_price_list_rate = r.message.buying_price_rate || 0
+                                item.selling_price_list_rate = r.message.selling_price_rate || 0
+                                item.base_selling_price_list_rate = r.message.selling_price_rate || 0
+                                item.discount_percent = r.message.discount_percentage || 0
+                                item.discount = r.message.discount_amount || 0
+
+                                let margin = -100;
+                                if (r.message.selling_price_rate > 0){
+                                    margin = (r.message.selling_price_rate - r.message.buying_price_rate) / r.message.selling_price_rate * 100;
+                                }
+                                item.margin =  margin
+                                let amt = item.rate * item.qty
+                                let discount_amount = (amt / 100) * item.discount_percent
+                                let amount = amt - discount_amount
+                                let dis_aft_rate = amount/ item.qty
+                                item.discount = discount_amount
+                                item.amount = amount
+                                item.net_amount = amount
+                                item.base_net_amount = amount
+                                item.discount_after_rate = dis_aft_rate
+                            }
+                        })
+                    }
+                })
+            },
+            ()=>update_total_qty(frm, cdt, cdn)
+        ])
     }
 });
 
@@ -199,6 +258,20 @@ function validate_item_rate(frm, cdt, cdn){
     });
 }
 
+function parent_item_filters(frm){
+    frappe.call({
+        method: "get_item_code",
+        doc: frm.doc,
+        callback: function(r) {
+           frm.set_query("item", () => {
+                return {
+                    filters: {'name':['in',r.message]}
+                }
+           })
+        }
+    });
+}
+
 function apply_item_filters(frm){
     frappe.call({
         method: "get_item_code",
@@ -209,9 +282,13 @@ function apply_item_filters(frm){
                     filters: {'name':['in',r.message]}
                 }
             }
+           frm.set_query("item", () => {
+                return {
+                    filters: {'name':['in',r.message]}
+                }
+           })
         }
     });
-
 }
 
 function apply_child_btn_color(frm, cdt, cdn){

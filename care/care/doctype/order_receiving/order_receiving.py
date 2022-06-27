@@ -24,6 +24,7 @@ class OrderReceiving(Document):
 
     @frappe.whitelist()
     def update_total_margin(self):
+        total_qty = total_amt = 0
         for res in self.items:
             if self.is_return:
                 if res.qty != res.received_qty and not res.code:
@@ -33,7 +34,14 @@ class OrderReceiving(Document):
                 margin = (res.selling_price_list_rate - res.rate) / res.selling_price_list_rate * 100
             res.margin_percent = margin
             res.discount_after_rate = round(res.amount, 2) / res.qty
+
+            total_qty = total_qty + res.qty
+            total_amt = total_amt + res.amount
+
         self.calculate_item_level_tax_breakup()
+        self.total_qty = total_qty
+        self.total = total_amt
+        self.grand_total = total_amt
 
     def on_cancel(self):
         frappe.db.set(self, 'status', 'Cancelled')
