@@ -364,6 +364,7 @@ function get_items_details(frm, cdt, cdn){
             doc: frm.doc,
             item: item
         },
+        freeze: true,
         callback: function(r) {
             item.conversion_factor = r.message.conversion_factor
             item.qty = r.message.qty || 0
