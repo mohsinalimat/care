@@ -174,6 +174,7 @@ frappe.ui.form.on('Order Receiving', {
                                 }
                             }
                         },
+                        ()=>frappe.timeout(0.2),
                         ()=>{
                             var new_row = frm.fields_dict.items.grid;
                             new_row.add_new_row(null, null, true, null, true);
