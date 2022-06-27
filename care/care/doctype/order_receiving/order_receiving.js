@@ -355,6 +355,7 @@ function calculate_margin(frm, cdt, cdn){
 
 
 function get_items_details(frm, cdt, cdn){
+    console.log("----------get_items_details-----------------")
     var item = locals[cdt][cdn];
     frm.call({
         method: "care.care.doctype.order_receiving.order_receiving.get_items_details",
@@ -383,7 +384,9 @@ function get_items_details(frm, cdt, cdn){
             item.margin =  margin
             update_amount(frm, cdt, cdn)
             update_total_qty(frm, cdt, cdn)
-            frappe.model.set_value(cdt,cdn,"item_tax_template",r.message.item_tax_template);
+            if(r.message.item_tax_template){
+                frappe.model.set_value(cdt,cdn,"item_tax_template", r.message.item_tax_template);
+            }
         }
     })
 }
