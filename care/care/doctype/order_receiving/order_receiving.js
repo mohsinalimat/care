@@ -35,7 +35,8 @@ frappe.ui.form.on('Order Receiving', {
 			return {
 				"filters": {
 					"docstatus": 1,
-					"date": frm.doc.posting_date
+					"date": frm.doc.posting_date,
+					"status": 'Open'
 				}
 			};
 		})

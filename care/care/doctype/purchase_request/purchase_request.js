@@ -37,7 +37,7 @@ frappe.ui.form.on('Purchase Request', {
         else{
             frm.set_df_property('get_items', 'hidden', 0);
         }
-        if(frm.doc.status == 'Submitted'){
+        if(frm.doc.docstatus == 1){
             frm.add_custom_button(__('Make Purchase Order'), function(){
                 frappe.call({
                     method: "make_purchase_order",
@@ -48,6 +48,20 @@ frappe.ui.form.on('Purchase Request', {
                     }
                 });
             }).addClass("btn-primary");
+        }
+        if(frm.doc.status == 'Open'){
+            frm.add_custom_button(__('Closed'), function(){
+                frm.doc.status = 'Closed'
+                frm.dirty();
+			    frm.save_or_update();
+            });
+        }
+        if(frm.doc.status == 'Closed'){
+            frm.add_custom_button(__('Re-Open'), function(){
+                frm.doc.status = 'Open'
+                frm.dirty();
+			    frm.save_or_update();
+            });
         }
         if(frm.doc.docstatus !=0){
             frm.add_custom_button(__('Download Excel'), function(){

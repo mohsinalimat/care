@@ -13,5 +13,11 @@ frappe.listview_settings['Purchase Request'] = {
 		else if (doc.status== "Order Created" ) {
 			return [__("Order Created" ), "purple"]
 		}
+		else if (doc.status== "Open" ) {
+			return [__("Open" ), "orange"]
+		}
+		else if (doc.status== "Closed" ) {
+			return [__("Closed" ), "orange"]
+		}
 	}
 };

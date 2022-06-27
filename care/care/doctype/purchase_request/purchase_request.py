@@ -191,7 +191,8 @@ class PurchaseRequest(Document):
 		if not self.items:
 			frappe.throw(_("no Items Found. Please set first"))
 		self.make_material_demand()
-		self.status = "Submitted"
+		# self.status = "Submitted"
+		self.status = "Open"
 		self.db_update()
 
 	def make_material_demand(self):
