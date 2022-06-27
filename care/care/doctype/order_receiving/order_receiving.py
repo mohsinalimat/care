@@ -515,6 +515,7 @@ def get_warehouse(purchase_request, item):
                             from `tabWarehouse` as w 
                             left join `tabPurchase Request Item` as p on w.name = p.warehouse and p.parent ='{0}' and p.item_code ='{1}'
                             where w.is_group = 0 and w.auto_select_in_purchase_request = 1 
+                            and p.pack_order_qty > 0
                             group by w.name""".format(purchase_request, item), as_dict=True)
         return result
     return []
