@@ -216,7 +216,7 @@ frappe.ui.form.on('Order Receiving', {
         frappe.run_serially([
             ()=>{
                 $.each(frm.doc['items'] || [], function(i, item) {
-                    if (item.rate <= 0){
+                    if (item.rate <= 0 || item.conversion_factor == 0){
                         frm.call({
                             method: "care.care.doctype.order_receiving.order_receiving.get_items_details",
                             args: {
