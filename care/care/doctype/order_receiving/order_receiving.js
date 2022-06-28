@@ -225,7 +225,7 @@ frappe.ui.form.on('Order Receiving', {
                                 item: item
                             },
                             callback: function(r) {
-                                item.conversion_factor = r.message.conversion_factor
+                                item.conversion_factor = r.message.conversion_factor || 1
                                 item.qty = r.message.qty || 1
                                 item.rate = r.message.buying_price_rate || 0
                                 item.net_rate = r.message.buying_price_rate || 0
@@ -464,8 +464,8 @@ function get_items_details(frm, cdt, cdn){
         },
         freeze: true,
         callback: function(r) {
-            item.conversion_factor = r.message.conversion_factor
-            item.qty = r.message.qty || 0
+            item.conversion_factor = r.message.conversion_factor || 1
+            item.qty = r.message.qty || 1
             item.rate = r.message.buying_price_rate || 0
             item.net_rate = r.message.buying_price_rate || 0
             item.base_net_rate = r.message.buying_price_rate || 0
