@@ -16,8 +16,9 @@
   "purchase_invoice_creation_tool",
   "supplier",
   "supplier_name",
-  "is_return",
   "return_ref",
+  "is_return",
+  "accept_un_order_item",
   "column_break_6",
   "posting_date",
   "c_b_warehouse",
@@ -138,7 +139,7 @@
    "reqd": 1
   },
   {
-   "default": "1",
+   "default": "0",
    "fieldname": "ignore_un_order_item",
    "fieldtype": "Check",
    "label": "Ignore Un Order Item"
@@ -412,6 +413,12 @@
    "fieldname": "validate_data",
    "fieldtype": "Button",
    "label": "Validate Data"
+  },
+  {
+   "default": "0",
+   "fieldname": "accept_un_order_item",
+   "fieldtype": "Check",
+   "label": "Accept Un-Order Item"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -429,7 +436,7 @@
    "link_fieldname": "return_ref"
   }
  ],
- "modified": "2022-06-27 18:46:25.037233",
+ "modified": "2022-06-28 11:40:26.295284",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Order Receiving",

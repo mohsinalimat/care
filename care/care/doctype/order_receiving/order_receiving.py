@@ -63,7 +63,8 @@ class OrderReceiving(Document):
             else:
                 frappe.db.set(self, 'status', 'Submitted')
         else:
-            self.ignore_un_order_item = 1
+            # self.ignore_un_order_item = 1
+            self.accept_un_order_item = 1
             self.updated_price_list_and_dicsount()
             frappe.enqueue(make_purchase_invoice, doc=self, queue='long')
             frappe.db.set(self, 'status', 'Queue')
@@ -110,10 +111,13 @@ class OrderReceiving(Document):
     def get_item_code(self):
         i_lst = []
         if self.purchase_request and self.supplier:
-            select_item_list = ["sdsds","dasdasdadsadad"]
+            select_item_list = ["sd@","das@"]
             for res in self.items:
                 if res.item_code:
                     select_item_list.append(res.item_code)
+
+            if self.accept_un_order_item:
+                return select_item_list
 
             result = frappe.db.sql("""select distinct pi.item_code from `tabPurchase Request Item` as pi
                     inner join `tabPurchase Request` as p on p.name = pi.parent 
@@ -322,8 +326,25 @@ def make_purchase_invoice(doc):
                     })
 
                 else:
-                    if not doc.ignore_un_order_item:
+                    if not doc.ignore_un_order_item and not doc.accept_un_order_item:
                         frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
+
+                    if doc.accept_un_order_item:
+                        pi.append("items", {
+                            "item_code": d.get('item_code'),
+                            "warehouse": doc.warehouse,
+                            "qty": 0 - d.get('qty') if doc.is_return else d.get('qty'),
+                            "received_qty": 0 - d.get('qty') if doc.is_return else d.get('qty'),
+                            "rate": d.get('discount_after_rate'),
+                            "uom": d.get('uom'),
+                            "item_tax_template": d.get('item_tax_template'),
+                            "item_tax_rate": d.get('item_tax_rate'),
+                            "stock_Uom": d.stock_uom,
+                            "order_receiving_item": d.name,
+                            "margin_type": "Percentage" if d.get("discount_percent") else None,
+                            "discount_percentage": d.get("discount_percent")
+                        })
+
             if pi.get('items'):
                 taxes = get_taxes_and_charges('Purchase Taxes and Charges Template', doc.taxes_and_charges)
                 for tax in taxes:
@@ -373,9 +394,29 @@ def make_purchase_invoice(doc):
                                         fifo_queue = item_details[key]["details"]
                                         fifo_queue.append(s)
                             else:
-                                if not doc.ignore_un_order_item:
+                                if not doc.ignore_un_order_item and not doc.accept_un_order_item:
                                     frappe.throw(
                                         _("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
+
+                                if doc.accept_un_order_item:
+                                    s = {
+                                        "item_code": d.get('item_code'),
+                                        "warehouse": res.get('warehouse'),
+                                        "qty": 0 - res.get('qty') if doc.is_return else res.get('qty'),
+                                        "received_qty": 0 - res.get('qty') if doc.is_return else res.get('qty'),
+                                        "rate": d.get('discount_after_rate'),
+                                        "uom": d.get('uom'),
+                                        "stock_Uom": d.get('stock_uom'),
+                                        "item_tax_template": d.get('item_tax_template'),
+                                        "item_tax_rate": d.get('item_tax_rate'),
+                                        "order_receiving_item": d.name,
+                                        "margin_type": "Percentage" if d.get("discount_percent") else None,
+                                        "discount_percentage": d.get("discount_percent")
+                                    }
+                                    key = (res.get('warehouse'))
+                                    item_details.setdefault(key, {"details": []})
+                                    fifo_queue = item_details[key]["details"]
+                                    fifo_queue.append(s)
                 else:
                     md_item = frappe.get_list("Material Demand Item",
                                               {'item_code': d.get('item_code'), 'parent': ['in', m_list]}, ['name'])
@@ -431,8 +472,29 @@ def make_purchase_invoice(doc):
                             fifo_queue.append(s)
 
                     else:
-                        if not doc.ignore_un_order_item:
+                        if not doc.ignore_un_order_item and not doc.accept_un_order_item:
                             frappe.throw(_("Item <b>{0}</b> not found in Material Demand").format(d.get('item_code')))
+
+                        if doc.accept_un_order_item:
+                            s = {
+                                "item_code": d.get('item_code'),
+                                "warehouse": doc.c_b_warehouse,
+                                "qty": 0 - received_qty if doc.is_return else received_qty,
+                                "received_qty": 0 - received_qty if doc.is_return else received_qty,
+                                "rate": d.get('discount_after_rate'),
+                                "uom": d.get('uom'),
+                                "stock_Uom": d.get('stock_uom'),
+                                "item_tax_template": d.get('item_tax_template'),
+                                "item_tax_rate": d.get('item_tax_rate'),
+                                "order_receiving_item": d.name,
+                                "margin_type": "Percentage" if d.get("discount_percent") else None,
+                                "discount_percentage": d.get("discount_percent")
+                            }
+                            key = (doc.c_b_warehouse)
+                            item_details.setdefault(key, {"details": []})
+                            fifo_queue = item_details[key]["details"]
+                            fifo_queue.append(s)
+
             if item_details:
                 if item_details:
                     for key in item_details.keys():
@@ -643,7 +705,7 @@ def get_items_details(item_code, doc, item):
 
         item_tax_template = get_item_tax_template(item_code, json.dumps(args))
 
-        qty = get_item_qty(doc.get('purchase_request'), item_code, doc.get('supplier'), doc.get('warehouse'))
+        qty = get_item_qty(doc.get('purchase_request'), item_code, doc.get('supplier'), doc.get('warehouse')) or 1
 
         rule = apply_price_rule(doc, item, conversion_factor)
         discount_percentage = discount_amount = 0

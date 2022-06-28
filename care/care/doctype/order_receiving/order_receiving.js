@@ -164,6 +164,11 @@ frappe.ui.form.on('Order Receiving', {
 	    apply_item_filters(frm)
 	    parent_item_filters(frm)
     },
+    accept_un_order_item: function (frm){
+        console.log("--------------")
+	    apply_item_filters(frm)
+	    parent_item_filters(frm)
+    },
     onload: function (frm, cdt, cdn){
 	    validate_item_rate(frm, cdt, cdn)
 		frm.get_field("items").grid.toggle_display("received_qty", frm.doc.is_return ? 1 : 0);
@@ -212,7 +217,7 @@ frappe.ui.form.on('Order Receiving', {
                             },
                             callback: function(r) {
                                 item.conversion_factor = r.message.conversion_factor
-                                item.qty = r.message.qty || 0
+                                item.qty = r.message.qty || 1
                                 item.rate = r.message.buying_price_rate || 0
                                 item.net_rate = r.message.buying_price_rate || 0
                                 item.base_net_rate = r.message.buying_price_rate || 0
@@ -277,16 +282,22 @@ function apply_item_filters(frm){
         method: "get_item_code",
         doc: frm.doc,
         callback: function(r) {
-            frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
-                return {
-                    filters: {'name':['in',r.message]}
+            if (!frm.doc.accept_un_order_item){
+                frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
+                    return {
+                        filters: {'name':['in',r.message]}
+                    }
                 }
             }
-           frm.set_query("item", () => {
-                return {
-                    filters: {'name':['in',r.message]}
+            else{
+                frm.fields_dict['items'].grid.get_field("item_code").get_query = function (doc, cdt, cdn) {
+                    var child = locals[cdt][cdn];
+                    return {
+                        filters: {'name':['not in',r.message]}
+                    }
                 }
-           })
+            }
+
         }
     });
 }
@@ -329,7 +340,6 @@ frappe.ui.form.on('Order Receiving Item', {
 //                                            }
 //                                        }
 //                                    },
-//                                    ()=>frappe.timeout(0.5),
 //                                    ()=>{
 //                                        setTimeout(() => {
 //                                            var new_row = frm.fields_dict.items.grid;
