@@ -165,7 +165,6 @@ frappe.ui.form.on('Order Receiving', {
 	    parent_item_filters(frm)
     },
     accept_un_order_item: function (frm){
-        console.log("--------------")
 	    apply_item_filters(frm)
 	    parent_item_filters(frm)
     },
@@ -180,9 +179,19 @@ frappe.ui.form.on('Order Receiving', {
                 callback: function(r) {
                     frappe.run_serially([
                         ()=>{
-                            frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
-                                return {
-                                    filters: {'name':['in',r.message]}
+                            if (!frm.doc.accept_un_order_item){
+                                frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
+                                    return {
+                                        filters: {'name':['in',r.message]}
+                                    }
+                                }
+                            }
+                            else{
+                                frm.fields_dict['items'].grid.get_field("item_code").get_query = function (doc, cdt, cdn) {
+                                    var child = locals[cdt][cdn];
+                                    return {
+                                        filters: {'name':['not in',r.message]}
+                                    }
                                 }
                             }
                         },
@@ -297,7 +306,6 @@ function apply_item_filters(frm){
                     }
                 }
             }
-
         }
     });
 }
@@ -377,6 +385,10 @@ frappe.ui.form.on('Order Receiving Item', {
         refresh_field("discount_percent", cdn, "items");
         update_amount(frm, cdt, cdn)
 	},
+	uom: function(frm, cdt, cdn){
+        var row = locals[cdt][cdn];
+        get_items_details(frm, cdt, cdn)
+    },
     discount_percent: function(frm, cdt, cdn) {
         var row = locals[cdt][cdn];
         let amt = row.rate * row.qty
