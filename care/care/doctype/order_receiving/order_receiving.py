@@ -29,6 +29,16 @@ class OrderReceiving(Document):
             if self.is_return:
                 if res.qty != res.received_qty and not res.code:
                     frappe.throw("Return qty is not equal to Received qty in row <b>{0}</b>. <span style='color:red'>please split the Qty.</span>".format(res.idx))
+
+            split_qty = 0
+            if res.code:
+                data = json.loads(res.code)
+                for d in data:
+                    if d.get('qty'):
+                        split_qty += float(d.get('qty'))
+            if split_qty != res.qty and split_qty != 0:
+                frappe.throw("Split Qty is not equal to received qty. Please split the qty again in row <b>{0}</b>".format(res.idx))
+
             margin = -100
             if res.selling_price_list_rate > 0:
                 margin = (res.selling_price_list_rate - res.rate) / res.selling_price_list_rate * 100
@@ -37,6 +47,7 @@ class OrderReceiving(Document):
 
             total_qty = total_qty + res.qty
             total_amt = total_amt + res.amount
+
 
         self.calculate_item_level_tax_breakup()
         self.total_qty = total_qty
