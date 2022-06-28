@@ -272,6 +272,7 @@ class PurchaseInvoiceCreationTool(Document):
 			doc.purchase_request = self.purchase_request
 			doc.supplier = self.supplier
 			doc.ignore_un_order_item = self.ignore_un_order_item
+			doc.accept_un_order_item = 1
 			doc.warehouse = self.warehouse
 			doc.purchase_invoice_creation_tool = self.name
 			i = Importer(self.reference_doctype, data_import=self)
