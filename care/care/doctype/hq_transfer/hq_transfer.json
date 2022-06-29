@@ -10,8 +10,8 @@
   "naming_series",
   "amended_from",
   "section_break_4",
-  "purchase_request",
   "hq_warehouse",
+  "base_on",
   "column_break_7",
   "company",
   "posting_date",
@@ -43,15 +43,6 @@
   {
    "fieldname": "section_break_4",
    "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "purchase_request",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Purchase Request",
-   "options": "Purchase Request",
-   "reqd": 1
   },
   {
    "fieldname": "posting_date",
@@ -117,6 +108,14 @@
    "label": "Company",
    "options": "Company",
    "reqd": 1
+  },
+  {
+   "default": "Reorder Quantity",
+   "fieldname": "base_on",
+   "fieldtype": "Select",
+   "label": "Order Qty Base On",
+   "options": "Reorder Quantity\nOptimal Level",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
@@ -128,7 +127,7 @@
    "link_fieldname": "hq_transfer"
   }
  ],
- "modified": "2022-06-23 15:31:16.896362",
+ "modified": "2022-06-28 17:07:32.969304",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "HQ Transfer",
