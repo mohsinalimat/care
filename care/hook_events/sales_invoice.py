@@ -3,6 +3,7 @@ from frappe import _
 from frappe.utils import nowdate, now
 from care.hook_events.util import round_amount_by_2p5_diff
 import requests
+import json
 
 def updated_item_amendment_summary(doc, method):
     for res in doc.items:
@@ -41,6 +42,7 @@ def create_franchise_invoice(inv, method):
             if not f_w_doc.customer:
                 frappe.throw("Please set Franchise {0} Supplier in Franchise DocType".format(inv.set_warehouse))
             data = {
+                "doctype": "Purchase Invoice",
                 "sales_invoice_ref": inv.name,
                 "supplier": f_w_doc.supplier,
                 "posting_date": str(inv.posting_date),
@@ -48,6 +50,7 @@ def create_franchise_invoice(inv, method):
                 "company": f_w_doc.company_name,
                 "update_stock": 1,
                 "set_warehouse": inv.set_warehouse,
+                "submit_invoice": f_w_doc.submit_invoice,
                 "items": []
             }
             itm_lst = data['items']
@@ -65,13 +68,15 @@ def create_franchise_invoice(inv, method):
                     "discount_amount": res.discount_amount
                 })
 
-            url = str(f_w_doc.url) + "/api/resource/Purchase Invoice"
+            # url = str(f_w_doc.url) + "/api/resource/Purchase Invoice"
+            url = str(f_w_doc.url) + "/api/method/care.utils.api.create_purchase_invoice"
             api_key = f_w_doc.api_key
             api_secret = f_w_doc.api_secret
             headers = {
                 'Authorization': 'token ' + str(api_key) + ':' + str(api_secret)
             }
-            payload = dict({"data": data})
+            # payload = dict({"data": data})
+            payload = dict({"invoice": json.dumps(data)})
             response = requests.post(url, headers=headers, json=payload)
             if response.status_code == 200:
                 frappe.log_error(title="Franchise Invoice Creation Error", message=response.json())

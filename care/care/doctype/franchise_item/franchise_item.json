@@ -10,6 +10,7 @@
   "warehouse",
   "enable",
   "update_price",
+  "submit_invoice",
   "reorder_prec",
   "column_break_5",
   "company_name",
@@ -162,12 +163,18 @@
    "fieldname": "generate_invoice",
    "fieldtype": "Button",
    "label": "Generate Invoice"
+  },
+  {
+   "default": "0",
+   "fieldname": "submit_invoice",
+   "fieldtype": "Check",
+   "label": "Submit Invoice"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-06-23 16:42:09.118087",
+ "modified": "2022-06-29 14:33:09.116941",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Franchise Item",

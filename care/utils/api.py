@@ -227,12 +227,16 @@ def set_item_price(item_prices):
             try:
                 existing_price = frappe.db.get_value("Item Price", {"item_code": res.get('item_code'),
                                                     "buying": res.get('buying'),
-                                                    "selling": res.get('selling'),
-                                                    "price_list": res.get('price_list'),
-                                                    "price_list_rate": res.get('price_list_rate'),
-                                                    "valid_from": getdate(res.get('valid_from')),
+                                                    "selling": res.get('selling')
                                                     }, "name")
-                if not existing_price:
+                if existing_price:
+                    itm_price = frappe.get_doc("Item Price", existing_price)
+                    itm_price.update(res)
+                    itm_price.flags.ignore_permissions = True
+                    itm_price.flags.ignore_mandatory = True
+                    itm_price.flags.ignore_if_duplicate = True
+                    itm_price.save()
+                else:
                     frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True)
                     frappe.db.commit()
             except Exception as e:
@@ -270,7 +274,13 @@ def set_price_rule(rules):
 def create_purchase_invoice(invoice):
     if invoice:
         invoice = json.loads(invoice)
+        submit_invoice = invoice.get('submit_invoice')
         doc = frappe.get_doc(invoice)
         doc.set_missing_values()
         doc.insert(ignore_permissions=True, ignore_mandatory=True)
         frappe.db.commit()
+        if submit_invoice:
+            try:
+                doc.submit()
+            except Exception as e:
+                pass

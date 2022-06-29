@@ -38,7 +38,8 @@ frappe.ui.form.on('Franchise Item', {
             method: "care.care.doctype.franchise.franchise.create_sales_invoice",
             args: {
                 warehouse:row.warehouse,
-                customer:row.customer
+                customer:row.customer,
+                submit_invoice: row.submit_invoice
             },
             freeze: true,
             freeze_message: __("Invoice Creating..."),

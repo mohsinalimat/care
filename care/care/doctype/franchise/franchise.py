@@ -12,7 +12,6 @@ from erpnext.stock.get_item_details import get_conversion_factor
 class Franchise(Document):
 	@frappe.whitelist()
 	def sync_data_on_franchise(self):
-		# self.set_account()
 		self.set_item_group()
 		self.set_item_brand()
 		self.set_item_uom()
@@ -246,7 +245,7 @@ class Franchise(Document):
 
 	def set_item_price(self):
 		for res in self.franchise_list:
-			if res.enable and res.update_price:
+			if res.enable:
 				total = frappe.db.sql("""select count(*) from `tabItem Price` where modified >= '{0}'""".format(res.last_update))[0][0] or 0
 				sets = math.floor(total / 200) + 1
 				start = end = 0
@@ -254,9 +253,10 @@ class Franchise(Document):
 					end = start + 200
 					item_prices = frappe.db.sql("""select 'Item Price' as doctype, item_code, item_name, item_description, 
 									buying, selling, price_list, 
-									CONVERT(valid_from, CHAR) as valid_from, currency,packing_unit, uom, 
+									null as valid_from, currency,packing_unit, uom, 
 									price_list_rate from `tabItem Price` where modified >= '{0}' 
-									limit {1},{2}""".format(res.last_update, start, end), as_dict=True)
+									order by item_code, valid_from 
+									limit {1},{2} """.format(res.last_update, start, end), as_dict=True)
 					if item_prices:
 						try:
 							url = str(res.url) + "/api/method/care.utils.api.set_item_price"
@@ -407,7 +407,7 @@ def upload_data():
 	franchise.sync_data_on_franchise()
 
 @frappe.whitelist()
-def create_sales_invoice(warehouse, customer):
+def create_sales_invoice(warehouse, customer, submit_invoice=0):
 	if warehouse and customer:
 		total = frappe.db.sql("""select count(*)
 							from `tabBin`
@@ -444,6 +444,12 @@ def create_sales_invoice(warehouse, customer):
 					})
 				sale.set_missing_values()
 				sale.insert(ignore_permissions=True)
+				frappe.db.commit()
 				frappe.msgprint("Sales invoice {0} Created".format(sale.name),indicator='green', alert=1)
+				if submit_invoice:
+					try:
+						sale.submit()
+					except Exception as e:
+						pass
 			start = end
 
