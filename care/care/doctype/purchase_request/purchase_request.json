@@ -150,13 +150,14 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Status",
    "no_copy": 1,
-   "options": "Draft\nSubmitted\nCancelled\nOrder Created",
+   "options": "Draft\nSubmitted\nCancelled\nOrder Created\nOpen\nClosed",
    "read_only": 1
   },
   {
@@ -164,6 +165,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "total_amount",
    "fieldtype": "Currency",
    "label": "Total Amount",
@@ -214,7 +216,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-06-23 16:31:24.807101",
+ "modified": "2022-06-27 11:10:53.203937",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Request",

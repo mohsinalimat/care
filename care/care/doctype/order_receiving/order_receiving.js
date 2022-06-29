@@ -35,7 +35,8 @@ frappe.ui.form.on('Order Receiving', {
 			return {
 				"filters": {
 					"docstatus": 1,
-					"date": frm.doc.posting_date
+					"date": frm.doc.posting_date,
+					"status": 'Open'
 				}
 			};
 		})
@@ -59,6 +60,11 @@ frappe.ui.form.on('Order Receiving', {
             frm.set_value("base_selling_price_list", frappe.defaults.get_default('selling_price_list'))
         }
 		apply_item_filters(frm)
+		parent_item_filters(frm)
+
+        frm.fields_dict.add_items.$input.addClass("btn-primary");
+        frm.fields_dict.validate_data.$input.addClass("btn-primary");
+
 		frm.get_field("items").grid.toggle_display("split_qty", frm.doc.warehouse ? 0 : 1);
 		frm.get_field("items").grid.toggle_display("received_qty", frm.doc.is_return ? 1 : 0);
 		frm.get_field("items").grid.toggle_enable("rate", frm.doc.update_buying_price ? 1 : 0);
@@ -144,22 +150,113 @@ frappe.ui.form.on('Order Receiving', {
 	    }
 	},
 	validate: function(frm, cdt, cdn){
+	    frm.trigger('validate_datas');
         $.each(frm.doc.items,  function(i,  d) {
             d.amount_before_discount = d.rate * d.qty;
         });
-	    update_total_qty(frm, cdt, cdn)
 	    validate_item_rate(frm, cdt, cdn)
 	},
     purchase_request: function (frm){
 	    apply_item_filters(frm)
+	    parent_item_filters(frm)
     },
     supplier: function (frm){
 	    apply_item_filters(frm)
+	    parent_item_filters(frm)
+    },
+    accept_un_order_item: function (frm){
+	    apply_item_filters(frm)
+	    parent_item_filters(frm)
     },
     onload: function (frm, cdt, cdn){
-	    apply_item_filters(frm)
 	    validate_item_rate(frm, cdt, cdn)
 		frm.get_field("items").grid.toggle_display("received_qty", frm.doc.is_return ? 1 : 0);
+
+		frappe.ui.keys.on("ctrl+z", () => {
+            frappe.call({
+                method: "get_item_code",
+                doc: frm.doc,
+                callback: function(r) {
+                    frappe.run_serially([
+                        ()=>{
+                            if (!frm.doc.accept_un_order_item){
+                                frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
+                                    return {
+                                        filters: {'name':['in',r.message]}
+                                    }
+                                }
+                            }
+                            else{
+                                frm.fields_dict['items'].grid.get_field("item_code").get_query = function (doc, cdt, cdn) {
+                                    var child = locals[cdt][cdn];
+                                    return {
+                                        filters: {'name':['not in',r.message]}
+                                    }
+                                }
+                            }
+                        },
+                        ()=>{
+                            var new_row = frm.fields_dict.items.grid;
+                            new_row.add_new_row(null, null, true, null, true);
+                            new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
+                            new_row.set_focus_on_row();
+                        }
+                    ])
+                }
+            });
+		});
+    },
+    validate_data: function(frm, cdt, cdn){
+        frappe.run_serially([
+            ()=>frm.trigger('validate_datas'),
+            ()=>frm.save()
+        ])
+    },
+    validate_datas: function(frm, cdt, cdn){
+        frappe.run_serially([
+            ()=>{
+                $.each(frm.doc['items'] || [], function(i, item) {
+                    if (item.rate <= 0 || item.conversion_factor == 0){
+                        frm.call({
+                            method: "care.care.doctype.order_receiving.order_receiving.get_items_details",
+                            args: {
+                                item_code: item.item_code,
+                                doc: frm.doc,
+                                item: item
+                            },
+                            callback: function(r) {
+                                item.conversion_factor = r.message.conversion_factor || 1
+                                item.qty = r.message.qty || 1
+                                item.rate = r.message.buying_price_rate || 0
+                                item.net_rate = r.message.buying_price_rate || 0
+                                item.base_net_rate = r.message.buying_price_rate || 0
+                                item.base_buying_price_list_rate = r.message.buying_price_rate || 0
+                                item.selling_price_list_rate = r.message.selling_price_rate || 0
+                                item.base_selling_price_list_rate = r.message.selling_price_rate || 0
+                                item.discount_percent = r.message.discount_percentage || 0
+                                item.discount = r.message.discount_amount || 0
+
+                                let margin = -100;
+                                if (r.message.selling_price_rate > 0){
+                                    margin = (r.message.selling_price_rate - r.message.buying_price_rate) / r.message.selling_price_rate * 100;
+                                }
+                                item.margin =  margin
+                                let amt = item.rate * item.qty
+                                let discount_amount = (amt / 100) * item.discount_percent
+                                let amount = amt - discount_amount
+                                let dis_aft_rate = amount/ item.qty
+                                item.discount = discount_amount
+                                item.amount = amount
+                                item.net_amount = amount
+                                item.base_net_amount = amount
+                                item.discount_after_rate = dis_aft_rate
+                            }
+                        })
+                    }
+                })
+            },
+            ()=>update_total_qty(frm, cdt, cdn)
+        ])
     }
 });
 
@@ -175,20 +272,42 @@ function validate_item_rate(frm, cdt, cdn){
     });
 }
 
-function apply_item_filters(frm){
-//    console.log("apply_item_filters")
+function parent_item_filters(frm){
     frappe.call({
         method: "get_item_code",
         doc: frm.doc,
         callback: function(r) {
-            frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
+           frm.set_query("item", () => {
                 return {
                     filters: {'name':['in',r.message]}
+                }
+           })
+        }
+    });
+}
+
+function apply_item_filters(frm){
+    frappe.call({
+        method: "get_item_code",
+        doc: frm.doc,
+        callback: function(r) {
+            if (!frm.doc.accept_un_order_item){
+                frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
+                    return {
+                        filters: {'name':['in',r.message]}
+                    }
+                }
+            }
+            else{
+                frm.fields_dict['items'].grid.get_field("item_code").get_query = function (doc, cdt, cdn) {
+                    var child = locals[cdt][cdn];
+                    return {
+                        filters: {'name':['not in',r.message]}
+                    }
                 }
             }
         }
     });
-
 }
 
 function apply_child_btn_color(frm, cdt, cdn){
@@ -199,9 +318,9 @@ function apply_child_btn_color(frm, cdt, cdn){
 }
 
 frappe.ui.form.on('Order Receiving Item', {
-//    items_add: function(frm, cdt, cdn){
-//        apply_item_filters(frm)
-//    },
+    items_add: function(frm, cdt, cdn){
+        apply_item_filters(frm)
+    },
     item_code: function(frm, cdt, cdn){
         var row = locals[cdt][cdn];
         if(!frm.doc.purchase_request || !frm.doc.supplier){
@@ -210,34 +329,38 @@ frappe.ui.form.on('Order Receiving Item', {
         }
         else{
             if (row.item_code){
-                frappe.run_serially([
-                    ()=>get_items_details(frm, cdt, cdn),
-                    ()=> {
-                        frappe.call({
-                            method: "get_item_code",
-                            doc: frm.doc,
-                            callback: function(r) {
-                                frappe.run_serially([
-                                    ()=>{
-                                        frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
-                                            return {
-                                                filters: {'name':['in',r.message]}
-                                            }
-                                        }
-                                    },
-                                    ()=>{
-                                        setTimeout(() => {
-                                            var new_row = frm.fields_dict.items.grid;
-                                            new_row.add_new_row(null, null, true, null, true);
-                                            new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
-                                            new_row.set_focus_on_row();
-                                        }, 500);
-                                    }
-                                ])
-                            }
-                        });
-                    }
-                ])
+                get_items_details(frm, cdt, cdn)
+
+//                frappe.run_serially([
+//                    ()=>get_items_details(frm, cdt, cdn),
+//                    ()=>frappe.timeout(0.3),
+//                    ()=>apply_item_filters(frm),
+//                    ()=> {
+//                        frappe.call({
+//                            method: "get_item_code",
+//                            doc: frm.doc,
+//                            callback: function(r) {
+//                                frappe.run_serially([
+//                                    ()=>{
+//                                        frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
+//                                            return {
+//                                                filters: {'name':['in',r.message]}
+//                                            }
+//                                        }
+//                                    },
+//                                    ()=>{
+//                                        setTimeout(() => {
+//                                            var new_row = frm.fields_dict.items.grid;
+//                                            new_row.add_new_row(null, null, true, null, true);
+//                                            new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
+//                                            new_row.set_focus_on_row();
+//                                        }, 500);
+//                                    }
+//                                ])
+//                            }
+//                        });
+//                    }
+//                ])
             }
         }
     },
@@ -262,6 +385,10 @@ frappe.ui.form.on('Order Receiving Item', {
         refresh_field("discount_percent", cdn, "items");
         update_amount(frm, cdt, cdn)
 	},
+	uom: function(frm, cdt, cdn){
+        var row = locals[cdt][cdn];
+        get_items_details(frm, cdt, cdn)
+    },
     discount_percent: function(frm, cdt, cdn) {
         var row = locals[cdt][cdn];
         let amt = row.rate * row.qty
@@ -296,15 +423,12 @@ function update_amount(frm, cdt, cdn){
     let amount = amt - discount_amount
     let dis_aft_rate = amount/ row.qty
     row.discount = discount_amount
-    frappe.model.set_value(cdt,cdn,"amount",amount);
-    frappe.model.set_value(cdt,cdn,"net_amount",amount);
-    frappe.model.set_value(cdt,cdn,"base_net_amount",amount);
-    frappe.model.set_value(cdt,cdn,"discount_after_rate",dis_aft_rate);
-    refresh_field("amount", cdn, "items");
-    refresh_field("discount", cdn, "items");
-    refresh_field("net_amount", cdn, "items");
-    refresh_field("base_net_amount", cdn, "items");
-    refresh_field("discount_after_rate", cdn, "items");
+    row.amount = amount
+    row.net_amount = amount
+    row.base_net_amount = amount
+    row.discount_after_rate = dis_aft_rate
+
+    frm.refresh_field("items");
 }
 function update_total_qty(frm, cdt, cdn){
     let total_qty = 0
@@ -329,7 +453,7 @@ function calculate_margin(frm, cdt, cdn){
 
 
 function get_items_details(frm, cdt, cdn){
-//    console.log("get_items_details")
+//    console.log("----------get_items_details-----------------")
     var item = locals[cdt][cdn];
     frm.call({
         method: "care.care.doctype.order_receiving.order_receiving.get_items_details",
@@ -338,23 +462,29 @@ function get_items_details(frm, cdt, cdn){
             doc: frm.doc,
             item: item
         },
+        freeze: true,
         callback: function(r) {
-            frappe.model.set_value(cdt,cdn,"conversion_factor",r.message.conversion_factor || 0);
+            item.conversion_factor = r.message.conversion_factor || 1
+            item.qty = r.message.qty || 1
+            item.rate = r.message.buying_price_rate || 0
+            item.net_rate = r.message.buying_price_rate || 0
+            item.base_net_rate = r.message.buying_price_rate || 0
+            item.base_buying_price_list_rate = r.message.buying_price_rate || 0
+            item.selling_price_list_rate = r.message.selling_price_rate || 0
+            item.base_selling_price_list_rate = r.message.selling_price_rate || 0
+            item.discount_percent = r.message.discount_percentage || 0
+            item.discount = r.message.discount_amount || 0
+//            refresh_field("conversion_factor", cdn, "items");
 
-            frappe.model.set_value(cdt,cdn,"qty",r.message.qty || 0);
-            frappe.model.set_value( cdt, cdn, 'rate',r.message.buying_price_rate || 0)
-            frappe.model.set_value( cdt, cdn, 'base_buying_price_list_rate',r.message.buying_price_rate || 0)
-
-             frappe.model.set_value( cdt, cdn, 'selling_price_list_rate',r.message.selling_price_rate || 0)
-            frappe.model.set_value( cdt, cdn, 'base_selling_price_list_rate',r.message.selling_price_rate || 0)
-
-            frappe.model.set_value(cdt,cdn,"item_tax_template",r.message.item_tax_template);
-
-            if(r.message.discount_percentage > 0){
-                frappe.model.set_value( cdt, cdn, 'discount_percent', r.message.discount_percentage)
+            let margin = -100;
+            if (r.message.selling_price_rate > 0){
+                margin = (r.message.selling_price_rate - r.message.buying_price_rate) / r.message.selling_price_rate * 100;
             }
-            if(r.message.discount_amount > 0){
-                frappe.model.set_value( cdt, cdn, 'discount', r.message.discount_amount)
+            item.margin =  margin
+            update_amount(frm, cdt, cdn)
+            update_total_qty(frm, cdt, cdn)
+            if(r.message.item_tax_template){
+                frappe.model.set_value(cdt,cdn,"item_tax_template", r.message.item_tax_template);
             }
         }
     })

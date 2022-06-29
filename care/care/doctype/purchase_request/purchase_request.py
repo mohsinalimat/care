@@ -191,7 +191,8 @@ class PurchaseRequest(Document):
 		if not self.items:
 			frappe.throw(_("no Items Found. Please set first"))
 		self.make_material_demand()
-		self.status = "Submitted"
+		# self.status = "Submitted"
+		self.status = "Open"
 		self.db_update()
 
 	def make_material_demand(self):
@@ -373,3 +374,8 @@ def pur_req_pdf_summary(doc):
 		group by item_code, item_name, brand 
 		order by item_code, item_name, brand""".format(doc.name), as_dict=True)
 	return data
+
+
+def update_status_as_open():
+	frappe.db.sql("""UPDATE `tabPurchase Request` SET status = 'Open' 
+				WHERE status = 'Submitted'""")
