@@ -72,9 +72,12 @@ def get_data(filters):
 	# 	query += " and pr.status = '{0}'".format(filters.get('status'))
 	
 	if filters.get('order_receiving'):
-		query += " and pr.order_receiving = '{0}'" \
-			.format(filters.get('order_receiving'))
-
+		order_receiving = tuple(filters.get('order_receiving'))
+		if len(order_receiving) == 1:
+			query += " and pr.order_receiving = '{0}'".format(order_receiving[0])
+		else:
+			query += " and pr.order_receiving in {0} ".format(order_receiving)
+	
 	if filters.get('supplier'):
 		supplier = tuple(filters.get('supplier'))
 		if len(supplier) == 1:

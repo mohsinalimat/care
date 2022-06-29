@@ -24,11 +24,12 @@ frappe.query_reports["Brand Wise Set"] = {
 		// 	"options": ["", __("Draft"), __("To Bill"), __("Completed"), __("Return Issued"), __("Cancelled"), __("Closed")]
 		// },
 		{
-			"fieldname": "order_receiving",
-			"fieldtype": "Link",
-			"label": "Order Receiving",
-			"mandatory": 0,
-			"options": "Order Receiving"
+			"fieldname":"order_receiving",
+			"label": __("Order Receiving"),
+			"fieldtype": "MultiSelectList",
+			get_data: function(txt) {
+				return frappe.db.get_link_options('Order Receiving', txt);
+			}
 		},
 		{
 			"fieldname":"supplier",
