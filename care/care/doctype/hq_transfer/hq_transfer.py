@@ -169,7 +169,8 @@ def make_stock_entry(doc):
 							pi.insert(ignore_permissions=True)
 							pi.submit()
 					except Exception as e:
-						print("---------error: ", e)
+						frappe.log_error(title="Creating Stock Entry Error", message=e)
+						frappe.msgprint("Creating Stock Entry Error Log Generated", indicator='red', alert=True)
 						continue
 
 	frappe.msgprint(_("Stock Entry Created"), alert=1)
