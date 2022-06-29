@@ -152,26 +152,25 @@ def make_stock_entry(doc):
 		if item_details:
 			if item_details:
 				for key in item_details.keys():
-					try:
-						pi = frappe.new_doc("Stock Entry")
-						pi.purpose = 'Material Transfer'
-						pi.stock_entry_type = 'Material Transfer'
-						pi.posting_date = doc.posting_date
-						pi.company = doc.company
-						pi.hq_transfer = doc.name
-						pi.from_warehouse = doc.hq_warehouse
-						pi.to_warehouse = key
-						pi.ignore_pricing_rule = 1
-						for d in item_details[key]['details']:
-							pi.append("items", d)
-						if pi.get('items'):
-							pi.set_missing_values()
-							pi.insert(ignore_permissions=True)
-							pi.submit()
-					except Exception as e:
-						frappe.log_error(title="Creating Stock Entry Error", message=e)
-						frappe.msgprint("Creating Stock Entry Error Log Generated", indicator='red', alert=True)
-						continue
+					pi = frappe.new_doc("Stock Entry")
+					pi.purpose = 'Material Transfer'
+					pi.stock_entry_type = 'Material Transfer'
+					pi.posting_date = doc.posting_date
+					pi.company = doc.company
+					pi.hq_transfer = doc.name
+					pi.from_warehouse = doc.hq_warehouse
+					pi.to_warehouse = key
+					pi.ignore_pricing_rule = 1
+					for d in item_details[key]['details']:
+						pi.append("items", d)
+					if pi.get('items'):
+						pi.set_missing_values()
+						pi.insert(ignore_permissions=True)
+						pi.submit()
+					# except Exception as e:
+					# 	frappe.log_error(title="Creating Stock Entry Error", message=e)
+					# 	frappe.msgprint("Creating Stock Entry Error Log Generated", indicator='red', alert=True)
+					# 	continue
 
 	frappe.msgprint(_("Stock Entry Created"), alert=1)
 
