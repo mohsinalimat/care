@@ -400,7 +400,7 @@ def _get_item_dict(itm_doc, company):
 
 
 def sync_data_scheduler():
-	frappe.enqueue(upload_data, queue='long')
+	frappe.enqueue(upload_data, queue='long', timeout=3600)
 
 def upload_data():
 	franchise = frappe.get_single("Franchise")
