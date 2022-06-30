@@ -77,7 +77,7 @@ class OrderReceiving(Document):
             # self.ignore_un_order_item = 1
             self.accept_un_order_item = 1
             self.updated_price_list_and_dicsount()
-            frappe.enqueue(make_purchase_invoice, doc=self, queue='long')
+            frappe.enqueue(make_purchase_invoice, doc=self, queue='long', timeout=3600)
             frappe.db.set(self, 'status', 'Queue')
         self.update_p_r_c_tool_status()
 
@@ -546,8 +546,10 @@ def make_purchase_invoice(doc):
                                             res.item_tax_rate = '{}'
                                 pi.insert(ignore_permissions=True)
                         except Exception as e:
-                            print("---------error: ",e)
+                            frappe.log_error(title="Creating Purchase Receipt Error", message=e)
+                            frappe.msgprint("Creating Purchase Receipt error log generated", indicator='red', alert=True)
                             continue
+
         frappe.msgprint(_("Purchase Receipt Created"), alert=1)
     if doc.is_return:
         frappe.db.set(doc, 'status', 'Return')
