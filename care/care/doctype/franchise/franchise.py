@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
-from frappe.utils import now_datetime, nowdate
+from frappe.utils import now_datetime, nowdate,flt
 from frappe.model.document import Document
 import json
 import requests
@@ -447,7 +447,7 @@ def create_sales_invoice(warehouse, customer, submit_invoice=0):
 				sale.insert(ignore_permissions=True)
 				frappe.db.commit()
 				frappe.msgprint("Sales invoice {0} Created".format(sale.name),indicator='green', alert=1)
-				if submit_invoice:
+				if flt(submit_invoice):
 					try:
 						sale.submit()
 					except Exception as e:
