@@ -26,6 +26,7 @@ frappe.ui.form.on('HQ Transfer', {
         frappe.call({
             method: "get_items",
             doc: frm.doc,
+            freeze: true,
             callback: function(r) {
                 frm.clear_table("items");
                 if(r.message) {

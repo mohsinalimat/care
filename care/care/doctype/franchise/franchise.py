@@ -432,16 +432,17 @@ def create_sales_invoice(warehouse, customer, submit_invoice=0):
 				sale.is_franchise_inv = 1
 				for d in avl_qty_items:
 					conversion_factor = get_conversion_factor(d.get('item_code'), 'Pack').get('conversion_factor') or 1
-					avl_qty_pack = math.ceil(d.qty / conversion_factor)
-					item_doc = frappe.get_doc("Item", d.item_code)
-					sale.append("items", {
-						"item_code": d.item_code,
-						"qty": avl_qty_pack,
-						"rate": item_doc.last_purchase_rate,
-						"uom": 'Pack',
-						"stock_uom": d.stock_uom,
-						"warehouse": warehouse
-					})
+					avl_qty_pack = math.floor(d.qty / conversion_factor)
+					if avl_qty_pack > 0:
+						item_doc = frappe.get_doc("Item", d.item_code)
+						sale.append("items", {
+							"item_code": d.item_code,
+							"qty": avl_qty_pack,
+							"rate": item_doc.last_purchase_rate,
+							"uom": 'Pack',
+							"stock_uom": d.stock_uom,
+							"warehouse": warehouse
+						})
 				sale.set_missing_values()
 				sale.insert(ignore_permissions=True)
 				frappe.db.commit()
