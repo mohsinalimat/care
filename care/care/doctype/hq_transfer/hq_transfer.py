@@ -15,8 +15,8 @@ class HQTransfer(Document):
 	def validate(self):
 		total_qty = total_amount = 0
 		for res in self.items:
-			total_qty += res.qty
-			total_amount += res.amount
+			total_qty += float(res.qty)
+			total_amount += float(res.amount)
 			split_qty = 0
 			if res.code:
 				data = json.loads(res.code)

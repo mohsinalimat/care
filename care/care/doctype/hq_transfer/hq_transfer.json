@@ -73,6 +73,7 @@
    "label": "Get Items"
   },
   {
+   "allow_bulk_edit": 1,
    "fieldname": "items",
    "fieldtype": "Table",
    "label": "items",
@@ -127,7 +128,7 @@
    "link_fieldname": "hq_transfer"
   }
  ],
- "modified": "2022-06-28 17:07:32.969304",
+ "modified": "2022-06-29 22:14:20.227361",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "HQ Transfer",
