@@ -26,6 +26,9 @@ class OrderReceiving(Document):
     def update_total_margin(self):
         total_qty = total_amt = 0
         for res in self.items:
+            if res.qty == 0:
+                frappe.throw("Qty should be greater than zero.")
+
             if self.is_return:
                 if res.qty != res.received_qty and not res.code:
                     frappe.throw("Return qty is not equal to Received qty in row <b>{0}</b>. <span style='color:red'>please split the Qty.</span>".format(res.idx))
@@ -43,7 +46,7 @@ class OrderReceiving(Document):
             if res.selling_price_list_rate > 0:
                 margin = (res.selling_price_list_rate - res.rate) / res.selling_price_list_rate * 100
             res.margin_percent = margin
-            res.discount_after_rate = round(res.amount, 2) / res.qty
+            res.discount_after_rate = round(res.amount, 2) / res.qty if res.qty else 0
 
             total_qty = total_qty + res.qty
             total_amt = total_amt + res.amount
@@ -235,7 +238,7 @@ class OrderReceiving(Document):
                     itm.discount_percent = discount_percent
                 discount_amount = (amt / 100) * itm.discount_percent
                 amount = amt - discount_amount
-                dis_aft_rate = amount / itm.qty
+                dis_aft_rate = amount / itm.qty if itm.qty else 0
                 itm.amount = amount
                 itm.net_amount = amount
                 itm.base_net_amount = amount
@@ -509,6 +512,7 @@ def make_purchase_invoice(doc):
             if item_details:
                 if item_details:
                     for key in item_details.keys():
+                        pi_dict = {}
                         try:
                             is_franchise = frappe.get_value("Warehouse", {'name': key}, "is_franchise")
                             cost_center = frappe.get_value("Warehouse", {'name': key}, "cost_center")
@@ -544,9 +548,11 @@ def make_purchase_invoice(doc):
                                                                 'item_tax_template'):
                                             res.item_tax_template = None
                                             res.item_tax_rate = '{}'
+                                pi_dict = pi.as_dict()
                                 pi.insert(ignore_permissions=True)
                         except Exception as e:
-                            frappe.log_error(title="Creating Purchase Receipt Error", message=e)
+                            error = "------- "+str(e)+" -----\n"+str(pi_dict)
+                            frappe.log_error(title="Creating Purchase Receipt Error", message=error)
                             frappe.msgprint("Creating Purchase Receipt error log generated", indicator='red', alert=True)
                             continue
 
