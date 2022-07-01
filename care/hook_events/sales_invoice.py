@@ -32,29 +32,34 @@ def validate_cost_center(doc, method):
 @frappe.whitelist()
 def create_franchise_inv(doc_name):
     doc = frappe.get_doc("Sales Invoice", doc_name)
-    create_franchise_invoice(doc, None)
+    create_franchise_pi_invoice(doc)
+
 
 def create_franchise_invoice(inv, method):
-    if inv.is_franchise_inv:
-        f_w_data = frappe.get_value("Franchise Item", {'warehouse': inv.set_warehouse, 'enable': 1}, "name")
+    frappe.enqueue(create_franchise_pi_invoice, doc=inv, queue='long', timeout=3600)
+    frappe.msgprint("creating franchise invoice in-process. please wait")
+
+def create_franchise_pi_invoice(doc):
+    if doc.is_franchise_inv:
+        f_w_data = frappe.get_value("Franchise Item", {'warehouse': doc.set_warehouse, 'enable': 1}, "name")
         if f_w_data:
             f_w_doc = frappe.get_doc("Franchise Item", f_w_data)
             if not f_w_doc.customer:
-                frappe.throw("Please set Franchise {0} Supplier in Franchise DocType".format(inv.set_warehouse))
+                frappe.throw("Please set Franchise {0} Supplier in Franchise DocType".format(doc.set_warehouse))
             data = {
                 "doctype": "Purchase Invoice",
-                "sales_invoice_ref": inv.name,
+                "sales_invoice_ref": doc.name,
                 "supplier": f_w_doc.supplier,
-                "posting_date": str(inv.posting_date),
-                "due_date": str(inv.due_date),
+                "posting_date": str(doc.posting_date),
+                "due_date": str(doc.due_date),
                 "company": f_w_doc.company_name,
                 "update_stock": 1,
-                "set_warehouse": inv.set_warehouse,
+                "set_warehouse": doc.set_warehouse,
                 "submit_invoice": f_w_doc.submit_invoice,
                 "items": []
             }
             itm_lst = data['items']
-            for res in inv.items:
+            for res in doc.items:
                 itm_lst.append({
                     "item_code": res.item_code,
                     "warehouse": res.warehouse,
@@ -83,8 +88,8 @@ def create_franchise_invoice(inv, method):
                 frappe.msgprint(
                     "Franchise invoice created on <b><a href='{0}' target='_blank'>{0}</a></b>".format(f_w_doc.url),
                     indicator='Green', alert=True)
-                inv.franchise_inv_gen = 1
-                inv.db_update()
+                doc.franchise_inv_gen = 1
+                doc.db_update()
             else:
                 frappe.log_error(title="Franchise Invoice Creation Error", message=response.json())
                 frappe.msgprint("Error Log Generated", indicator='red', alert=True)
