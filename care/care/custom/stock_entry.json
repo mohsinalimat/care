@@ -41,7 +41,7 @@
    "name": "Stock Entry-transfer_reason",
    "no_copy": 0,
    "non_negative": 0,
-   "options": "Transfer\nExpired Items \nDead Stock\nBreakage",
+   "options": "Transfer\nEXPIRED ITEMS\nDEAD STOCK\nBREAKAGE",
    "owner": "saeed@resourcefactors.com",
    "parent": null,
    "parentfield": null,
