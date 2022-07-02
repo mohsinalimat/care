@@ -417,7 +417,8 @@ def create_sales_invoice(warehouse, customer, submit_invoice=0):
 		start = end = 0
 		for p in range(0, sets):
 			end = start + 400
-			avl_qty_items = frappe.db.sql("""select item_code, stock_uom, sum(actual_qty) as qty
+			avl_qty_items = frappe.db.sql("""select item_code, stock_uom, sum(actual_qty) as qty,
+											sum(valuation_rate) as rate
 											from `tabBin`
 											where warehouse = '{0}' and actual_qty > 0 
 											group by item_code, stock_uom 
@@ -438,8 +439,7 @@ def create_sales_invoice(warehouse, customer, submit_invoice=0):
 						sale.append("items", {
 							"item_code": d.item_code,
 							"qty": avl_qty_pack,
-							"rate": item_doc.last_purchase_rate * conversion_factor,
-							"last_purchase_rate": item_doc.last_purchase_rate * conversion_factor,
+							"rate": d.rate * conversion_factor,
 							"uom": 'Pack',
 							"stock_uom": d.stock_uom,
 							"warehouse": warehouse
