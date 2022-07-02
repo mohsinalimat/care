@@ -438,7 +438,7 @@ def create_sales_invoice(warehouse, customer, submit_invoice=0):
 						sale.append("items", {
 							"item_code": d.item_code,
 							"qty": avl_qty_pack,
-							"rate": item_doc.last_purchase_rate,
+							"rate": item_doc.last_purchase_rate * conversion_factor,
 							"uom": 'Pack',
 							"stock_uom": d.stock_uom,
 							"warehouse": warehouse
