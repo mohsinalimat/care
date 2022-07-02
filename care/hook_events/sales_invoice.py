@@ -17,6 +17,12 @@ def updated_item_amendment_summary(doc, method):
                 }
             )
 
+def calculate_mod_amount(doc, mehtod):
+    if doc.is_franchise_inv:
+        for m in doc.payments:
+            m.amount = doc.rounded_total
+            m.base_amount = doc.rounded_total
+
 def apply_additional_discount(doc, method):
     if doc.docstatus == 0:
         doc.discount_amount = round_amount_by_2p5_diff(doc.grand_total)

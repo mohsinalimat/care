@@ -131,7 +131,10 @@ doc_events = {
         "before_insert": "care.hook_events.purchase_invoice.un_check_franchise_inv_generated"
     },
     "Sales Invoice": {
-        # "validate": ["care.hook_events.sales_invoice.updated_item_amendment_summary"],
+        "validate": [
+            "care.hook_events.sales_invoice.calculate_mod_amount"
+            # "care.hook_events.sales_invoice.updated_item_amendment_summary"
+        ],
         # "before_insert": "care.hook_events.sales_invoice.disable_rounded_total",
         # "before_submit": ["care.hook_events.sales_invoice.validate_cost_center"]
         "on_submit": "care.hook_events.sales_invoice.create_franchise_invoice"

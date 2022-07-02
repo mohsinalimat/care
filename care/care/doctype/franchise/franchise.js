@@ -39,7 +39,8 @@ frappe.ui.form.on('Franchise Item', {
             args: {
                 warehouse:row.warehouse,
                 customer:row.customer,
-                submit_invoice: row.submit_invoice
+                submit_invoice: row.submit_invoice,
+                mode_of_payment: row.mode_of_payment,
             },
             freeze: true,
             freeze_message: __("Invoice Creating..."),

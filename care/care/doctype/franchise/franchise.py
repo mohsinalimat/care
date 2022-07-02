@@ -407,7 +407,7 @@ def upload_data():
 	franchise.sync_data_on_franchise()
 
 @frappe.whitelist()
-def create_sales_invoice(warehouse, customer, submit_invoice=0):
+def create_sales_invoice(warehouse, customer, submit_invoice=0, mode_of_payment=None):
 	if warehouse and customer:
 		total = frappe.db.sql("""select count(*)
 							from `tabBin`
@@ -431,6 +431,7 @@ def create_sales_invoice(warehouse, customer, submit_invoice=0):
 				sale.set_warehouse = warehouse
 				sale.update_stock = 1
 				sale.is_franchise_inv = 1
+				sale.is_pos = 1
 				for d in avl_qty_items:
 					conversion_factor = get_conversion_factor(d.get('item_code'), 'Pack').get('conversion_factor') or 1
 					avl_qty_pack = math.floor(d.qty / conversion_factor)
@@ -444,6 +445,16 @@ def create_sales_invoice(warehouse, customer, submit_invoice=0):
 							"stock_uom": d.stock_uom,
 							"warehouse": warehouse
 						})
+				if mode_of_payment:
+					mod = frappe.get_doc("Mode of Payment", mode_of_payment)
+					account = cost_center = None
+					for m in mod.accounts:
+						account = m.default_account
+						cost_center = m.cost_center
+					sale.append('payments', {'mode_of_payment': mode_of_payment,
+											 'account': account,
+											 'type': mod.type})
+
 				sale.set_missing_values()
 				sale.insert(ignore_permissions=True)
 				frappe.db.commit()
