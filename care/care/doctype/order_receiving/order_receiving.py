@@ -234,7 +234,7 @@ class OrderReceiving(Document):
                 itm.conversion_factor = get_conversion_factor(itm.item_code, itm.uom).get('conversion_factor')
                 amt = itm.rate * itm.qty
                 if itm.discount > 0:
-                    discount_percent = (itm.discount / amt) * 100
+                    discount_percent = (itm.discount / amt) * 100 if amt else 0
                     itm.discount_percent = discount_percent
                 discount_amount = (amt / 100) * itm.discount_percent
                 amount = amt - discount_amount
