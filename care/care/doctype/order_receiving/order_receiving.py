@@ -441,30 +441,34 @@ def make_purchase_invoice(doc):
                                 md_doc = frappe.get_doc("Material Demand Item", p_tm.name)
                                 if md_doc:
                                     qty = md_doc.qty if md_doc.qty <= received_qty else received_qty
-                                    s = {
-                                        "item_code": d.get('item_code'),
-                                        "warehouse": md_doc.warehouse,
-                                        "qty": 0 - qty if doc.is_return else qty,
-                                        "received_qty": 0 - qty if doc.is_return else qty,
-                                        "rate": d.get('discount_after_rate'),
-                                        "expense_account": md_doc.expense_account,
-                                        "cost_center": md_doc.cost_center,
-                                        "uom": md_doc.uom,
-                                        "stock_Uom": md_doc.stock_uom,
-                                        "material_demand": md_doc.parent,
-                                        "material_demand_item": md_doc.name,
-                                        "order_receiving_item": d.name,
-                                        "item_tax_template": d.get('item_tax_template'),
-                                        "item_tax_rate": d.get('item_tax_rate'),
-                                        "margin_type": "Percentage" if d.get("discount_percent") else None,
-                                        "discount_percentage": d.get("discount_percent"),
-                                    }
-                                    received_qty -= md_doc.qty
+                                    if qty ==0:
+                                        qty
+                                    if qty > 0:
+                                        s = {
+                                            "item_code": d.get('item_code'),
+                                            "warehouse": md_doc.warehouse,
+                                            "qty": 0 - qty if doc.is_return else qty,
+                                            "received_qty": 0 - qty if doc.is_return else qty,
+                                            "rate": d.get('discount_after_rate'),
+                                            "expense_account": md_doc.expense_account,
+                                            "cost_center": md_doc.cost_center,
+                                            "uom": md_doc.uom,
+                                            "stock_Uom": md_doc.stock_uom,
+                                            "material_demand": md_doc.parent,
+                                            "material_demand_item": md_doc.name,
+                                            "order_receiving_item": d.name,
+                                            "item_tax_template": d.get('item_tax_template'),
+                                            "item_tax_rate": d.get('item_tax_rate'),
+                                            "margin_type": "Percentage" if d.get("discount_percent") else None,
+                                            "discount_percentage": d.get("discount_percent"),
+                                        }
+                                        received_qty -= md_doc.qty
 
-                                    key = (md_doc.warehouse)
-                                    item_details.setdefault(key, {"details": []})
-                                    fifo_queue = item_details[key]["details"]
-                                    fifo_queue.append(s)
+                                        key = (md_doc.warehouse)
+                                        item_details.setdefault(key, {"details": []})
+                                        fifo_queue = item_details[key]["details"]
+                                        fifo_queue.append(s)
+
                         if received_qty > 0:
                             s = {
                                 "item_code": d.get('item_code'),
