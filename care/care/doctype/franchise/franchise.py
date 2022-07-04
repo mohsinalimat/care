@@ -425,10 +425,12 @@ def create_sales_invoice(warehouse, customer, submit_invoice=0, mode_of_payment=
 											limit {1},{2}""".format(warehouse, start, end), as_dict=True)
 			if avl_qty_items:
 				sale = frappe.new_doc("Sales Invoice")
+				cost_center = frappe.get_value("Warehouse", warehouse, "cost_center")
 				sale.customer = customer
 				sale.posting_date = nowdate()
 				sale.due_date = nowdate()
 				sale.set_warehouse = warehouse
+				sale.cost_center = cost_center
 				sale.update_stock = 1
 				sale.is_franchise_inv = 1
 				sale.is_pos = 1
@@ -443,7 +445,8 @@ def create_sales_invoice(warehouse, customer, submit_invoice=0, mode_of_payment=
 							"rate": d.rate * conversion_factor,
 							"uom": 'Pack',
 							"stock_uom": d.stock_uom,
-							"warehouse": warehouse
+							"warehouse": warehouse,
+							"cost_center": cost_center
 						})
 				if mode_of_payment:
 					mod = frappe.get_doc("Mode of Payment", mode_of_payment)
@@ -455,7 +458,6 @@ def create_sales_invoice(warehouse, customer, submit_invoice=0, mode_of_payment=
 											 'account': account,
 											 'type': mod.type})
 
-				sale.set_missing_values()
 				sale.insert(ignore_permissions=True)
 				frappe.db.commit()
 				frappe.msgprint("Sales invoice {0} Created".format(sale.name),indicator='green', alert=1)

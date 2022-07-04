@@ -276,7 +276,7 @@ def create_purchase_invoice(invoice):
         invoice = json.loads(invoice)
         submit_invoice = invoice.get('submit_invoice')
         doc = frappe.get_doc(invoice)
-        doc.set_missing_values()
+        # doc.set_missing_values()
         doc.insert(ignore_permissions=True, ignore_mandatory=True)
         frappe.db.commit()
         if submit_invoice:

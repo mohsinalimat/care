@@ -58,6 +58,7 @@ def create_franchise_pi_invoice(doc):
                 "supplier": f_w_doc.supplier,
                 "posting_date": str(doc.posting_date),
                 "due_date": str(doc.due_date),
+                "set_posting_time": 1,
                 "company": f_w_doc.company_name,
                 "update_stock": 1,
                 "set_warehouse": doc.set_warehouse,
