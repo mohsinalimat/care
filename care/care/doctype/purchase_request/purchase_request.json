@@ -207,7 +207,7 @@
    "depends_on": "o_r_oth_supplier",
    "fieldname": "supplier",
    "fieldtype": "Link",
-   "label": "Supplier",
+   "label": "Receive Supplier",
    "mandatory_depends_on": "o_r_oth_supplier",
    "options": "Supplier"
   }
@@ -216,7 +216,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-06-27 11:10:53.203937",
+ "modified": "2022-07-04 11:51:46.330964",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Request",
