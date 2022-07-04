@@ -441,8 +441,6 @@ def make_purchase_invoice(doc):
                                 md_doc = frappe.get_doc("Material Demand Item", p_tm.name)
                                 if md_doc:
                                     qty = md_doc.qty if md_doc.qty <= received_qty else received_qty
-                                    if qty ==0:
-                                        qty
                                     if qty > 0:
                                         s = {
                                             "item_code": d.get('item_code'),
