@@ -154,8 +154,8 @@ doc_events = {
 
 scheduler_events = {
     "hourly": ["care.hook_events.override_pos_closing.execute_pos_invoices"],
-    "daily": ["care.hook_events.purchase_invoice.delete_purchase_inv_cr_tol_item",
-              "care.care.doctype.franchise.franchise.sync_data_scheduler"]
+    "daily": ["care.hook_events.purchase_invoice.delete_purchase_inv_cr_tol_item"],
+    "0 */3 * * *": ["care.care.doctype.franchise.franchise.sync_data_scheduler"]
 }
 
 # Testing

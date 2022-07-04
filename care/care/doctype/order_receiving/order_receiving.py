@@ -146,21 +146,35 @@ class OrderReceiving(Document):
         if self.update_buying_price or self.update_selling_price:
             for res in self.items:
                 if self.update_buying_price and res.rate != res.base_buying_price_list_rate:
-                    buying_price_list = frappe.get_value("Item Price", {'item_code': res.item_code,
-                                                                        'price_list': self.buying_price_list,
-                                                                        'buying': 1}, ['name'])
-                    if buying_price_list:
-                        item_price = frappe.get_doc("Item Price", buying_price_list)
-                        item_price.price_list_rate = res.rate / res.conversion_factor
-                        item_price.save(ignore_permissions=True)
+                    exit_buying_price_list = frappe.get_value("Item Price", {'item_code': res.item_code,
+                                                                'price_list': self.buying_price_list,
+                                                                'buying': 1,
+                                                                'price_list_rate': round(res.rate / res.conversion_factor,2)},
+                                                              ['name'])
+                    if not exit_buying_price_list:
+                        buying_price_list = frappe.get_value("Item Price", {'item_code': res.item_code,
+                                                                            'price_list': self.buying_price_list,
+                                                                            'buying': 1}, ['name'])
+                        if buying_price_list:
+                            item_price = frappe.get_doc("Item Price", buying_price_list)
+                            item_price.price_list_rate = round(res.rate / res.conversion_factor,2)
+                            item_price.save(ignore_permissions=True)
+
                 if self.update_selling_price and res.selling_price_list_rate != res.base_selling_price_list_rate:
-                    selling_price_list = frappe.get_value("Item Price", {'item_code': res.item_code,
-                                                                         'price_list': self.base_selling_price_list,
-                                                                         'selling': 1}, ['name'])
-                    if selling_price_list:
-                        item_price = frappe.get_doc("Item Price", selling_price_list)
-                        item_price.price_list_rate = res.selling_price_list_rate / res.conversion_factor
-                        item_price.save(ignore_permissions=True)
+                    exit_selling_price_list = frappe.get_value("Item Price", {'item_code': res.item_code,
+                                                             'price_list': self.base_selling_price_list,
+                                                             'selling': 1,
+                                                            'price_list_rate': round(res.selling_price_list_rate / res.conversion_factor, 2)},
+                                                            ['name'])
+                    if not exit_selling_price_list:
+                        selling_price_list = frappe.get_value("Item Price", {'item_code': res.item_code,
+                                                                             'price_list': self.base_selling_price_list,
+                                                                             'selling': 1}, ['name'])
+                        if selling_price_list:
+                            item_price = frappe.get_doc("Item Price", selling_price_list)
+                            item_price.price_list_rate = round(res.selling_price_list_rate / res.conversion_factor, 2)
+                            item_price.save(ignore_permissions=True)
+
                 if self.update_discount and res.discount_percent:
                     query = """select p.name from `tabPricing Rule` as p 
                         inner join `tabPricing Rule Item Code` as pi on pi.parent = p.name 
@@ -176,12 +190,6 @@ class OrderReceiving(Document):
                     result = frappe.db.sql(query)
                     if result:
                         p_rule = frappe.get_doc("Pricing Rule", result[0][0])
-                        text = ""
-                        # if res.discount:
-                        # 	text = f"""Updated Discount Amount {p_rule.discount_amount} to {res.discount} From Order Receiving"""
-                        # 	p_rule.rate_or_discount = 'Discount Amount'
-                        # 	p_rule.discount_amount = res.discount
-
                         if float(res.discount_percent) != float(p_rule.discount_percentage):
                             text = f"""Updated Discount Percentage {p_rule.discount_percentage} 
                                         to {res.discount_percent} From Order Receiving"""
@@ -203,10 +211,6 @@ class OrderReceiving(Document):
                         p_rule.priority = priority
                         p_rule.valid_from = nowdate()
                         p_rule.append("items", {'item_code': res.item_code})
-                        # if res.discount:
-                        # 	p_rule.rate_or_discount = 'Discount Amount'
-                        # 	p_rule.discount_amount = res.discount
-                        # if res.discount_percent:
                         p_rule.rate_or_discount = 'Discount Percentage'
                         p_rule.discount_percentage = res.discount_percent
                         p_rule.save(ignore_permissions=True)
