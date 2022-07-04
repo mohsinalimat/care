@@ -76,8 +76,6 @@ frappe.ui.form.on('Order Receiving', {
                  make_return_entry(frm);
 
             }, __('Create'));
-        }
-        if(frm.doc.docstatus == 1){
             frappe.call({
                 method: "check_purchase_receipt_created",
                 doc: frm.doc,
