@@ -237,6 +237,7 @@ class HQTransfer(Document):
 							'avl_qty': avl_ord_qty_pack,
 							'qty': total_ord_qty_pack,
 							'allocated_qty': allocated_qty,
+							'amount': allocated_qty * buying_rate,
 							'code': w_lst
 						}
 						if d.get('avl_qty') > 0 and d.get('qty') > 0:
