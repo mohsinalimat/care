@@ -55,7 +55,7 @@ def create_franchise_pi_invoice(doc):
                 frappe.throw("Please set Franchise {0} Supplier in Franchise DocType".format(doc.set_warehouse))
             data = {
                 "doctype": "Purchase Invoice",
-                "sales_invoice_ref": doc.name,
+                "pospi_id": doc.name,
                 "supplier": f_w_doc.supplier,
                 "posting_date": str(doc.posting_date),
                 "due_date": str(doc.due_date),
