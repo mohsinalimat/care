@@ -139,7 +139,7 @@ class HQTransfer(Document):
 									"order_uom": 'Pack',
 									"warehouse": f_w_doc.warehouse
 								}
-								response = requests.get(url=url, headers=headers, params=datas)
+								response = requests.get(url=url, headers=headers, data=datas)
 								if response.status_code == 200:
 									response = frappe.parse_json(response.content.decode())
 									data = response.message
