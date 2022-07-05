@@ -9,6 +9,7 @@ import json
 import math
 from erpnext.stock.get_item_details import get_conversion_factor
 from care.hook_events.purchase_invoice import get_price_list_rate_for
+import requests
 
 class HQTransfer(Document):
 
@@ -46,30 +47,32 @@ class HQTransfer(Document):
 		lst = []
 		for res in result:
 			conversion_factor = get_conversion_factor(res.item_code, res.uom).get('conversion_factor') or 1
-			d = {
-				"item_code": res.item_code,
-				"item_name": res.item_name,
-				"stock_uom": res.stock_uom,
-				"uom": res.uom,
-				"stock_qty": res.actual_qty,
-				"conversion_factor": conversion_factor
-			}
-			data = get_items_details(res.item_code, json.dumps(self.as_dict()),json.dumps(d))
+			avl_ord_qty_pack = math.floor(res.actual_qty / conversion_factor)
+			if avl_ord_qty_pack > 0:
+				d = {
+					"item_code": res.item_code,
+					"item_name": res.item_name,
+					"stock_uom": res.stock_uom,
+					"uom": res.uom,
+					"stock_qty": res.actual_qty,
+					"conversion_factor": conversion_factor
+				}
+				data = get_items_details(res.item_code, json.dumps(self.as_dict()),json.dumps(d))
 
-			d['rate'] = data.get('rate')
-			d['avl_qty'] = data.get('avl_qty')
-			d['stock_qty'] = data.get('stock_qty')
-			d['allocated_qty'] = data.get('allocated_qty')
-			d['qty'] = data.get('demand')
-			d['amount'] = data.get('allocated_qty') * data.get('rate')
-			d['code'] = data.get('code')
+				d['rate'] = data.get('rate')
+				d['avl_qty'] = data.get('avl_qty')
+				d['stock_qty'] = data.get('stock_qty')
+				d['allocated_qty'] = data.get('allocated_qty')
+				d['qty'] = data.get('demand')
+				d['amount'] = data.get('allocated_qty') * data.get('rate')
+				d['code'] = data.get('code')
 
-			if data.get('avl_qty') > 0 and data.get('demand') > 0:
-				lst.append(d)
+				if data.get('avl_qty') > 0 and data.get('demand') > 0:
+					lst.append(d)
 		if lst:
 			return lst
 		else:
-			frappe.throw(_("Stock Item not found in <b>{0}</b>".format(self.hq_warehouse)))
+			frappe.throw(_("Item stock or Demand not found in <b>{0}</b>".format(self.hq_warehouse)))
 
 	def on_submit(self):
 		make_stock_entry(self)
@@ -170,6 +173,35 @@ def get_items_details(item_code, doc, item):
 					and (b.actual_qty < ird.warehouse_reorder_level or b.actual_qty is null)
 					and i.name = '{0}'""".format(item_code)
 		w_itm_qty = frappe.db.sql(query, as_dict=True)
+
+		#---------------franchise data -----------------------
+		franchise = frappe.get_single("Franchise")
+		if franchise.is_enabled:
+			for f_w_doc in franchise.franchise_list:
+				if f_w_doc.enable:
+					try:
+						if f_w_doc.url and f_w_doc.api_key and f_w_doc.api_secret:
+							url = str(f_w_doc.url) + "/api/method/care.utils.api.get_franchise_warehouse_order"
+							api_key = f_w_doc.api_key
+							api_secret = f_w_doc.api_secret
+							headers = {
+								'Authorization': 'token ' + str(api_key) + ':' + str(api_secret)
+							}
+							datas = {
+								"item_code": item_code,
+								"order_uom": 'Pack',
+								"warehouse": f_w_doc.warehouse
+							}
+							response = requests.get(url=url, headers=headers, params=datas)
+							if response.status_code == 200:
+								response = frappe.parse_json(response.content.decode())
+								data = response.message
+								w_itm_qty.extend(data)
+
+					except Exception as e:
+						frappe.log_error(title="Franchise Order API Error", message=e)
+						continue
+		# ---------------end -----------------------
 		w_lst = []
 		total_ord_qty_pack = 0
 		for d in w_itm_qty:
@@ -195,7 +227,7 @@ def get_items_details(item_code, doc, item):
 
 			ord_qty_pack = math.ceil(order_qty / conversion_factor)
 			total_ord_qty_pack += ord_qty_pack
-			w_lst.append({"warehouse": d.warehouse, "qty": ord_qty_pack, "order_qty": ord_qty_pack})
+			w_lst.append({"warehouse": d.get('warehouse'), "qty": ord_qty_pack, "order_qty": ord_qty_pack})
 
 		avl_qty = float(frappe.db.sql("""select IFNULL(sum(actual_qty), 0) from `tabBin`
 				where item_code = %s and warehouse = %s """, (item_code, doc.get('hq_warehouse')))[0][0] or 0)

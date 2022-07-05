@@ -42,8 +42,9 @@ def create_franchise_inv(doc_name):
 
 
 def create_franchise_invoice(inv, method):
-    frappe.enqueue(create_franchise_pi_invoice, doc=inv, queue='long', timeout=3600)
-    frappe.msgprint("creating franchise invoice in-process. please wait")
+    if inv.is_franchise_inv:
+        frappe.enqueue(create_franchise_pi_invoice, doc=inv, queue='long', timeout=1800)
+        frappe.msgprint("creating franchise invoice in-process. please wait")
 
 def create_franchise_pi_invoice(doc):
     if doc.is_franchise_inv:

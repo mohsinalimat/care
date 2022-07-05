@@ -167,6 +167,15 @@ frappe.ui.form.on("Purchase Request Item", {
         refresh_field("pack_order_qty", cdn, "items");
         refresh_field("amount", cdn, "items");
 	},
+    pack_order_qty: function(frm, cdt, cdn) {
+        var row = locals[cdt][cdn];
+        let order_qty = Math.ceil(row.pack_order_qty * parseFloat(row.conversion_factor))
+        row.order_qty = order_qty
+        let amount = row.rate * row.pack_order_qty
+        frappe.model.set_value(cdt,cdn,"amount",amount);
+        refresh_field("order_qty", cdn, "items");
+        refresh_field("amount", cdn, "items");
+	},
     rate: function(frm, cdt, cdn) {
         var row = locals[cdt][cdn];
         let amount = row.rate * row.order_qty
