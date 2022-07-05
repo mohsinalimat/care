@@ -12,7 +12,6 @@ from care.hook_events.purchase_invoice import get_price_list_rate_for
 import requests
 
 class HQTransfer(Document):
-
 	def validate(self):
 		total_qty = total_amount = 0
 		for res in self.items:
@@ -34,48 +33,220 @@ class HQTransfer(Document):
 		self.total_qty = total_qty
 		self.total_amount = total_amount
 
+	# @frappe.whitelist()
+	# def get_items(self):
+	# 	result = frappe.db.sql("""select distinct b.item_code,
+	# 					i.item_name,b.stock_uom,
+	# 					'Pack' as uom,
+	# 					b.actual_qty
+	# 					from `tabBin` as b
+	# 					inner join `tabItem` as i on b.item_code = i.name
+	# 					where b.warehouse = '{0}' and b.actual_qty > 0""".format(self.hq_warehouse), as_dict=True)
+	# 	lst = []
+	# 	for res in result:
+	# 		conversion_factor = get_conversion_factor(res.item_code, res.uom).get('conversion_factor') or 1
+	# 		avl_ord_qty_pack = math.floor(res.actual_qty / conversion_factor)
+	# 		if avl_ord_qty_pack > 0:
+	# 			d = {
+	# 				"item_code": res.item_code,
+	# 				"item_name": res.item_name,
+	# 				"stock_uom": res.stock_uom,
+	# 				"uom": res.uom,
+	# 				"stock_qty": res.actual_qty,
+	# 				"conversion_factor": conversion_factor
+	# 			}
+	# 			data = get_items_details(res.item_code, json.dumps(self.as_dict()),json.dumps(d))
+	#
+	# 			d['rate'] = data.get('rate')
+	# 			d['avl_qty'] = data.get('avl_qty')
+	# 			d['stock_qty'] = data.get('stock_qty')
+	# 			d['allocated_qty'] = data.get('allocated_qty')
+	# 			d['qty'] = data.get('demand')
+	# 			d['amount'] = data.get('allocated_qty') * data.get('rate')
+	# 			d['code'] = data.get('code')
+	#
+	# 			if data.get('avl_qty') > 0 and data.get('demand') > 0:
+	# 				lst.append(d)
+	# 	if lst:
+	# 		return lst
+	# 	else:
+	# 		frappe.throw(_("Item stock or Demand not found in <b>{0}</b>".format(self.hq_warehouse)))
+
+	def on_submit(self):
+		make_stock_entry(self)
 
 	@frappe.whitelist()
 	def get_items(self):
+		company = self.get('company')
+		buying_price_list = frappe.defaults.get_defaults().buying_price_list
+		currency = frappe.defaults.get_defaults().currency
+
 		result = frappe.db.sql("""select distinct b.item_code, 
-						i.item_name,b.stock_uom, 
-						'Pack' as uom, 
-						b.actual_qty 
-						from `tabBin` as b 
-						inner join `tabItem` as i on b.item_code = i.name
-						where b.warehouse = '{0}' and b.actual_qty > 0""".format(self.hq_warehouse), as_dict=True)
-		lst = []
+							i.item_name,b.stock_uom, 
+							'Pack' as uom, 
+							b.actual_qty 
+							from `tabBin` as b 
+							inner join `tabItem` as i on b.item_code = i.name
+							where b.warehouse = '{0}' and b.actual_qty > 0""".format(self.hq_warehouse), as_dict=True)
+
+		avl_item_lst = ["sasw@", "aws@a"]
 		for res in result:
 			conversion_factor = get_conversion_factor(res.item_code, res.uom).get('conversion_factor') or 1
 			avl_ord_qty_pack = math.floor(res.actual_qty / conversion_factor)
 			if avl_ord_qty_pack > 0:
-				d = {
-					"item_code": res.item_code,
-					"item_name": res.item_name,
-					"stock_uom": res.stock_uom,
-					"uom": res.uom,
-					"stock_qty": res.actual_qty,
-					"conversion_factor": conversion_factor
-				}
-				data = get_items_details(res.item_code, json.dumps(self.as_dict()),json.dumps(d))
+				avl_item_lst.append(res.item_code)
 
-				d['rate'] = data.get('rate')
-				d['avl_qty'] = data.get('avl_qty')
-				d['stock_qty'] = data.get('stock_qty')
-				d['allocated_qty'] = data.get('allocated_qty')
-				d['qty'] = data.get('demand')
-				d['amount'] = data.get('allocated_qty') * data.get('rate')
-				d['code'] = data.get('code')
+		if len(avl_item_lst) > 2:
+			lst = []
+			query = """select i.name as item_code,							
+					ird.warehouse,
+					ird.warehouse_reorder_level,
+					ird.warehouse_reorder_qty,
+					ird.optimum_level,
+					b.actual_qty
+					from `tabItem` i 
+					inner join `tabItem Default` idf on idf.parent = i.name
+					inner  join `tabItem Reorder` ird on ird.parent = i.name
+					left join `tabBin` b on b.item_code = i.name and b.warehouse = ird.warehouse
+					where 
+					idf.default_supplier is not null
+					and ird.warehouse is not null
+					and i.is_stock_item = 1 
+					and i.has_variants = 0
+					and i.disabled = 0
+					and ird.warehouse_reorder_level > 0 
+					and ird.warehouse_reorder_qty > 0 
+					and ird.optimum_level > 0
+					and (b.actual_qty < ird.warehouse_reorder_level or b.actual_qty is null)
+					and i.name in {0}""".format(tuple(avl_item_lst))
 
-				if data.get('avl_qty') > 0 and data.get('demand') > 0:
-					lst.append(d)
-		if lst:
-			return lst
+			w_itm_qty = frappe.db.sql(query, as_dict=True)
+
+			franchise = frappe.get_single("Franchise")
+			if franchise.is_enabled:
+				for f_w_doc in franchise.franchise_list:
+					if f_w_doc.enable:
+						try:
+							if f_w_doc.url and f_w_doc.api_key and f_w_doc.api_secret:
+								url = str(f_w_doc.url) + "/api/method/care.utils.api.get_franchise_warehouse_order"
+								api_key = f_w_doc.api_key
+								api_secret = f_w_doc.api_secret
+								headers = {
+									'Authorization': 'token ' + str(api_key) + ':' + str(api_secret)
+								}
+								datas = {
+									"items": json.dumps(avl_item_lst),
+									"order_uom": 'Pack',
+									"warehouse": f_w_doc.warehouse
+								}
+								response = requests.get(url=url, headers=headers, params=datas)
+								if response.status_code == 200:
+									response = frappe.parse_json(response.content.decode())
+									data = response.message
+									w_itm_qty.extend(data)
+
+						except Exception as e:
+							frappe.log_error(title="Franchise Order API Error", message=e)
+							continue
+			if w_itm_qty:
+				item_detail = {}
+				for res in w_itm_qty:
+					item_detail.setdefault(res.get('item_code'), [])
+					item_detail[res.get('item_code')].append(res)
+
+				for key in item_detail.keys():
+					bin_item = frappe.db.sql("""select distinct b.item_code, 
+							i.item_name,b.stock_uom, 
+							'Pack' as uom, 
+							b.actual_qty 
+							from `tabBin` as b 
+							inner join `tabItem` as i on b.item_code = i.name
+							where b.warehouse = '{0}' and b.item_code = '{1}' limit 1""".format(self.hq_warehouse, key), as_dict=True)[0]
+					conversion_factor = get_conversion_factor(bin_item.item_code, bin_item.uom).get('conversion_factor') or 1
+					avl_ord_qty_pack = math.floor(bin_item.actual_qty / conversion_factor)
+					if avl_ord_qty_pack > 0:
+						args = {
+							'item_code': bin_item.get('item_code'),
+							'currency': company,
+							'price_list': buying_price_list,
+							'price_list_currency': currency,
+							'company': company,
+							'transaction_date': self.get('posting_date'),
+							'doctype': self.get('doctype'),
+							'name': self.get('name'),
+							'qty': 1,
+							'child_docname': bin_item.get('name'),
+							'uom': bin_item.get('uom'),
+							'stock_uom': bin_item.get('stock_uom'),
+							'conversion_factor': conversion_factor
+						}
+						buying_rate = get_price_list_rate_for(bin_item.item_code, json.dumps(args)) or 0
+						w_lst = []
+						total_ord_qty_pack = 0
+						for d in item_detail[key]:
+							actual_qty = 0
+							if d.get('actual_qty'):
+								actual_qty = float(d.get('actual_qty'))
+							order_qty = 0
+							if self.get('base_on') == "Reorder Quantity":
+								if 0 <= actual_qty < float(d.get('warehouse_reorder_level')):
+									total_qty = actual_qty + float(d.get('warehouse_reorder_qty'))
+									if total_qty >= float(d.get('optimum_level')):
+										order_qty = float(d.get('optimum_level')) - actual_qty
+									else:
+										order_qty = float(d.get('warehouse_reorder_qty'))
+
+							if self.get('base_on') == "Optimal Level":
+								if 0 <= actual_qty < float(d.get('optimum_level')):
+									total_qty = actual_qty + float(d.get('optimum_level'))
+									if total_qty >= float(d.get('optimum_level')):
+										order_qty = float(d.get('optimum_level')) - actual_qty
+									else:
+										order_qty = float(d.get('optimum_level'))
+
+							ord_qty_pack = math.ceil(order_qty / conversion_factor)
+							total_ord_qty_pack += ord_qty_pack
+							w_lst.append(
+								{"warehouse": d.get('warehouse'), "qty": ord_qty_pack, "order_qty": ord_qty_pack})
+						allocated_qty = total_ord_qty_pack
+						if total_ord_qty_pack > avl_ord_qty_pack:
+							rem_qty = avl_ord_qty_pack
+							al_qty = 0
+							for w in w_lst:
+								if rem_qty > 0:
+									ord_qty = float(w.get('qty')) if w.get('qty') else 0
+									if ord_qty > rem_qty:
+										w['qty'] = rem_qty
+										al_qty += rem_qty
+										rem_qty = 0
+									else:
+										rem_qty -= ord_qty
+										al_qty += ord_qty
+								else:
+									w['qty'] = 0
+							allocated_qty = al_qty
+
+						d = {
+							"item_code": bin_item.item_code,
+							"item_name": bin_item.item_name,
+							"stock_uom": bin_item.stock_uom,
+							"uom": bin_item.uom,
+							"stock_qty": bin_item.actual_qty,
+							"conversion_factor": conversion_factor,
+							'rate': buying_rate,
+							'avl_qty': avl_ord_qty_pack,
+							'qty': total_ord_qty_pack,
+							'allocated_qty': allocated_qty,
+							'code': w_lst
+						}
+						if d.get('avl_qty') > 0 and d.get('qty') > 0:
+							lst.append(d)
+			if lst:
+				return lst
+			else:
+				frappe.throw(_("Demand not found in <b>{0}</b>".format(self.hq_warehouse)))
 		else:
-			frappe.throw(_("Item stock or Demand not found in <b>{0}</b>".format(self.hq_warehouse)))
-
-	def on_submit(self):
-		make_stock_entry(self)
+			frappe.throw(_("Item stock not found in <b>{0}</b>".format(self.hq_warehouse)))
 
 def make_stock_entry(doc):
 	if doc.items:

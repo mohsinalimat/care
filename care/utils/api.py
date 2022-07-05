@@ -287,7 +287,9 @@ def create_purchase_invoice(invoice):
 
 
 @frappe.whitelist()
-def get_franchise_warehouse_order(item_code, warehouse, order_uom=None):
+def get_franchise_warehouse_order(items, warehouse, order_uom=None):
+    if items:
+        items = json.loads(items)
     w_lst = ["axop123"]
     wr_doc = frappe.get_doc("Warehouse", warehouse)
     w_lst.append(warehouse)
@@ -317,9 +319,9 @@ def get_franchise_warehouse_order(item_code, warehouse, order_uom=None):
             and ird.warehouse_reorder_qty > 0
             and ird.optimum_level > 0
             and (b.actual_qty < ird.warehouse_reorder_level or b.actual_qty is null) 
-            and i.name = '{0}' 
-            and ird.warehouse = '{1}'""".format(item_code, warehouse)
-
+            and i.name in {0}  
+            and ird.warehouse = '{1}'""".format(tuple(items), warehouse)
+    print("----------------\n",query)
     item_details = frappe.db.sql(query, as_dict=True)
     for res in item_details:
         conversion_factor = 1
