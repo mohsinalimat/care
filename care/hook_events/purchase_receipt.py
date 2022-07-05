@@ -230,13 +230,6 @@ def calculate_line_level_tax(doc, method):
                     res.advance_tax = res.amount * (tax.tax_rate / 100)
         res.total_includetaxes = flt(res.sales_tax + res.further_tax + res.advance_tax) + res.amount
 
-        if frappe.db.exists("Warehouse", "Corporate Office Store - CP"):
-            conversion_factor = res.conversion_factor or 1
-            avl_qty = float(frappe.db.sql("""select IFNULL(sum(actual_qty), 0) from `tabBin`
-            where item_code = %s and warehouse = 'Corporate Office Store - CP' """, (res.get('item_code')))[0][0] or 0)
-            res.avl_stock_qty_corp = math.floor(avl_qty / conversion_factor)
-
-
 def cal_hq_wr_qty(doc, method):
     for res in doc.items:
         if frappe.db.exists("Warehouse", "Corporate Office Store - CP"):
