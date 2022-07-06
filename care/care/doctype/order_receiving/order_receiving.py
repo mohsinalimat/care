@@ -26,6 +26,9 @@ class OrderReceiving(Document):
     def update_total_margin(self):
         total_qty = total_amt = 0
         for res in self.items:
+            if res.qty == 0:
+                frappe.throw("Qty should be greater than zero.")
+
             if self.is_return:
                 if res.qty != res.received_qty and not res.code:
                     frappe.throw("Return qty is not equal to Received qty in row <b>{0}</b>. <span style='color:red'>please split the Qty.</span>".format(res.idx))
@@ -43,7 +46,7 @@ class OrderReceiving(Document):
             if res.selling_price_list_rate > 0:
                 margin = (res.selling_price_list_rate - res.rate) / res.selling_price_list_rate * 100
             res.margin_percent = margin
-            res.discount_after_rate = round(res.amount, 2) / res.qty
+            res.discount_after_rate = round(res.amount, 2) / res.qty if res.qty else 0
 
             total_qty = total_qty + res.qty
             total_amt = total_amt + res.amount
@@ -77,7 +80,7 @@ class OrderReceiving(Document):
             # self.ignore_un_order_item = 1
             self.accept_un_order_item = 1
             self.updated_price_list_and_dicsount()
-            frappe.enqueue(make_purchase_invoice, doc=self, queue='long')
+            frappe.enqueue(make_purchase_invoice, doc=self, queue='long', timeout=3600)
             frappe.db.set(self, 'status', 'Queue')
         self.update_p_r_c_tool_status()
 
@@ -143,21 +146,35 @@ class OrderReceiving(Document):
         if self.update_buying_price or self.update_selling_price:
             for res in self.items:
                 if self.update_buying_price and res.rate != res.base_buying_price_list_rate:
-                    buying_price_list = frappe.get_value("Item Price", {'item_code': res.item_code,
-                                                                        'price_list': self.buying_price_list,
-                                                                        'buying': 1}, ['name'])
-                    if buying_price_list:
-                        item_price = frappe.get_doc("Item Price", buying_price_list)
-                        item_price.price_list_rate = res.rate / res.conversion_factor
-                        item_price.save(ignore_permissions=True)
+                    exit_buying_price_list = frappe.get_value("Item Price", {'item_code': res.item_code,
+                                                                'price_list': self.buying_price_list,
+                                                                'buying': 1,
+                                                                'price_list_rate': round(res.rate / res.conversion_factor,2)},
+                                                              ['name'])
+                    if not exit_buying_price_list:
+                        buying_price_list = frappe.get_value("Item Price", {'item_code': res.item_code,
+                                                                            'price_list': self.buying_price_list,
+                                                                            'buying': 1}, ['name'])
+                        if buying_price_list:
+                            item_price = frappe.get_doc("Item Price", buying_price_list)
+                            item_price.price_list_rate = round(res.rate / res.conversion_factor,2)
+                            item_price.save(ignore_permissions=True)
+
                 if self.update_selling_price and res.selling_price_list_rate != res.base_selling_price_list_rate:
-                    selling_price_list = frappe.get_value("Item Price", {'item_code': res.item_code,
-                                                                         'price_list': self.base_selling_price_list,
-                                                                         'selling': 1}, ['name'])
-                    if selling_price_list:
-                        item_price = frappe.get_doc("Item Price", selling_price_list)
-                        item_price.price_list_rate = res.selling_price_list_rate / res.conversion_factor
-                        item_price.save(ignore_permissions=True)
+                    exit_selling_price_list = frappe.get_value("Item Price", {'item_code': res.item_code,
+                                                             'price_list': self.base_selling_price_list,
+                                                             'selling': 1,
+                                                            'price_list_rate': round(res.selling_price_list_rate / res.conversion_factor, 2)},
+                                                            ['name'])
+                    if not exit_selling_price_list:
+                        selling_price_list = frappe.get_value("Item Price", {'item_code': res.item_code,
+                                                                             'price_list': self.base_selling_price_list,
+                                                                             'selling': 1}, ['name'])
+                        if selling_price_list:
+                            item_price = frappe.get_doc("Item Price", selling_price_list)
+                            item_price.price_list_rate = round(res.selling_price_list_rate / res.conversion_factor, 2)
+                            item_price.save(ignore_permissions=True)
+
                 if self.update_discount and res.discount_percent:
                     query = """select p.name from `tabPricing Rule` as p 
                         inner join `tabPricing Rule Item Code` as pi on pi.parent = p.name 
@@ -173,12 +190,6 @@ class OrderReceiving(Document):
                     result = frappe.db.sql(query)
                     if result:
                         p_rule = frappe.get_doc("Pricing Rule", result[0][0])
-                        text = ""
-                        # if res.discount:
-                        # 	text = f"""Updated Discount Amount {p_rule.discount_amount} to {res.discount} From Order Receiving"""
-                        # 	p_rule.rate_or_discount = 'Discount Amount'
-                        # 	p_rule.discount_amount = res.discount
-
                         if float(res.discount_percent) != float(p_rule.discount_percentage):
                             text = f"""Updated Discount Percentage {p_rule.discount_percentage} 
                                         to {res.discount_percent} From Order Receiving"""
@@ -200,10 +211,6 @@ class OrderReceiving(Document):
                         p_rule.priority = priority
                         p_rule.valid_from = nowdate()
                         p_rule.append("items", {'item_code': res.item_code})
-                        # if res.discount:
-                        # 	p_rule.rate_or_discount = 'Discount Amount'
-                        # 	p_rule.discount_amount = res.discount
-                        # if res.discount_percent:
                         p_rule.rate_or_discount = 'Discount Percentage'
                         p_rule.discount_percentage = res.discount_percent
                         p_rule.save(ignore_permissions=True)
@@ -231,11 +238,11 @@ class OrderReceiving(Document):
                 itm.conversion_factor = get_conversion_factor(itm.item_code, itm.uom).get('conversion_factor')
                 amt = itm.rate * itm.qty
                 if itm.discount > 0:
-                    discount_percent = (itm.discount / amt) * 100
+                    discount_percent = (itm.discount / amt) * 100 if amt else 0
                     itm.discount_percent = discount_percent
                 discount_amount = (amt / 100) * itm.discount_percent
                 amount = amt - discount_amount
-                dis_aft_rate = amount / itm.qty
+                dis_aft_rate = amount / itm.qty if itm.qty else 0
                 itm.amount = amount
                 itm.net_amount = amount
                 itm.base_net_amount = amount
@@ -438,30 +445,32 @@ def make_purchase_invoice(doc):
                                 md_doc = frappe.get_doc("Material Demand Item", p_tm.name)
                                 if md_doc:
                                     qty = md_doc.qty if md_doc.qty <= received_qty else received_qty
-                                    s = {
-                                        "item_code": d.get('item_code'),
-                                        "warehouse": md_doc.warehouse,
-                                        "qty": 0 - qty if doc.is_return else qty,
-                                        "received_qty": 0 - qty if doc.is_return else qty,
-                                        "rate": d.get('discount_after_rate'),
-                                        "expense_account": md_doc.expense_account,
-                                        "cost_center": md_doc.cost_center,
-                                        "uom": md_doc.uom,
-                                        "stock_Uom": md_doc.stock_uom,
-                                        "material_demand": md_doc.parent,
-                                        "material_demand_item": md_doc.name,
-                                        "order_receiving_item": d.name,
-                                        "item_tax_template": d.get('item_tax_template'),
-                                        "item_tax_rate": d.get('item_tax_rate'),
-                                        "margin_type": "Percentage" if d.get("discount_percent") else None,
-                                        "discount_percentage": d.get("discount_percent"),
-                                    }
-                                    received_qty -= md_doc.qty
+                                    if qty > 0:
+                                        s = {
+                                            "item_code": d.get('item_code'),
+                                            "warehouse": md_doc.warehouse,
+                                            "qty": 0 - qty if doc.is_return else qty,
+                                            "received_qty": 0 - qty if doc.is_return else qty,
+                                            "rate": d.get('discount_after_rate'),
+                                            "expense_account": md_doc.expense_account,
+                                            "cost_center": md_doc.cost_center,
+                                            "uom": md_doc.uom,
+                                            "stock_Uom": md_doc.stock_uom,
+                                            "material_demand": md_doc.parent,
+                                            "material_demand_item": md_doc.name,
+                                            "order_receiving_item": d.name,
+                                            "item_tax_template": d.get('item_tax_template'),
+                                            "item_tax_rate": d.get('item_tax_rate'),
+                                            "margin_type": "Percentage" if d.get("discount_percent") else None,
+                                            "discount_percentage": d.get("discount_percent"),
+                                        }
+                                        received_qty -= md_doc.qty
 
-                                    key = (md_doc.warehouse)
-                                    item_details.setdefault(key, {"details": []})
-                                    fifo_queue = item_details[key]["details"]
-                                    fifo_queue.append(s)
+                                        key = (md_doc.warehouse)
+                                        item_details.setdefault(key, {"details": []})
+                                        fifo_queue = item_details[key]["details"]
+                                        fifo_queue.append(s)
+
                         if received_qty > 0:
                             s = {
                                 "item_code": d.get('item_code'),
@@ -509,6 +518,7 @@ def make_purchase_invoice(doc):
             if item_details:
                 if item_details:
                     for key in item_details.keys():
+                        pi_dict = {}
                         try:
                             is_franchise = frappe.get_value("Warehouse", {'name': key}, "is_franchise")
                             cost_center = frappe.get_value("Warehouse", {'name': key}, "cost_center")
@@ -544,10 +554,14 @@ def make_purchase_invoice(doc):
                                                                 'item_tax_template'):
                                             res.item_tax_template = None
                                             res.item_tax_rate = '{}'
+                                pi_dict = pi.as_dict()
                                 pi.insert(ignore_permissions=True)
                         except Exception as e:
-                            print("---------error: ",e)
+                            error = "------- "+str(e)+" -----\n"+str(pi_dict)
+                            frappe.log_error(title="Creating Purchase Receipt Error", message=error)
+                            frappe.msgprint("Creating Purchase Receipt error log generated", indicator='red', alert=True)
                             continue
+
         frappe.msgprint(_("Purchase Receipt Created"), alert=1)
     if doc.is_return:
         frappe.db.set(doc, 'status', 'Return')

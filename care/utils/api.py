@@ -227,12 +227,16 @@ def set_item_price(item_prices):
             try:
                 existing_price = frappe.db.get_value("Item Price", {"item_code": res.get('item_code'),
                                                     "buying": res.get('buying'),
-                                                    "selling": res.get('selling'),
-                                                    "price_list": res.get('price_list'),
-                                                    "price_list_rate": res.get('price_list_rate'),
-                                                    "valid_from": getdate(res.get('valid_from')),
+                                                    "selling": res.get('selling')
                                                     }, "name")
-                if not existing_price:
+                if existing_price:
+                    itm_price = frappe.get_doc("Item Price", existing_price)
+                    itm_price.update(res)
+                    itm_price.flags.ignore_permissions = True
+                    itm_price.flags.ignore_mandatory = True
+                    itm_price.flags.ignore_if_duplicate = True
+                    itm_price.save()
+                else:
                     frappe.get_doc(res).insert(ignore_permissions=True, ignore_mandatory=True)
                     frappe.db.commit()
             except Exception as e:
@@ -270,7 +274,58 @@ def set_price_rule(rules):
 def create_purchase_invoice(invoice):
     if invoice:
         invoice = json.loads(invoice)
+        submit_invoice = invoice.get('submit_invoice')
         doc = frappe.get_doc(invoice)
-        doc.set_missing_values()
+        # doc.set_missing_values()
         doc.insert(ignore_permissions=True, ignore_mandatory=True)
         frappe.db.commit()
+        if submit_invoice:
+            try:
+                doc.submit()
+            except Exception as e:
+                pass
+
+
+@frappe.whitelist()
+def get_franchise_warehouse_order(items, warehouse, order_uom=None):
+    if items:
+        items = json.loads(items)
+    w_lst = ["axop123"]
+    wr_doc = frappe.get_doc("Warehouse", warehouse)
+    w_lst.append(warehouse)
+
+    if wr_doc.is_group:
+        child_wr = frappe.get_list("Warehouse", filters={'parent_warehouse': wr_doc.name}, fields='*')
+        for r in child_wr:
+            w_lst.append(r.name)
+
+    query = """select i.name as item_code,							
+            ird.warehouse,
+            ird.warehouse_reorder_level,
+            ird.warehouse_reorder_qty,
+            ird.optimum_level,
+            b.actual_qty
+            from `tabItem` i
+            inner join `tabItem Default` idf on idf.parent = i.name
+            inner  join `tabItem Reorder` ird on ird.parent = i.name
+            left join `tabBin` b on b.item_code = i.name and b.warehouse = ird.warehouse
+            where
+            idf.default_supplier is not null
+            and ird.warehouse is not null
+            and i.is_stock_item = 1
+            and i.has_variants = 0
+            and i.disabled = 0
+            and ird.warehouse_reorder_level > 0
+            and ird.warehouse_reorder_qty > 0
+            and ird.optimum_level > 0
+            and (b.actual_qty < ird.warehouse_reorder_level or b.actual_qty is null) 
+            and i.name in {0}  
+            and ird.warehouse = '{1}'""".format(tuple(items), warehouse)
+    item_details = frappe.db.sql(query, as_dict=True)
+    for res in item_details:
+        conversion_factor = 1
+        conversion = get_conversion_factor(res.item_code, order_uom)
+        if conversion:
+            conversion_factor = conversion['conversion_factor']
+        res['conversion_factor'] = conversion_factor
+    return item_details

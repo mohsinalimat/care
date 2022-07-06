@@ -12,6 +12,7 @@ from erpnext.setup.doctype.item_group.item_group import get_item_group_defaults
 from erpnext.setup.doctype.brand.brand import get_brand_defaults
 from care.hook_events.make_xlsx_file import make_xlsx,make_xlsx_summary
 from care.hook_events.purchase_invoice import get_price_list_rate_for
+import math
 
 class PurchaseRequest(Document):
 
@@ -224,25 +225,21 @@ class PurchaseRequest(Document):
 						expense_account = get_default_expense_account(item_defaults, item_group_defaults, brand_defaults)
 						cost_center = get_default_cost_center(self,item_defaults, item_group_defaults, brand_defaults)
 
-						qty = d.order_qty / conversion_factor
-						q_lst = "0."+str(round(qty, 2)).split(".")[1]
-						if 0 < float(q_lst) <= 0.50:
-							r = .55 - float(q_lst)
-							qty += r
+						# qty = math.ceil(d.order_qty / conversion_factor)
 						md.append("items", {
 							"item_code": d.item_code,
 							"item_name": d.item_name,
 							"brand": d.brand,
 							"description": d.item_description,
 							"schedule_date": self.required_by,
-							"qty": round(qty),
+							"qty": d.pack_order_qty,
 							"stock_uom": d.stock_uom,
 							"uom": self.order_uom,
 							"conversion_factor": conversion_factor,
 							"warehouse": key[1],
 							"actual_qty": d.avl_qty,
 							"rate": d.rate,
-							"amount": d.rate * d.order_qty,
+							"amount": d.rate * d.pack_order_qty,
 							"stock_qty": d.order_qty * conversion_factor,
 							"expense_account": expense_account,
 							"cost_center": cost_center

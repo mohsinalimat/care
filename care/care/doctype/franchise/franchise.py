@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
-from frappe.utils import now_datetime, nowdate
+from frappe.utils import now_datetime, nowdate,flt
 from frappe.model.document import Document
 import json
 import requests
@@ -12,7 +12,6 @@ from erpnext.stock.get_item_details import get_conversion_factor
 class Franchise(Document):
 	@frappe.whitelist()
 	def sync_data_on_franchise(self):
-		# self.set_account()
 		self.set_item_group()
 		self.set_item_brand()
 		self.set_item_uom()
@@ -246,7 +245,7 @@ class Franchise(Document):
 
 	def set_item_price(self):
 		for res in self.franchise_list:
-			if res.enable and res.update_price:
+			if res.enable:
 				total = frappe.db.sql("""select count(*) from `tabItem Price` where modified >= '{0}'""".format(res.last_update))[0][0] or 0
 				sets = math.floor(total / 200) + 1
 				start = end = 0
@@ -254,9 +253,10 @@ class Franchise(Document):
 					end = start + 200
 					item_prices = frappe.db.sql("""select 'Item Price' as doctype, item_code, item_name, item_description, 
 									buying, selling, price_list, 
-									CONVERT(valid_from, CHAR) as valid_from, currency,packing_unit, uom, 
+									null as valid_from, currency,packing_unit, uom, 
 									price_list_rate from `tabItem Price` where modified >= '{0}' 
-									limit {1},{2}""".format(res.last_update, start, end), as_dict=True)
+									order by item_code, valid_from 
+									limit {1},{2} """.format(res.last_update, start, end), as_dict=True)
 					if item_prices:
 						try:
 							url = str(res.url) + "/api/method/care.utils.api.set_item_price"
@@ -400,14 +400,14 @@ def _get_item_dict(itm_doc, company):
 
 
 def sync_data_scheduler():
-	frappe.enqueue(upload_data, queue='long')
+	frappe.enqueue(upload_data, queue='long', timeout=3600)
 
 def upload_data():
 	franchise = frappe.get_single("Franchise")
 	franchise.sync_data_on_franchise()
 
 @frappe.whitelist()
-def create_sales_invoice(warehouse, customer):
+def create_sales_invoice(warehouse, customer, submit_invoice=0, mode_of_payment=None):
 	if warehouse and customer:
 		total = frappe.db.sql("""select count(*)
 							from `tabBin`
@@ -417,33 +417,54 @@ def create_sales_invoice(warehouse, customer):
 		start = end = 0
 		for p in range(0, sets):
 			end = start + 400
-			avl_qty_items = frappe.db.sql("""select item_code, stock_uom, sum(actual_qty) as qty
+			avl_qty_items = frappe.db.sql("""select item_code, stock_uom, sum(actual_qty) as qty,
+											sum(valuation_rate) as rate
 											from `tabBin`
 											where warehouse = '{0}' and actual_qty > 0 
 											group by item_code, stock_uom 
 											limit {1},{2}""".format(warehouse, start, end), as_dict=True)
 			if avl_qty_items:
 				sale = frappe.new_doc("Sales Invoice")
+				cost_center = frappe.get_value("Warehouse", warehouse, "cost_center")
 				sale.customer = customer
 				sale.posting_date = nowdate()
 				sale.due_date = nowdate()
 				sale.set_warehouse = warehouse
+				sale.cost_center = cost_center
 				sale.update_stock = 1
 				sale.is_franchise_inv = 1
+				sale.is_pos = 1
 				for d in avl_qty_items:
 					conversion_factor = get_conversion_factor(d.get('item_code'), 'Pack').get('conversion_factor') or 1
-					avl_qty_pack = math.ceil(d.qty / conversion_factor)
-					item_doc = frappe.get_doc("Item", d.item_code)
-					sale.append("items", {
-						"item_code": d.item_code,
-						"qty": avl_qty_pack,
-						"rate": item_doc.last_purchase_rate,
-						"uom": 'Pack',
-						"stock_uom": d.stock_uom,
-						"warehouse": warehouse
-					})
-				sale.set_missing_values()
+					avl_qty_pack = math.floor(d.qty / conversion_factor)
+					if avl_qty_pack > 0:
+						item_doc = frappe.get_doc("Item", d.item_code)
+						sale.append("items", {
+							"item_code": d.item_code,
+							"qty": avl_qty_pack,
+							"rate": d.rate * conversion_factor,
+							"uom": 'Pack',
+							"stock_uom": d.stock_uom,
+							"warehouse": warehouse,
+							"cost_center": cost_center
+						})
+				if mode_of_payment:
+					mod = frappe.get_doc("Mode of Payment", mode_of_payment)
+					account = cost_center = None
+					for m in mod.accounts:
+						account = m.default_account
+						cost_center = m.cost_center
+					sale.append('payments', {'mode_of_payment': mode_of_payment,
+											 'account': account,
+											 'type': mod.type})
+
 				sale.insert(ignore_permissions=True)
+				frappe.db.commit()
 				frappe.msgprint("Sales invoice {0} Created".format(sale.name),indicator='green', alert=1)
+				if flt(submit_invoice):
+					try:
+						sale.submit()
+					except Exception as e:
+						pass
 			start = end
 

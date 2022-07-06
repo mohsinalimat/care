@@ -2,13 +2,12 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('HQ Transfer', {
-    setup: function(frm){
-        if (!frm.doc.date){
+    onload: function(frm){
+        if (frm.doc.__islocal){
             frm.set_value("posting_date", frappe.datetime.get_today());
         }
     },
 	refresh: function(frm) {
-	    apply_item_filters(frm)
         frm.fields_dict.get_items.$input.addClass("btn-primary");
         frm.set_query("hq_warehouse", () => {
 			return {
@@ -17,21 +16,8 @@ frappe.ui.form.on('HQ Transfer', {
 				}
 			};
 		})
-		frm.set_query("purchase_request", () => {
-			return {
-				"filters": {
-					"docstatus": 1
-				}
-			};
-		})
 	},
-    purchase_request: function (frm){
-	    apply_item_filters(frm)
-    },
     get_items: function(frm){
-        if(!frm.doc.purchase_request){
-            frappe.throw("Select Purchase Request first!")
-        }
         if(!frm.doc.hq_warehouse){
             frappe.throw("Select HQ Warehouse first!")
         }
@@ -40,6 +26,7 @@ frappe.ui.form.on('HQ Transfer', {
         frappe.call({
             method: "get_items",
             doc: frm.doc,
+            freeze: true,
             callback: function(r) {
                 frm.clear_table("items");
                 if(r.message) {
@@ -54,7 +41,9 @@ frappe.ui.form.on('HQ Transfer', {
                         item.avl_qty = d.avl_qty
                         item.rate = d.rate
                         item.qty = d.qty
+                        item.allocated_qty = d.allocated_qty
                         item.amount = d.amount
+                        item.code = JSON.stringify(d.code)
                     })
                 }
                 refresh_field("items");
@@ -72,7 +61,6 @@ frappe.ui.form.on('HQ Transfer Item', {
         }
         if (row.item_code){
             get_items_details(frm, cdt, cdn)
-            apply_item_filters(frm)
         }
     },
     uom: function(frm, cdt, cdn){
@@ -91,34 +79,10 @@ frappe.ui.form.on('HQ Transfer Item', {
 	},
 	split_qty: function(frm, cdt, cdn) {
         var row = locals[cdt][cdn];
-        frappe.call({
-            method: "care.care.doctype.hq_transfer.hq_transfer.get_warehouse",
-            args: {
-                purchase_request:frm.doc.purchase_request,
-                item:row.item_code
-            },
-            callback: function(r) {
-                split_warehouse_wise_qty(row, frm, cdt, cdn, r.message)
-            }
-        });
+        split_warehouse_wise_qty(row, frm, cdt, cdn)
 	}
 });
 
-function apply_item_filters(frm){
-//    console.log("apply_item_filters")
-    frappe.call({
-        method: "get_item_code",
-        doc: frm.doc,
-        callback: function(r) {
-            frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
-                return {
-                    filters: {'name':['in',r.message]}
-                }
-            }
-        }
-    });
-
-}
 
 function update_amount(frm, cdt, cdn){
     var row = locals[cdt][cdn];
@@ -152,15 +116,14 @@ function get_items_details(frm, cdt, cdn){
             frappe.model.set_value( cdt, cdn, 'rate', r.message.rate || 0)
             frappe.model.set_value( cdt, cdn, 'qty', r.message.demand || 0)
             frappe.model.set_value( cdt, cdn, 'stock_qty', r.message.stock_qty || 0)
+            frappe.model.set_value( cdt, cdn, 'allocated_qty', r.message.allocated_qty || 0)
+            frappe.model.set_value( cdt, cdn, 'code', JSON.stringify(r.message.code))
         }
     })
 }
 
-function split_warehouse_wise_qty(row, frm, cdt, cdn, warhs){
+function split_warehouse_wise_qty(row, frm, cdt, cdn){
     let data = JSON.parse(row.code || '[]')
-    if (data.length === 0){
-        data = warhs;
-    }
     let dialog = new frappe.ui.Dialog({
         title: __('Split Qty'),
         fields: [
@@ -235,13 +198,15 @@ function split_warehouse_wise_qty(row, frm, cdt, cdn, warhs){
                 t_qty = t_qty + d.qty
                 lst.push({"warehouse": d.warehouse, "order_qty": d.order_qty, "qty": d.qty})
             });
-            if (values.avl_qty != t_qty){
+            if (values.avl_qty < t_qty){
                 frappe.throw(__("Total split qty must be equal to ") + values.avl_qty);
             }
             else{
                 dialog.hide();
                 frappe.model.set_value(cdt,cdn,"code",JSON.stringify(lst));
+                frappe.model.set_value(cdt,cdn,"allocated_qty",t_qty);
                 refresh_field("code", cdn, "items");
+                refresh_field("allocated_qty", cdn, "items");
             }
         }
     });

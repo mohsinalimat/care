@@ -14,7 +14,8 @@ frappe.ui.form.on('Purchase Invoice Creation Tool', {
 			return {
 				"filters": {
 					"docstatus": 1,
-					"date": frm.doc.date
+					"date": frm.doc.date,
+					"status": 'Open'
 //					"status": "Order Created"
 				}
 			};

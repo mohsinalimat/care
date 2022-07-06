@@ -107,8 +107,10 @@ doc_events = {
     },
     "Purchase Receipt": {
         "before_save": "care.hook_events.purchase_receipt.calculate_taxes",
-        "validate": [ "care.hook_events.purchase_receipt.calculate_item_level_tax_breakup",
-                        "care.hook_events.purchase_receipt.calculate_line_level_tax"],
+        "validate": ["care.hook_events.purchase_receipt.calculate_item_level_tax_breakup",
+                    "care.hook_events.purchase_receipt.calculate_line_level_tax",
+                    "care.hook_events.purchase_receipt.cal_hq_wr_qty"
+                    ],
         "on_submit": ["care.hook_events.purchase_receipt.update_p_r_c_tool_status",
                 "care.hook_events.purchase_receipt.update_md_status",
         ],
@@ -131,7 +133,10 @@ doc_events = {
         "before_insert": "care.hook_events.purchase_invoice.un_check_franchise_inv_generated"
     },
     "Sales Invoice": {
-        # "validate": ["care.hook_events.sales_invoice.updated_item_amendment_summary"],
+        "validate": [
+            "care.hook_events.sales_invoice.calculate_mod_amount"
+            # "care.hook_events.sales_invoice.updated_item_amendment_summary"
+        ],
         # "before_insert": "care.hook_events.sales_invoice.disable_rounded_total",
         # "before_submit": ["care.hook_events.sales_invoice.validate_cost_center"]
         "on_submit": "care.hook_events.sales_invoice.create_franchise_invoice"
@@ -151,8 +156,10 @@ doc_events = {
 
 scheduler_events = {
     "hourly": ["care.hook_events.override_pos_closing.execute_pos_invoices"],
-    "daily": ["care.hook_events.purchase_invoice.delete_purchase_inv_cr_tol_item",
-              "care.care.doctype.franchise.franchise.sync_data_scheduler"]
+    "daily": ["care.hook_events.purchase_invoice.delete_purchase_inv_cr_tol_item"],
+    "cron": {
+        "0 */3 * * *": ["care.care.doctype.franchise.franchise.sync_data_scheduler"]
+    }
 }
 
 # Testing
