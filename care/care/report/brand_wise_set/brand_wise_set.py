@@ -21,6 +21,12 @@ def get_columns():
 			"width": 170
 		},
 		{
+			"fieldname": "supplier_name",
+			"fieldtype": "Data",
+			"label": "Supplier Name",
+			"width": 170
+		},
+		{
 			"fieldname": "brand",
 			"fieldtype": "Link",
 			"label": "Brand",
