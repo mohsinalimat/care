@@ -108,8 +108,7 @@ doc_events = {
     "Purchase Receipt": {
         "before_save": "care.hook_events.purchase_receipt.calculate_taxes",
         "validate": ["care.hook_events.purchase_receipt.calculate_item_level_tax_breakup",
-                    "care.hook_events.purchase_receipt.calculate_line_level_tax",
-                    "care.hook_events.purchase_receipt.cal_hq_wr_qty"
+                    "care.hook_events.purchase_receipt.calculate_line_level_tax"
                     ],
         "on_submit": ["care.hook_events.purchase_receipt.update_p_r_c_tool_status",
                 "care.hook_events.purchase_receipt.update_md_status",
