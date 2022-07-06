@@ -365,8 +365,9 @@ def make_purchase_invoice(doc):
 
             if pi.get('items'):
                 taxes = get_taxes_and_charges('Purchase Taxes and Charges Template', doc.taxes_and_charges)
-                for tax in taxes:
-                    pi.append('taxes', tax)
+                if taxes:
+                    for tax in taxes:
+                        pi.append('taxes', tax)
                 pi.set_missing_values()
                 for res in pi.items:
                     if res.order_receiving_item:
@@ -545,8 +546,9 @@ def make_purchase_invoice(doc):
                             if pi.get('items'):
                                 taxes = get_taxes_and_charges('Purchase Taxes and Charges Template',
                                                               doc.taxes_and_charges)
-                                for tax in taxes:
-                                    pi.append('taxes', tax)
+                                if taxes:
+                                    for tax in taxes:
+                                        pi.append('taxes', tax)
                                 pi.set_missing_values()
                                 for res in pi.items:
                                     if res.order_receiving_item:
