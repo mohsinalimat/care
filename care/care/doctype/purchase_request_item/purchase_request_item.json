@@ -15,6 +15,7 @@
   "pack_order_qty",
   "rate",
   "amount",
+  "avl_stock_qty_corp",
   "column_break_9",
   "stock_uom",
   "conversion_factor",
@@ -170,12 +171,19 @@
    "fieldname": "conversion_factor",
    "fieldtype": "Float",
    "label": "UOM Conversion Factor"
+  },
+  {
+   "description": "In Pack",
+   "fieldname": "avl_stock_qty_corp",
+   "fieldtype": "Float",
+   "label": "Avl Stock Qty CORP",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-07-05 12:45:42.761595",
+ "modified": "2022-07-06 18:01:26.896951",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Purchase Request Item",

@@ -169,6 +169,13 @@ class PurchaseRequest(Document):
 				percent = warehouse_dict[d.get('warehouse')]
 				qty = order_qty * (percent / 100)
 				d['order_qty'] = qty
+				avl_stock_qty_corp = 0
+				if frappe.db.exists("Warehouse", "Corporate Office Store - CP"):
+					avl_qty = float(frappe.db.sql("""select IFNULL(sum(actual_qty), 0) from `tabBin`
+								where item_code = %s and warehouse = 'Corporate Office Store - CP' """,
+												  (d.get('item_code')))[0][0] or 0)
+					avl_stock_qty_corp = math.floor(avl_qty / d.get('conversion_factor'))
+
 				j_d = json.dumps({
 							"item_code": d.get('item_code'),
 							"price_list": frappe.defaults.get_defaults().buying_price_list,
@@ -185,6 +192,7 @@ class PurchaseRequest(Document):
 						})
 				rate = get_price_list_rate_for(d.get('item_code'),j_d )
 				d['last_purchase_rate'] = rate if rate else 0
+				d["avl_stock_qty_corp"] = avl_stock_qty_corp
 
 		return item_details
 
