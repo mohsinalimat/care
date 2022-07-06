@@ -54,6 +54,7 @@ def get_data(filters):
 	
 	query = """select 
 		pr.name,
+		pr.supplier_name,
 		pri.brand,
 		pri.item_name,
 		pr.set_warehouse,
