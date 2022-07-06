@@ -462,6 +462,10 @@ def create_sales_invoice(warehouse, customer, submit_invoice=0, mode_of_payment=
 						item_doc = frappe.get_doc("Item", d.item_code)
 						sale.append("items", {
 							"item_code": d.item_code,
+							"item_name": item_doc.item_name,
+							"brand": item_doc.brand,
+							"item_group": item_doc.item_group,
+							"description": item_doc.description,
 							"qty": avl_qty_pack,
 							"rate": d.rate * conversion_factor,
 							"uom": 'Pack',
