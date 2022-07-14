@@ -64,7 +64,8 @@ def create_franchise_pi_invoice(doc):
                 "update_stock": 1,
                 "set_warehouse": doc.set_warehouse,
                 "submit_invoice": f_w_doc.submit_invoice,
-                "items": []
+                "items": [],
+                "sales_tax_item": []
             }
             itm_lst = data['items']
             for res in doc.items:
@@ -80,6 +81,15 @@ def create_franchise_pi_invoice(doc):
                     "discount_percentage": res.discount_percentage,
                     "discount_amount": res.discount_amount
                 })
+
+            sales_tax_item = data['sales_tax_item']
+            if doc.taxes:
+                for t in doc.taxes:
+                    sales_tax_item.append({
+                        "charge_type": f_w_doc.charge_type,
+                        "category": f_w_doc.category,
+                        "tax_amount": t.tax_amount
+                    })
 
             # url = str(f_w_doc.url) + "/api/resource/Purchase Invoice"
             url = str(f_w_doc.url) + "/api/method/care.utils.api.create_purchase_invoice"

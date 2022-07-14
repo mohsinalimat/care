@@ -29,6 +29,8 @@
   "last_item_price_update_date",
   "last_pricing_rule_update_date",
   "column_break_19",
+  "charge_type",
+  "category",
   "mode_of_payment",
   "generate_invoice"
  ],
@@ -75,6 +77,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "URL",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -83,6 +86,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "API Key",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -91,6 +95,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "API Secret",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -197,12 +202,26 @@
    "fieldname": "last_pricing_rule_update_date",
    "fieldtype": "Datetime",
    "label": "Last Pricing Rule Update Date"
+  },
+  {
+   "default": "Actual",
+   "fieldname": "charge_type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "\nActual\nOn Net Total\nOn Previous Row Amount\nOn Previous Row Total\nOn Item Quantity"
+  },
+  {
+   "default": "Total",
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "label": "Consider Tax or Charge for",
+   "options": "Valuation and Total\nValuation\nTotal"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-07-06 13:35:12.517004",
+ "modified": "2022-07-14 16:25:23.444315",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Franchise Item",

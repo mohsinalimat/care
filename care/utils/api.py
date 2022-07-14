@@ -1,6 +1,7 @@
 import frappe
 from frappe.utils import nowdate, getdate
 from erpnext.stock.get_item_details import get_conversion_factor
+from erpnext.controllers.accounts_controller import get_taxes_and_charges
 import json
 
 @frappe.whitelist()
@@ -275,8 +276,23 @@ def create_purchase_invoice(invoice):
     if invoice:
         invoice = json.loads(invoice)
         submit_invoice = invoice.get('submit_invoice')
+        sales_tax_item = invoice.get('sales_tax_item')
+        invoice.pop('sales_tax_item')
         doc = frappe.get_doc(invoice)
         # doc.set_missing_values()
+        if frappe.db.exists('Purchase Taxes and Charges Template', 'HO Purchase - CP'):
+            doc.taxes_and_charges = 'HO Purchase - CP'
+            taxes = get_taxes_and_charges('Purchase Taxes and Charges Template', 'HO Purchase - CP')
+            if taxes and sales_tax_item:
+                for tax, stax in zip(taxes, sales_tax_item ):
+                    tax['tax_amount'] = stax.get('tax_amount')
+                    tax['category'] = stax.get('category')
+                    tax['charge_type'] = stax.get('charge_type')
+                    doc.append('taxes', tax)
+            elif taxes and not sales_tax_item:
+                for tax in taxes:
+                    doc.append('taxes', tax)
+
         doc.insert(ignore_permissions=True, ignore_mandatory=True)
         frappe.db.commit()
         if submit_invoice:
@@ -329,3 +345,5 @@ def get_franchise_warehouse_order(items, warehouse, order_uom=None):
             conversion_factor = conversion['conversion_factor']
         res['conversion_factor'] = conversion_factor
     return item_details
+
+# HO Purchase - CP
