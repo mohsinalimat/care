@@ -86,7 +86,8 @@ class PurchaseRequest(Document):
 				i.stock_uom,
 				i.last_purchase_rate,
 				0 as conversion_factor,
-				0.0 as order_qty
+				0.0 as order_qty,
+				null as last_purchase_date
 				from `tabItem` i 
 				inner join `tabItem Default` idf on idf.parent = i.name
 				inner  join `tabItem Reorder` ird on ird.parent = i.name
@@ -193,6 +194,14 @@ class PurchaseRequest(Document):
 				rate = get_price_list_rate_for(d.get('item_code'),j_d )
 				d['last_purchase_rate'] = rate if rate else 0
 				d["avl_stock_qty_corp"] = avl_stock_qty_corp
+
+				last_purchase_date = frappe.db.sql("""select p.posting_date from `tabPurchase Receipt` as p
+											inner join `tabPurchase Receipt Item` as pi on p.name = pi.parent 
+											where pi.item_code = '{0}' 
+											and p.docstatus = 1 
+											order by p.posting_date desc limit 1""".format(d.get('item_code')))
+				if last_purchase_date:
+					d["last_purchase_date"] = last_purchase_date[0][0]
 
 		return item_details
 
