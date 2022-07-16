@@ -121,7 +121,7 @@ doc_events = {
         "on_submit": ["care.hook_events.purchase_invoice.update_p_r_c_tool_status",
                       # "care.hook_events.purchase_invoice.update_md_status",
                       # "care.hook_events.purchase_invoice.create_franchise_purchase_invoice",
-                      "care.hook_events.purchase_invoice.updated_price_list",
+                      # "care.hook_events.purchase_invoice.updated_price_list",
                       "care.hook_events.purchase_invoice.update_billing_percentage"],
         "on_cancel": ["care.hook_events.purchase_invoice.cancel_update_p_r_c_tool_status",
                      # "care.hook_events.purchase_invoice.cancel_update_md_status",
