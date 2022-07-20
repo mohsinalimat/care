@@ -291,11 +291,12 @@ class PurchaseInvoiceCreationTool(Document):
 																	'supplier': self.supplier})
 							item_code = item.parent
 						item_doc = frappe.get_doc("Item", item_code)
+						rate = line.get('rate') if line.get('rate') else 0
 						doc.append("items", {
 							"item_code": item_code,
 							"item_name": item_doc.item_name,
 							"qty": line.get('qty'),
-							"rate": line.get('rate'),
+							"rate": round(rate, 2),
 							"uom": 'Pack',
 							"stock_uom": item_doc.stock_uom,
 							"discount_percent": line.get("discount_percent") or 0 ,
