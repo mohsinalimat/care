@@ -317,9 +317,9 @@ function apply_child_btn_color(frm, cdt, cdn){
 }
 
 frappe.ui.form.on('Order Receiving Item', {
-    items_add: function(frm, cdt, cdn){
-        apply_item_filters(frm)
-    },
+//    items_add: function(frm, cdt, cdn){
+//        apply_item_filters(frm)
+//    },
     item_code: function(frm, cdt, cdn){
         var row = locals[cdt][cdn];
         if(!frm.doc.purchase_request || !frm.doc.supplier){
@@ -328,38 +328,44 @@ frappe.ui.form.on('Order Receiving Item', {
         }
         else{
             if (row.item_code){
-                get_items_details(frm, cdt, cdn)
-
-//                frappe.run_serially([
-//                    ()=>get_items_details(frm, cdt, cdn),
-//                    ()=>frappe.timeout(0.3),
-//                    ()=>apply_item_filters(frm),
-//                    ()=> {
-//                        frappe.call({
-//                            method: "get_item_code",
-//                            doc: frm.doc,
-//                            callback: function(r) {
-//                                frappe.run_serially([
-//                                    ()=>{
-//                                        frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
-//                                            return {
-//                                                filters: {'name':['in',r.message]}
-//                                            }
-//                                        }
-//                                    },
-//                                    ()=>{
-//                                        setTimeout(() => {
-//                                            var new_row = frm.fields_dict.items.grid;
-//                                            new_row.add_new_row(null, null, true, null, true);
-//                                            new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
-//                                            new_row.set_focus_on_row();
-//                                        }, 500);
-//                                    }
-//                                ])
-//                            }
-//                        });
-//                    }
-//                ])
+//                get_items_details(frm, cdt, cdn)
+                frappe.run_serially([
+                    ()=>get_items_details(frm, cdt, cdn),
+                    ()=>frappe.timeout(0.3),
+                    ()=> {
+                        frappe.call({
+                            method: "get_item_code",
+                            doc: frm.doc,
+                            callback: function(r) {
+                                frappe.run_serially([
+                                    ()=>{
+                                         if (!frm.doc.accept_un_order_item){
+                                            frm.fields_dict['items'].grid.get_field("item_code").get_query = function(doc, cdt, cdn) {
+                                                return {
+                                                    filters: {'name':['in',r.message]}
+                                                }
+                                            }
+                                        }
+                                        else{
+                                            frm.fields_dict['items'].grid.get_field("item_code").get_query = function (doc, cdt, cdn) {
+                                                var child = locals[cdt][cdn];
+                                                return {
+                                                    filters: {'name':['not in',r.message]}
+                                                }
+                                            }
+                                        }
+                                    },
+                                    ()=>{
+                                        var new_row = frm.fields_dict.items.grid;
+                                        new_row.add_new_row(null, null, true, null, true);
+                                        new_row.grid_rows[new_row.grid_rows.length - 1].toggle_editable_row();
+                                        new_row.set_focus_on_row();
+                                    }
+                                ])
+                            }
+                        });
+                    }
+                ])
             }
         }
     },
