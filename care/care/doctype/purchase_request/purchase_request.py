@@ -382,11 +382,15 @@ def download_excel_summary(purchase_request=None):
 
 
 def pur_req_pdf_summary(doc):
-	data = frappe.db.sql("""select item_code, item_name, brand, sum(pack_order_qty) as pack_order_qty 
-		from `tabPurchase Request Item` 
-		where parent = '{0}'
-		group by item_code, item_name, brand 
-		order by brand, item_name """.format(doc.name), as_dict=True)
+	supp_lst = ['##efef']
+	for res in doc.suppliers:
+		supp_lst.append(res.supplier)
+	data = frappe.db.sql("""select p1.item_code, p1.item_name, p1.brand, sum(p1.pack_order_qty) as pack_order_qty ,
+	 	ifnull((select p2.supplier_part_no from `tabItem Supplier`as p2 where p2.parent = p1.item_code and supplier in {0} limit 1),"") as part_number
+		from `tabPurchase Request Item` as p1
+		where p1.parent = '{1}'
+		group by p1.item_code, p1.item_name, p1.brand 
+		order by p1.brand, p1.item_name """.format(tuple(supp_lst), doc.name), as_dict=True)
 	return data
 
 
