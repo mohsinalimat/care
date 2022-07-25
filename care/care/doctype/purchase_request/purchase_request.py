@@ -386,7 +386,7 @@ def pur_req_pdf_summary(doc):
 		from `tabPurchase Request Item` 
 		where parent = '{0}'
 		group by item_code, item_name, brand 
-		order by item_code, item_name, brand""".format(doc.name), as_dict=True)
+		order by brand, item_name """.format(doc.name), as_dict=True)
 	return data
 
 

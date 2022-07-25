@@ -48,7 +48,8 @@ def make_xlsx(material_demand_lst, wb=None, column_widths=None):
         #
         data = frappe.db.sql("""select item_code, item_name, qty, warehouse
                 from `tabMaterial Demand Item` 
-                where parent = '{0}'""".format(res), as_list=True)
+                where parent = '{0}'                 
+                order by brand, item_name""".format(res), as_list=True)
 
         ws.append(columns_heading)
         for row in data:
@@ -103,7 +104,7 @@ def make_xlsx_summary(purchase_request, wb=None, column_widths=None):
             from `tabPurchase Request Item` 
             where parent = '{0}'
             group by item_code, item_name, brand 
-            order by item_code, item_name, brand""".format(purchase_request), as_list=True)
+            order by brand, item_name""".format(purchase_request), as_list=True)
 
     ws.append(["Item Code", "Item Name", "Brand", "Pack Order Qty"])
     for row in data:
