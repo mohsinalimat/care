@@ -1,7 +1,10 @@
 # Copyright (c) 2022, RF and contributors
 # For license information, please see license.txt
+import json
 
 import frappe
+from frappe.utils import getdate
+from frappe.utils.pdf import get_pdf
 
 def execute(filters=None):
 	columns = get_column(filters)
@@ -74,7 +77,7 @@ def get_data(filters):
 				where docstatus = 1
 				and cost_center != 'Corporate Office - CP'
 				and company = "{0}"
-				and posting_date <= "{1}"
+				and posting_date = "{1}"
 				group by cost_center,is_return
 			) as foo
 			group by foo.cost_center""".format(filters.get('company'), filters.get('date'))
@@ -86,13 +89,14 @@ def get_data(filters):
 			t_g_s_count += res.g_s_count
 			t_r_s_amt += res.r_s_amt
 			t_r_s_count += res.r_s_count
+			res['s_r_percent'] = round(res['s_r_percent'],2)
 		total = {
 				"cost_center": '<b>Total</b>',
 				"g_s_amt": t_g_s_amt,
 				"g_s_count": t_g_s_count,
 				"r_s_amt": t_r_s_amt,
 				"r_s_count": t_r_s_count,
-				"s_r_percent": 0 if t_g_s_amt == 0 else (t_r_s_amt / t_g_s_amt) * 100 ,
+				"s_r_percent": 0 if t_g_s_amt == 0 else round((t_r_s_amt / t_g_s_amt) * 100, 2),
 				"net_sales": t_g_s_amt - t_r_s_amt
 				}
 		result.append(total)
@@ -126,7 +130,7 @@ def get_data(filters):
 					and cost_center != 'Corporate Office - CP' 
 					and (account like '%cash%' or account like '%map%' or account like '%credit card%' or account like '%citiledger%')
 					and company = "{0}"
-					and posting_date <= "{1}"
+					and posting_date = "{1}"
 					group by cost_center, account
 				) as foo
 				group by foo.cost_center""".format(filters.get('company'), filters.get('date'))
@@ -136,7 +140,7 @@ def get_data(filters):
 			local_purchase = float(frappe.db.sql("""select sum(rounded_total) from `tabPurchase Receipt`
 							where cost_center = '{0}' and docstatus = 1 
 							and company = '{1}'
-							and posting_date <= '{2}' """.format(res.cost_center,filters.get('company'), filters.get('date')))[0][0] or 0)
+							and posting_date = '{2}' """.format(res.cost_center,filters.get('company'), filters.get('date')))[0][0] or 0)
 			closing_stock = float(frappe.db.sql("""select sum(stock_value) from `tabStock Ledger Entry` 
 							where warehouse = '{0}' 
 							and company = '{1}'
@@ -155,13 +159,13 @@ def get_data(filters):
 
 		total = {
 			"cost_center": "<b>Total</b>",
-			"cash": t_cash,
-			"map": t_map,
-			"credit_card": t_credit_card,
-			"credit_sale": t_credit_sale,
-			"local_purchase": t_local_purchase,
-			"net_cash": t_local_purchase + t_cash,
-			"closing_stock": t_closing_stock
+			"cash": round(t_cash, 2),
+			"map": round(t_map, 2),
+			"credit_card": round(t_credit_card, 2),
+			"credit_sale": round(t_credit_sale, 2),
+			"local_purchase": round(t_local_purchase, 2),
+			"net_cash": round(t_local_purchase + t_cash, 2),
+			"closing_stock": round(t_closing_stock, 2)
 		}
 		result.append(total)
 		return result
@@ -184,7 +188,7 @@ def get_data(filters):
 					where docstatus = 1
 					and cost_center != 'Corporate Office - CP'
 					and company = "{0}"
-					and posting_date <= "{1}"
+					and posting_date = "{1}"
 					group by cost_center,is_return
 				) as foo
 				group by foo.cost_center""".format(filters.get('company'), filters.get('date'))
@@ -196,18 +200,60 @@ def get_data(filters):
 						and account like '%Cost of Goods Sold%' 
 						and is_cancelled = 0 
 						and company = "{1}"
-						and posting_date <= "{2}" """.format(res.cost_center, filters.get('company'), filters.get('date')))[0][0] or 0)
+						and posting_date = "{2}" """.format(res.cost_center, filters.get('company'), filters.get('date')))[0][0] or 0)
 			res['cost_sale'] = cost_sale
 			# res['gp_margin'] = 0 if res.net_revenue == 0 else (res.net_revenue + cost_sale) / res.net_revenue
-			res['gp_margin'] = 0 if res.net_revenue == 0 else (1 - (cost_sale / res.net_revenue)) * 100
+			res['gp_margin'] = 0 if res.net_revenue == 0 else round((1 - (cost_sale / res.net_revenue)) * 100,2)
 			t_cost_sale += cost_sale
 			t_net_revenue += res.net_revenue
 
 		total = {
 			"cost_center": "<b>Total</b>",
-			"net_revenue": t_net_revenue,
-			"cost_sale": t_cost_sale,
-			"gp_margin": 0 if t_net_revenue == 0 else (1 - (t_cost_sale / t_net_revenue)) * 100
+			"net_revenue": round(t_net_revenue,2),
+			"cost_sale": round(t_cost_sale,2),
+			"gp_margin": 0 if t_net_revenue == 0 else round((1 - (t_cost_sale / t_net_revenue)) * 100, 2)
 		}
 		result.append(total)
 		return result
+
+
+
+@frappe.whitelist()
+def download_pdf_report(filters):
+	filters = json.loads(filters)
+	base_template_path = "frappe/www/printview.html"
+	template = "care/care/report/daily_management_report/daily_management_report_pdf_template.html"
+
+	filters['type'] = 'Sales Summary'
+	sales_data = get_data(filters)
+
+	filters['type'] = 'Stock Summary'
+	stock_data = get_data(filters)
+
+	filters['type'] = 'Profitability Analysis'
+	analysis_data = get_data(filters)
+
+	data = {
+		"sales_data": sales_data,
+		"stock_data": stock_data,
+		"analysis_data": analysis_data,
+	}
+
+	from frappe.www.printview import get_letter_head
+	letterhead = get_letter_head({}, None)
+	filters['date'] = getdate(filters['date']).strftime("%A, %d %B %Y")
+	html = frappe.render_template(
+		template,
+		{
+			"data": data,
+			"letter_head": letterhead,
+			"filters": filters
+		},
+	)
+	final_template = frappe.render_template(
+		base_template_path, {"body": html, "title": "Daily Management Report"}
+	)
+
+	frappe.response.filename = "Daily_Management_Report.pdf"
+	frappe.response.filecontent = get_pdf(final_template, {"orientation": "Landscape"})
+	frappe.response.type = "download"

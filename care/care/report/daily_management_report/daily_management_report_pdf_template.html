@@ -1,0 +1,104 @@
+<html>
+<body>
+
+<div class="page-break">
+    {% if letter_head %}
+        {{ letter_head.content }}
+    {% endif %}
+</div>
+<br/>
+<div class="page-break">
+    <p style="font-size:25px;text-align: center"><b>DAILY MANAGEMENT REPORT</b></p>
+    <p style="font-size:20px;text-align: center"><b>{{filters.date}}</b></p>
+<br/>
+<table class="table table-bordered">
+    <tbody>
+        <tr>
+            <th rowspan="2" class="th" style="background-color: #ffe770 !important;">Sales Summary</th>
+            <th colspan="2" class="th" style="background-color: #ff9770 !important;">Gross Sales</th>
+            <th colspan="2" class="th" style="background-color: #ff9770 !important;">Sales Return</th>
+            <th rowspan="2" class="th" style="background-color: #ffe770 !important;">Sales Return %</th>
+            <th rowspan="2" class="th" style="background-color: #ffe770 !important;">Net Sales</th>
+        </tr>
+        <tr>
+            <th class="th" style="background-color: #ffe770 !important;">Amount</th>
+            <th class="th" style="background-color: #ffe770 !important;">Count</th>
+            <th class="th" style="background-color: #ffe770 !important;">Amount</th>
+            <th class="th" style="background-color: #ffe770 !important;">Count</th>
+        </tr>
+        {% for res in data.sales_data %}
+            <tr>
+                <td style="background-color: #ff9770 !important;">{{res.cost_center}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{res.g_s_amt}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{res.g_s_count}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{res.r_s_amt}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{res.r_s_count}}</td>
+                <td style="background-color: #ff9770 !important;">{{res.s_r_percent}}%</td>
+                <td style="background-color: #ffe770 !important;">{{res.net_sales}}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<br/>
+<table class="table table-bordered" style="page-break-before: always;">
+    <tbody>
+        <tr>
+            <th class="th" style="background-color: #ffe770 !important;">Available Cash and Stock Summary</th>
+            <th class="th" style="background-color: #ff9770 !important;">MAP</th>
+            <th class="th" style="background-color: #ff9770 !important;">Credit Sale</th>
+            <th class="th" style="background-color: #ff9770 !important;">Credit Card</th>
+            <th class="th" style="background-color: #ff9770 !important;">Cash</th>
+            <th class="th" style="background-color: #ff9770 !important;">Local Purchase</th>
+            <th class="th" style="background-color: #ffe770 !important;">Net Cash</th>
+            <th class="th" style="background-color: #ffe770 !important;">Closing Stock</th>
+        </tr>
+        {% for res in data.stock_data %}
+            <tr>
+                <td style="background-color: #ff9770 !important;">{{res.cost_center}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{res.map}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{res.credit_sale}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{res.credit_card}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{res.cash}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{res.local_purchase}}</td>
+                <td style="background-color: #ffe770 !important;">{{res.net_cash}}</td>
+                <td style="background-color: #ffe770 !important;">{{res.closing_stock}}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<br/>
+<table class="table table-bordered" style="page-break-before: always;">
+    <tbody>
+        <tr>
+            <th class="th" style="background-color: #ffe770 !important;">Profitability Analysis</th>
+            <th class="th" style="background-color: #ff9770 !important;">Net Revenue</th>
+            <th class="th" style="background-color: #ff9770 !important;">Cost of Sale</th>
+            <th class="th" style="background-color: #ff9770 !important;">GP Margin</th>
+        </tr>
+        {% for res in data.analysis_data %}
+            <tr>
+                <td style="background-color: #ff9770!important;">{{res.cost_center}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{res.net_revenue}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{res.cost_sale}}</td>
+                <td style="background-color: #ff9770 !important;">{{res.gp_margin}}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+</body>
+</html>
+<style>
+.table-bordered > tbody > tr > th{
+    border: 1px solid #000000 !important;
+}
+
+.table-bordered > tbody > tr > td{
+    border: 1px solid #000000 !important;
+}
+.th{
+    text-align: center
+}
+tr {page-break-inside: avoid;
+   page-break-after: auto;}
+</style>
