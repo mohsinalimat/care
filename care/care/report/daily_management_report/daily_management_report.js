@@ -2,7 +2,7 @@
 // For license information, please see license.txt
 /* eslint-disable */
 
-frappe.query_reports["Daily Managment Report"] = {
+frappe.query_reports["Daily Management Report"] = {
 	"filters": [
         {
 			"fieldname":"company",
