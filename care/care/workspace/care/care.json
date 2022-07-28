@@ -99,6 +99,24 @@
   },
   {
    "hidden": 0,
+   "is_query_report": 1,
+   "label": "Daily Management Report",
+   "link_to": "Daily Management Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Pre-Order Info",
+   "link_to": "Pre-Order Info",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
    "is_query_report": 0,
    "label": "Setting",
    "link_to": "Purchase Request",
@@ -143,7 +161,7 @@
    "type": "Link"
   }
  ],
- "modified": "2022-06-22 12:55:52.541165",
+ "modified": "2022-07-28 12:19:49.033726",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "Care",
