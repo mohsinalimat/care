@@ -8,6 +8,7 @@ import json
 import requests
 import math
 from erpnext.stock.get_item_details import get_conversion_factor
+from erpnext.controllers.accounts_controller import get_taxes_and_charges
 
 class Franchise(Document):
 	@frappe.whitelist()
@@ -482,6 +483,11 @@ def create_sales_invoice(warehouse, customer, submit_invoice=0, mode_of_payment=
 					sale.append('payments', {'mode_of_payment': mode_of_payment,
 											 'account': account,
 											 'type': mod.type})
+				if frappe.db.exists('Sales Taxes and Charges Template', 'Pakistan Tax - CP'):
+					sale.taxes_and_charges = 'Pakistan Tax - CP'
+					taxes = get_taxes_and_charges('Sales Taxes and Charges Template', 'Pakistan Tax - CP')
+					for tax in taxes:
+						sale.append('taxes', tax)
 
 				sale.insert(ignore_permissions=True)
 				frappe.db.commit()
