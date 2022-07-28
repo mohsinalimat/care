@@ -1,0 +1,39 @@
+{
+ "add_total_row": 1,
+ "columns": [],
+ "creation": "2022-07-28 11:25:09.597678",
+ "disable_prepared_report": 1,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "letter_head": "Standard",
+ "modified": "2022-07-28 11:25:09.597678",
+ "modified_by": "Administrator",
+ "module": "Care",
+ "name": "Pre-Order Info",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Purchase Request",
+ "report_name": "Pre-Order Info",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Purchase User"
+  },
+  {
+   "role": "Purchase Manager"
+  },
+  {
+   "role": "Care Purchase"
+  },
+  {
+   "role": "Care Purchase Master"
+  }
+ ]
+}
