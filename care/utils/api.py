@@ -25,6 +25,7 @@ def get_franchise_order(supplier, warehouse=None, order_uom=None):
             i.description,
             i.brand,
             idf.default_supplier,
+            idf.supplier_name,
             ird.warehouse,
             ird.warehouse_reorder_level,
             ird.warehouse_reorder_qty,
@@ -39,6 +40,7 @@ def get_franchise_order(supplier, warehouse=None, order_uom=None):
             left join `tabBin` b on b.item_code = i.name and b.warehouse = ird.warehouse
             where
             idf.default_supplier is not null
+            idf.supplier_name is not null
             and ird.warehouse is not null
             and i.is_stock_item = 1
             and i.has_variants = 0
@@ -47,10 +49,10 @@ def get_franchise_order(supplier, warehouse=None, order_uom=None):
             and ird.warehouse_reorder_qty > 0
             and ird.optimum_level > 0
             and (b.actual_qty < ird.warehouse_reorder_level or b.actual_qty is null)
-            and idf.default_supplier in {0}""".format(tuple(supplier))
+            and idf.supplier_name in {0}""".format(tuple(supplier))
     if warehouse:
         query += """ and ird.warehouse in {0}""".format(tuple(w_lst))
-    query += " order by idf.default_supplier, ird.warehouse, i.name"
+    query += " order by idf.supplier_name, ird.warehouse, i.name"
     item_details = frappe.db.sql(query, as_dict=True)
     for res in item_details:
         conversion_factor = 1

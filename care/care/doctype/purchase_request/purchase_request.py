@@ -49,10 +49,14 @@ class PurchaseRequest(Document):
 			frappe.throw(_("Select Warehouses"))
 
 		s_lst = ["axop123"]
+		s_name_lst = ["axop123"]
 		w_lst = ["axop123","axop123"]
 		f_w_lst = []
 		for res in self.suppliers:
 			s_lst.append(res.supplier)
+		for res in self.supplier_name.split("\n"):
+			if res and res != '':
+				s_name_lst.append(res)
 
 		warehouse_dict = {}
 		for res in self.warehouses:
@@ -78,6 +82,7 @@ class PurchaseRequest(Document):
 				i.description,
 				i.brand,
 				idf.default_supplier,
+				idf.supplier_name,
 				ird.warehouse,
 				ird.warehouse_reorder_level,
 				ird.warehouse_reorder_qty,
@@ -129,11 +134,11 @@ class PurchaseRequest(Document):
 									'Authorization': 'token ' + str(api_key)+':' + str(api_secret)
 								}
 								datas = {
-									"supplier": json.dumps(s_lst),
+									"supplier": json.dumps(s_name_lst),
 									"order_uom": 'Pack',
 									"warehouse": w
 								}
-								response = requests.get(url=url, headers=headers, params=datas)
+								response = requests.get(url=url, headers=headers, data=datas)
 								if response.status_code == 200:
 									response = frappe.parse_json(response.content.decode())
 									data = response.message
@@ -146,6 +151,8 @@ class PurchaseRequest(Document):
 							frappe.msgprint("Error Log Generated", indicator='red', alert=True)
 							continue
 		for d in item_details:
+			supplier = frappe.get_value("Supplier",{"supplier_name": d.get('supplier_name')}, "name")
+			d['default_supplier'] = supplier
 			if d.get('warehouse') in warehouse_dict.keys():
 				actual_qty = 0
 				if d.get('actual_qty'):
