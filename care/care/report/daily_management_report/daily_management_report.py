@@ -137,11 +137,14 @@ def get_data(filters):
 		result = frappe.db.sql(query, as_dict=True)
 		t_cash = t_map = t_credit_card = t_credit_sale = t_local_purchase = t_closing_stock = 0
 		for res in result:
-			local_purchase = float(frappe.db.sql("""select sum(rounded_total) from `tabPurchase Receipt`
-							where cost_center = '{0}' and docstatus = 1 
+			local_purchase = float(frappe.db.sql("""select sum(grand_total) from `tabPurchase Invoice`
+							where cost_center = '{0}' 
+							and supplier_name in ('LOCAL MARKET', 'CUSTOMER RETURN') 
+							and update_stock = 1 
+							and docstatus = 1 
 							and company = '{1}'
 							and posting_date = '{2}' """.format(res.cost_center,filters.get('company'), filters.get('date')))[0][0] or 0)
-			closing_stock = float(frappe.db.sql("""select sum(stock_value) from `tabStock Ledger Entry` 
+			closing_stock = float(frappe.db.sql("""select sum(stock_value_difference) from `tabStock Ledger Entry` 
 							where warehouse = '{0}' 
 							and company = '{1}'
 							and posting_date <= '{2}' 
