@@ -138,7 +138,7 @@ class PurchaseRequest(Document):
 									"order_uom": 'Pack',
 									"warehouse": w
 								}
-								response = requests.get(url=url, headers=headers, data=datas)
+								response = requests.get(url=url, headers=headers, params=datas)
 								if response.status_code == 200:
 									response = frappe.parse_json(response.content.decode())
 									data = response.message
