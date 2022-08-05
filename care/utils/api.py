@@ -53,7 +53,6 @@ def get_franchise_order(supplier, warehouse=None, order_uom=None):
     if warehouse:
         query += """ and ird.warehouse in {0}""".format(tuple(w_lst))
     query += " order by idf.supplier_name, ird.warehouse, i.name"
-    print("----------\n", query)
     item_details = frappe.db.sql(query, as_dict=True)
     for res in item_details:
         conversion_factor = 1
