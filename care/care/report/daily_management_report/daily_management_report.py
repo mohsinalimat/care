@@ -9,8 +9,8 @@ from frappe.utils.pdf import get_pdf
 def execute(filters=None):
 	columns = get_column(filters)
 	data = get_data(filters)
-	summary_view = get_summary(filters)
-	return columns, data,None,None,summary_view
+	summary_view = get_summary(filters) if filters.get('type') == "Stock Summary" else None
+	return columns, data,None,None, summary_view
 
 def get_summary(filters):
 	w_lst = ['Corporate Office Store - CP', "Dead Stock - CP", "Expiry Store - CP"]
