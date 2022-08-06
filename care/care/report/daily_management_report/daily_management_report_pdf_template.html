@@ -85,6 +85,15 @@
         {% endfor %}
     </tbody>
 </table>
+<br/>
+<table class="table table-bordered" style="page-break-before: avoid;">
+    {% for res in data.summary %}
+        <tr>
+            <td style="background-color: #ff9770!important;">{{res.label}}</td>
+            <td style="background-color: #cfd1d3 !important;">{{res.value}}</td>
+        </tr>
+    {% endfor %}
+</table>
 </div>
 </body>
 </html>

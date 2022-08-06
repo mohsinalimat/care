@@ -9,7 +9,26 @@ from frappe.utils.pdf import get_pdf
 def execute(filters=None):
 	columns = get_column(filters)
 	data = get_data(filters)
-	return columns, data
+	summary_view = get_summary(filters)
+	return columns, data,None,None,summary_view
+
+def get_summary(filters):
+	w_lst = ['Corporate Office Store - CP', "Dead Stock - CP", "Expiry Store - CP"]
+	lst = []
+	total = 0
+	for w in w_lst:
+		closing_stock = float(frappe.db.sql("""select sum(stock_value_difference) from `tabStock Ledger Entry` 
+								where warehouse = '{0}' 
+								and company = '{1}'
+								and posting_date <= '{2}' 
+								and is_cancelled = 0""".format('Corporate Office Store - CP', filters.get('company'),
+																filters.get('date')))[0][0] or 0)
+		label = w.split(" - ")[0]
+		total += closing_stock
+		lst.append({"value": closing_stock, "label": label})
+	lst.append({"value": total, "label": "Total Stock", "indicator": "Green"})
+
+	return lst
 
 def get_column(filters):
 	if filters.get('type') == "Sales Summary":
@@ -138,12 +157,14 @@ def get_data(filters):
 		t_cash = t_map = t_credit_card = t_credit_sale = t_local_purchase = t_closing_stock = 0
 		for res in result:
 			local_purchase = float(frappe.db.sql("""select sum(grand_total) from `tabPurchase Invoice`
-							where cost_center = '{0}' 
+							where name in (select distinct parent from `tabPurchase Invoice Item` where cost_center = '{0}') 
 							and supplier_name in ('LOCAL MARKET', 'CUSTOMER RETURN') 
 							and update_stock = 1 
 							and docstatus = 1 
 							and company = '{1}'
-							and posting_date = '{2}' """.format(res.cost_center,filters.get('company'), filters.get('date')))[0][0] or 0)
+							and posting_date = '{2}' 
+							""".format(res.cost_center, filters.get('company'), filters.get('date')))[0][0] or 0)
+
 			closing_stock = float(frappe.db.sql("""select sum(stock_value_difference) from `tabStock Ledger Entry` 
 							where warehouse = '{0}' 
 							and company = '{1}'
@@ -219,8 +240,6 @@ def get_data(filters):
 		result.append(total)
 		return result
 
-
-
 @frappe.whitelist()
 def download_pdf_report(filters):
 	filters = json.loads(filters)
@@ -236,10 +255,13 @@ def download_pdf_report(filters):
 	filters['type'] = 'Profitability Analysis'
 	analysis_data = get_data(filters)
 
+	summary = get_summary(filters)
+
 	data = {
 		"sales_data": sales_data,
 		"stock_data": stock_data,
 		"analysis_data": analysis_data,
+		"summary": summary,
 	}
 
 	from frappe.www.printview import get_letter_head
