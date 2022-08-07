@@ -6,6 +6,21 @@ frappe.ui.form.on('HQ Transfer', {
         if (frm.doc.__islocal){
             frm.set_value("posting_date", frappe.datetime.get_today());
         }
+        frappe.call({
+                method: "get_warehouse",
+                doc: frm.doc,
+                callback: function(r) {
+                    if(r.message) {
+                        frm.clear_table("warehouses");
+                        r.message.forEach(function(d) {
+                            var w = frm.add_child("warehouses");
+                            w.warehouse = d.name
+                            w.order_per = d.order_per
+                        });
+                        refresh_field("warehouses");
+                    }
+                }
+            });
     },
 	refresh: function(frm) {
         frm.fields_dict.get_items.$input.addClass("btn-primary");

@@ -1,6 +1,7 @@
 import frappe
 from frappe.utils import nowdate, getdate
 from erpnext.stock.get_item_details import get_conversion_factor
+from erpnext.controllers.accounts_controller import get_taxes_and_charges
 import json
 
 @frappe.whitelist()
@@ -24,6 +25,7 @@ def get_franchise_order(supplier, warehouse=None, order_uom=None):
             i.description,
             i.brand,
             idf.default_supplier,
+            idf.supplier_name,
             ird.warehouse,
             ird.warehouse_reorder_level,
             ird.warehouse_reorder_qty,
@@ -38,6 +40,7 @@ def get_franchise_order(supplier, warehouse=None, order_uom=None):
             left join `tabBin` b on b.item_code = i.name and b.warehouse = ird.warehouse
             where
             idf.default_supplier is not null
+            and idf.supplier_name is not null
             and ird.warehouse is not null
             and i.is_stock_item = 1
             and i.has_variants = 0
@@ -46,10 +49,10 @@ def get_franchise_order(supplier, warehouse=None, order_uom=None):
             and ird.warehouse_reorder_qty > 0
             and ird.optimum_level > 0
             and (b.actual_qty < ird.warehouse_reorder_level or b.actual_qty is null)
-            and idf.default_supplier in {0}""".format(tuple(supplier))
+            and idf.supplier_name in {0}""".format(tuple(supplier))
     if warehouse:
         query += """ and ird.warehouse in {0}""".format(tuple(w_lst))
-    query += " order by idf.default_supplier, ird.warehouse, i.name"
+    query += " order by idf.supplier_name, ird.warehouse, i.name"
     item_details = frappe.db.sql(query, as_dict=True)
     for res in item_details:
         conversion_factor = 1
@@ -275,8 +278,23 @@ def create_purchase_invoice(invoice):
     if invoice:
         invoice = json.loads(invoice)
         submit_invoice = invoice.get('submit_invoice')
+        sales_tax_item = invoice.get('sales_tax_item')
+        invoice.pop('sales_tax_item')
         doc = frappe.get_doc(invoice)
         # doc.set_missing_values()
+        if frappe.db.exists('Purchase Taxes and Charges Template', 'HO Purchase - CP'):
+            doc.taxes_and_charges = 'HO Purchase - CP'
+            taxes = get_taxes_and_charges('Purchase Taxes and Charges Template', 'HO Purchase - CP')
+            if taxes and sales_tax_item:
+                for tax, stax in zip(taxes, sales_tax_item ):
+                    tax['tax_amount'] = stax.get('tax_amount')
+                    tax['category'] = stax.get('category')
+                    tax['charge_type'] = stax.get('charge_type')
+                    doc.append('taxes', tax)
+            elif taxes and not sales_tax_item:
+                for tax in taxes:
+                    doc.append('taxes', tax)
+
         doc.insert(ignore_permissions=True, ignore_mandatory=True)
         frappe.db.commit()
         if submit_invoice:
@@ -329,3 +347,5 @@ def get_franchise_warehouse_order(items, warehouse, order_uom=None):
             conversion_factor = conversion['conversion_factor']
         res['conversion_factor'] = conversion_factor
     return item_details
+
+# HO Purchase - CP

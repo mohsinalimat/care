@@ -10,11 +10,12 @@
   "naming_series",
   "amended_from",
   "section_break_4",
+  "company",
   "hq_warehouse",
   "base_on",
   "column_break_7",
-  "company",
   "posting_date",
+  "warehouses",
   "item_section",
   "get_items",
   "items",
@@ -117,6 +118,12 @@
    "label": "Order Qty Base On",
    "options": "Reorder Quantity\nOptimal Level",
    "reqd": 1
+  },
+  {
+   "fieldname": "warehouses",
+   "fieldtype": "Table",
+   "label": "Warehouses",
+   "options": "Purchase Multi Warehouse"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -128,7 +135,7 @@
    "link_fieldname": "hq_transfer"
   }
  ],
- "modified": "2022-06-29 22:14:20.227361",
+ "modified": "2022-07-06 14:14:43.039912",
  "modified_by": "Administrator",
  "module": "Care",
  "name": "HQ Transfer",

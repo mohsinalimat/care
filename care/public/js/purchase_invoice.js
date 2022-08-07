@@ -1,11 +1,11 @@
 frappe.ui.form.on('Purchase Invoice', {
-    setup: function (frm){
-		frm.set_value("base_selling_price_list", frappe.defaults.get_default('selling_price_list'))
-    },
+//    setup: function (frm){
+//		frm.set_value("base_selling_price_list", frappe.defaults.get_default('selling_price_list'))
+//    },
     refresh: function(frm, cdt, cdn) {
-        if(!frm.doc.base_selling_price_list){
-            frm.set_value("base_selling_price_list", frappe.defaults.get_default('selling_price_list'))
-        }
+//        if(!frm.doc.base_selling_price_list){
+//            frm.set_value("base_selling_price_list", frappe.defaults.get_default('selling_price_list'))
+//        }
         // validate_item_rate(frm, cdt, cdn)
         if(!frm.doc__islocal && frm.doc.docstatus == 0)
         {
@@ -246,8 +246,7 @@ $.extend(cur_frm.cscript, {
 					get_query_filters: {
 						docstatus: 1,
 						status: ["not in", ["Closed", "Completed", "Return Issued"]],
-						company: me.frm.doc.company,
-						is_return: 0
+						company: me.frm.doc.company
 					}
 				})
 			}, __("Get Items From"));

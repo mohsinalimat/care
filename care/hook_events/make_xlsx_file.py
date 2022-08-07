@@ -47,8 +47,9 @@ def make_xlsx(material_demand_lst, wb=None, column_widths=None):
         #         where parent = '{0}'""".format(res), as_list=True)
         #
         data = frappe.db.sql("""select item_code, item_name, qty, warehouse
-                from `tabMaterial Demand Item` 
-                where parent = '{0}'""".format(res), as_list=True)
+                from `tabMaterial Demand Item`
+                where parent = '{0}'                 
+                order by brand, item_name""".format(res), as_list=True)
 
         ws.append(columns_heading)
         for row in data:
@@ -89,23 +90,32 @@ def make_xlsx_summary(purchase_request, wb=None, column_widths=None):
     column_widths = column_widths or []
     if wb is None:
         wb = openpyxl.Workbook(write_only=True)
-
+    p_doc = frappe.get_doc("Purchase Request", purchase_request)
+    supp_lst = ['##efef']
+    for res in p_doc.suppliers:
+        supp_lst.append(res.supplier)
     sheet_name = purchase_request
     ws = wb.create_sheet(purchase_request, 0)
-
     for i, column_width in enumerate(column_widths):
         if column_width:
             ws.column_dimensions[get_column_letter(i + 1)].width = column_width
 
     row1 = ws.row_dimensions[1]
     row1.font = Font(name='Calibri', bold=True)
-    data = frappe.db.sql("""select item_code, item_name, brand, sum(pack_order_qty)
-            from `tabPurchase Request Item` 
-            where parent = '{0}'
-            group by item_code, item_name, brand 
-            order by item_code, item_name, brand""".format(purchase_request), as_list=True)
+    data = frappe.db.sql("""select p1.item_code, p1.item_name, p1.brand,
+            ifnull((select p2.supplier_part_no from `tabItem Supplier`as p2 where p2.parent = p1.item_code and supplier in {0} limit 1),"") as part_number, 
+            sum(p1.pack_order_qty)            
+            from `tabPurchase Request Item` as p1
+            where p1.parent = '{1}'
+            group by p1.item_code, p1.item_name, p1.brand 
+            order by p1.brand, p1.item_name""".format(tuple(supp_lst), purchase_request), as_list=True)
 
-    ws.append(["Item Code", "Item Name", "Brand", "Pack Order Qty"])
+    ws.append(["Purchase Request", purchase_request, "", "Date", p_doc.date.strftime("%d/%m/%Y")])
+    ws.append(["Company", p_doc.company, "", "Required By", p_doc.required_by.strftime("%d/%m/%Y")])
+    ws.append(["Suppliers", p_doc.supplier_name])
+    ws.append([])
+    ws.append(["-----------"])
+    ws.append(["Item Code", "Item Name", "Brand", "Supplier Part No.", "Pack Order Qty"])
     for row in data:
         clean_row = []
         for item in row:

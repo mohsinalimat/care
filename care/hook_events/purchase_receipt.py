@@ -258,6 +258,7 @@ def calculate_taxes(doc, method):
                         'charge_type': d.charge_type,
                         'account_head': d.account_head,
                         'description': d.description,
+                        'cost_center': d.cost_center,
                         'tax_amount': (d.tax_amount/ord.total)*doc.total,
                         'total': total
                     })

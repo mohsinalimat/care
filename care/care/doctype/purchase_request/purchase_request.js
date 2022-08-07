@@ -109,6 +109,8 @@ frappe.ui.form.on('Purchase Request', {
                             item.supplier = d.default_supplier
                             item.warehouse = d.warehouse
                             item.amount = d.last_purchase_rate * pack_order_qty
+                            item.avl_stock_qty_corp = d.avl_stock_qty_corp
+                            item.last_purchase_date = d.last_purchase_date
                         }
                     })
                 }

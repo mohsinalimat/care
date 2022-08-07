@@ -49,10 +49,14 @@ class PurchaseRequest(Document):
 			frappe.throw(_("Select Warehouses"))
 
 		s_lst = ["axop123"]
+		s_name_lst = ["axop123"]
 		w_lst = ["axop123","axop123"]
 		f_w_lst = []
 		for res in self.suppliers:
 			s_lst.append(res.supplier)
+		for res in self.supplier_name.split("\n"):
+			if res and res != '':
+				s_name_lst.append(res)
 
 		warehouse_dict = {}
 		for res in self.warehouses:
@@ -78,6 +82,7 @@ class PurchaseRequest(Document):
 				i.description,
 				i.brand,
 				idf.default_supplier,
+				idf.supplier_name,
 				ird.warehouse,
 				ird.warehouse_reorder_level,
 				ird.warehouse_reorder_qty,
@@ -86,7 +91,8 @@ class PurchaseRequest(Document):
 				i.stock_uom,
 				i.last_purchase_rate,
 				0 as conversion_factor,
-				0.0 as order_qty
+				0.0 as order_qty,
+				null as last_purchase_date
 				from `tabItem` i 
 				inner join `tabItem Default` idf on idf.parent = i.name
 				inner  join `tabItem Reorder` ird on ird.parent = i.name
@@ -128,7 +134,7 @@ class PurchaseRequest(Document):
 									'Authorization': 'token ' + str(api_key)+':' + str(api_secret)
 								}
 								datas = {
-									"supplier": json.dumps(s_lst),
+									"supplier": json.dumps(s_name_lst),
 									"order_uom": 'Pack',
 									"warehouse": w
 								}
@@ -145,6 +151,8 @@ class PurchaseRequest(Document):
 							frappe.msgprint("Error Log Generated", indicator='red', alert=True)
 							continue
 		for d in item_details:
+			supplier = frappe.get_value("Supplier",{"supplier_name": d.get('supplier_name')}, "name")
+			d['default_supplier'] = supplier
 			if d.get('warehouse') in warehouse_dict.keys():
 				actual_qty = 0
 				if d.get('actual_qty'):
@@ -169,6 +177,13 @@ class PurchaseRequest(Document):
 				percent = warehouse_dict[d.get('warehouse')]
 				qty = order_qty * (percent / 100)
 				d['order_qty'] = qty
+				avl_stock_qty_corp = 0
+				if frappe.db.exists("Warehouse", "Corporate Office Store - CP"):
+					avl_qty = float(frappe.db.sql("""select IFNULL(sum(actual_qty), 0) from `tabBin`
+								where item_code = %s and warehouse = 'Corporate Office Store - CP' """,
+												  (d.get('item_code')))[0][0] or 0)
+					avl_stock_qty_corp = math.floor(avl_qty / d.get('conversion_factor'))
+
 				j_d = json.dumps({
 							"item_code": d.get('item_code'),
 							"price_list": frappe.defaults.get_defaults().buying_price_list,
@@ -185,6 +200,15 @@ class PurchaseRequest(Document):
 						})
 				rate = get_price_list_rate_for(d.get('item_code'),j_d )
 				d['last_purchase_rate'] = rate if rate else 0
+				d["avl_stock_qty_corp"] = avl_stock_qty_corp
+
+				last_purchase_date = frappe.db.sql("""select p.posting_date from `tabPurchase Receipt` as p
+											inner join `tabPurchase Receipt Item` as pi on p.name = pi.parent 
+											where pi.item_code = '{0}' 
+											and p.docstatus = 1 
+											order by p.posting_date desc limit 1""".format(d.get('item_code')))
+				if last_purchase_date:
+					d["last_purchase_date"] = last_purchase_date[0][0]
 
 		return item_details
 
@@ -365,11 +389,15 @@ def download_excel_summary(purchase_request=None):
 
 
 def pur_req_pdf_summary(doc):
-	data = frappe.db.sql("""select item_code, item_name, brand, sum(pack_order_qty) as pack_order_qty 
-		from `tabPurchase Request Item` 
-		where parent = '{0}'
-		group by item_code, item_name, brand 
-		order by item_code, item_name, brand""".format(doc.name), as_dict=True)
+	supp_lst = ['##efef']
+	for res in doc.suppliers:
+		supp_lst.append(res.supplier)
+	data = frappe.db.sql("""select p1.item_code, p1.item_name, p1.brand, sum(p1.pack_order_qty) as pack_order_qty ,
+	 	ifnull((select p2.supplier_part_no from `tabItem Supplier`as p2 where p2.parent = p1.item_code and supplier in {0} limit 1),"") as part_number
+		from `tabPurchase Request Item` as p1
+		where p1.parent = '{1}'
+		group by p1.item_code, p1.item_name, p1.brand 
+		order by p1.brand, p1.item_name """.format(tuple(supp_lst), doc.name), as_dict=True)
 	return data
 
 
