@@ -21,7 +21,7 @@ def get_summary(filters):
 								where warehouse = '{0}' 
 								and company = '{1}'
 								and posting_date <= '{2}' 
-								and is_cancelled = 0""".format('Corporate Office Store - CP', filters.get('company'),
+								and is_cancelled = 0""".format(w, filters.get('company'),
 																filters.get('date')))[0][0] or 0)
 		label = w.split(" - ")[0]
 		total += closing_stock
