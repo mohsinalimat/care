@@ -11,7 +11,7 @@
     <p style="font-size:25px;text-align: center"><b>DAILY MANAGEMENT REPORT</b></p>
     <p style="font-size:20px;text-align: center"><b>{{filters.date}}</b></p>
 <br/>
-<table class="table table-bordered">
+<table class="table table-bordered" style="font-size: 12px;">
     <tbody>
         <tr>
             <th rowspan="2" class="th" style="background-color: #ffe770 !important;">Sales Summary</th>
@@ -29,18 +29,18 @@
         {% for res in data.sales_data %}
             <tr>
                 <td style="background-color: #ff9770 !important;">{{res.cost_center}}</td>
-                <td style="background-color: #cfd1d3 !important;">{{res.g_s_amt}}</td>
-                <td style="background-color: #cfd1d3 !important;">{{res.g_s_count}}</td>
-                <td style="background-color: #cfd1d3 !important;">{{res.r_s_amt}}</td>
-                <td style="background-color: #cfd1d3 !important;">{{res.r_s_count}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{"{:,.2f}".format(res.g_s_amt)}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{"{:,.2f}".format(res.g_s_count)}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{"{:,.2f}".format(res.r_s_amt)}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{"{:,.2f}".format(res.r_s_count)}}</td>
                 <td style="background-color: #ff9770 !important;">{{res.s_r_percent}}%</td>
-                <td style="background-color: #ffe770 !important;">{{res.net_sales}}</td>
+                <td style="background-color: #ffe770 !important;">{{"{:,.2f}".format(res.net_sales)}}</td>
             </tr>
         {% endfor %}
     </tbody>
 </table>
 <br/>
-<table class="table table-bordered" style="page-break-before: always;">
+<table class="table table-bordered" style="page-break-before: always;font-size: 12px;">
     <tbody>
         <tr>
             <th class="th" style="background-color: #ffe770 !important;">Available Cash and Stock Summary</th>
@@ -55,19 +55,19 @@
         {% for res in data.stock_data %}
             <tr>
                 <td style="background-color: #ff9770 !important;">{{res.cost_center}}</td>
-                <td style="background-color: #cfd1d3 !important;">{{res.map}}</td>
-                <td style="background-color: #cfd1d3 !important;">{{res.credit_sale}}</td>
-                <td style="background-color: #cfd1d3 !important;">{{res.credit_card}}</td>
-                <td style="background-color: #cfd1d3 !important;">{{res.cash}}</td>
-                <td style="background-color: #cfd1d3 !important;">{{res.local_purchase}}</td>
-                <td style="background-color: #ffe770 !important;">{{res.net_cash}}</td>
-                <td style="background-color: #ffe770 !important;">{{res.closing_stock}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{"{:,.2f}".format(res.map)}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{"{:,.2f}".format(res.credit_sale)}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{"{:,.2f}".format(res.credit_card)}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{"{:,.2f}".format(res.cash)}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{"{:,.2f}".format(res.local_purchase)}}</td>
+                <td style="background-color: #ffe770 !important;">{{"{:,.2f}".format(res.net_cash)}}</td>
+                <td style="background-color: #ffe770 !important;">{{"{:,.2f}".format(res.closing_stock)}}</td>
             </tr>
         {% endfor %}
     </tbody>
 </table>
 <br/>
-<table class="table table-bordered" style="page-break-before: always;">
+<table class="table table-bordered" style="page-break-before: always;font-size: 12px;">
     <tbody>
         <tr>
             <th class="th" style="background-color: #ffe770 !important;">Profitability Analysis</th>
@@ -77,22 +77,22 @@
         </tr>
         {% for res in data.analysis_data %}
             <tr>
-                <td style="background-color: #ff9770!important;">{{res.cost_center}}</td>
-                <td style="background-color: #cfd1d3 !important;">{{res.net_revenue}}</td>
-                <td style="background-color: #cfd1d3 !important;">{{res.cost_sale}}</td>
-                <td style="background-color: #ff9770 !important;">{{res.gp_margin}}</td>
+                <td style="background-color: #ff9770!important;">{{ res.cost_center}}</td>
+                <td style="background-color: #cfd1d3 !important;">{{ "{:,.2f}".format(res.net_revenue) }}</td>
+                <td style="background-color: #cfd1d3 !important;">{{ "{:,.2f}".format(res.cost_sale) }}</td>
+                <td style="background-color: #ff9770 !important;">{{ "{:,.2f}".format(res.gp_margin) }}</td>
             </tr>
         {% endfor %}
     </tbody>
 </table>
-<br/>
-<table class="table table-bordered" style="page-break-before: avoid;">
-    {% for res in data.summary %}
-        <tr>
-            <td style="background-color: #ff9770!important;">{{res.label}}</td>
-            <td style="background-color: #cfd1d3 !important;">{{res.value}}</td>
-        </tr>
-    {% endfor %}
+<table class="table table-bordered" style="font-size: 12px;">
+    <tr>
+         {% for res in data.summary %}
+            <td style="background-color: #ff9770!important;">{{res.label}}<br/>
+                {{ "{:,.2f}".format(res.value) }}
+            </td>
+        {% endfor %}
+    </tr>
 </table>
 </div>
 </body>
