@@ -170,7 +170,7 @@ def get_data(filters):
 							and company = '{1}'
 							and posting_date <= '{2}' 
 							and is_cancelled = 0""".format(res.cost_center,filters.get('company'), filters.get('date')))[0][0] or 0)
-			net_cash = res.cash + local_purchase
+			net_cash = res.cash - local_purchase
 			res['local_purchase'] = local_purchase
 			res['net_cash'] = net_cash
 			res['closing_stock'] = closing_stock
