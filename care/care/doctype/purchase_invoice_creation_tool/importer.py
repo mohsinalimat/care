@@ -202,7 +202,7 @@ class Importer:
 		if doc.supplier_item_code and not doc.item_code:
 			sup = self.data_import.supplier
 			item = frappe.get_doc("Item Supplier", {'supplier_part_no': doc.supplier_item_code, 'supplier': sup})
-			pr_item = frappe.get_doc("Purchase Request Item", {'parent': self.data_import.purchase_request, 'supplier': sup})
+			pr_item = frappe.get_doc("Purchase Request Item", {'item_code': item.parent, 'parent': self.data_import.purchase_request, 'supplier': sup})
 			doc['item_code'] = item.parent
 		new_doc.update(doc)
 
