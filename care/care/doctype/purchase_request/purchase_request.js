@@ -180,7 +180,7 @@ frappe.ui.form.on("Purchase Request Item", {
 	},
     rate: function(frm, cdt, cdn) {
         var row = locals[cdt][cdn];
-        let amount = row.rate * row.order_qty
+        let amount = row.rate * row.pack_order_qty
         frappe.model.set_value(cdt,cdn,"amount",amount);
         refresh_field("amount", cdn, "items");
 	},
